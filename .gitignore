@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+.env
+
+# Excluded from the public repo:
+#  - sample-letters/ contains the original MoE Word/PDF samples that may have real names
+#  - principles/ contains internal product/development principles PDFs
+sample-letters/
+principles/
+
+# Accidental nested copy of the design system bundle — duplicates of files
+# already at dist/. Excluded so the public repo isn't bloated.
+dist/assets/images/dist/

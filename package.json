@@ -1,0 +1,17 @@
+{
+  "name": "moe-letters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ministry of Education Job Letters — request and verify employment letters",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "@pdf-lib/fontkit": "^1.1.1"
+  }
+}

@@ -1,58 +1,70 @@
-name: Deploy to GitHub Pages
+name: Mirror staging branch into /staging/ on main
 
-# Publishes main at the site root and staging at /staging/. A push to either
-# branch triggers a fresh combined deploy.
+# Pages is configured to "Deploy from a branch: main / root", so /staging/
+# isn't a separate deploy target — it's a folder inside main. This workflow
+# syncs the staging branch's files into main:/staging/ whenever staging is
+# updated, so https://.../staging/ shows the staging build.
+#
+# Pushes from GITHUB_TOKEN don't trigger workflows again, so there's no loop.
 
 on:
   push:
-    branches: [main, staging]
+    branches: [staging]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: sync-staging
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  sync:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Check out main into site/
+      - name: Check out main (with full history so we can commit back)
         uses: actions/checkout@v4
         with:
           ref: main
-          path: site
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check out staging into site/staging/
+      - name: Check out staging branch into a sibling directory
         uses: actions/checkout@v4
         with:
           ref: staging
-          path: site/staging
-        continue-on-error: true
+          path: _staging_source
 
-      - name: Strip server-only files from the published site
+      - name: Replace main's /staging/ folder with the staging branch's content
         run: |
-          for dir in site site/staging; do
-            if [ -d "$dir" ]; then
-              rm -rf "$dir/server" "$dir/data" "$dir/node_modules" "$dir/dist" \
-                     "$dir/sample-letters" "$dir/principles" \
-                     "$dir/package.json" "$dir/package-lock.json" \
-                     "$dir/.github" "$dir/.git"
+          rm -rf staging
+          mkdir staging
+
+          # Copy everything from the staging checkout except .git and the
+          # server-only files. Use a positive include list so only the static
+          # demo lives at /staging/.
+          for entry in *.html *.css *.js employees.json assets; do
+            if [ -e "_staging_source/$entry" ]; then
+              cp -r "_staging_source/$entry" "staging/"
             fi
           done
-          ls -la site/
-          if [ -d site/staging ]; then ls -la site/staging/; fi
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          # The /staging/ root needs its own index.html as the demo entry.
+          # Everything in there links relatively, so nothing else has to change.
+
+          rm -rf _staging_source
+
+          ls -la staging/
+
+      - name: Commit and push if there are changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add staging
+          if git diff --staged --quiet; then
+            echo "No changes to /staging/."
+          else
+            git commit -m "Sync staging branch into /staging/ ($(date -u +%FT%TZ))"
+            git push origin main
+          fi

@@ -21,8 +21,16 @@
   <script>
     (async () => {
       const root = document.getElementById("verify-root");
-      const token = location.hash.replace(/^#/, "");
-      if (!token) {
+
+      // The QR/URL carries the letter id and HMAC signature as query params
+      // (id, t). For backwards-compat the page still accepts the older
+      // client-side payload-in-hash form and falls back to client decode.
+      const qs = new URLSearchParams(location.search);
+      const hashToken = location.hash.replace(/^#/, "");
+      const id = qs.get("id");
+      const signature = qs.get("t");
+
+      if (!id && !hashToken) {
         root.innerHTML = `
           <div class="panel-warning">
             <h1 class="govbb-text-h2">No letter reference provided</h1>
@@ -31,7 +39,14 @@
         return;
       }
 
-      const result = await JobLetters.decodeAndVerify(token);
+      let result;
+      if (id && signature) {
+        result = await JobLetters.apiVerifyLetter(id, signature);
+      } else {
+        // Old self-contained URL format — verify locally.
+        result = await JobLetters.decodeAndVerify(hashToken);
+      }
+
       if (!result.valid) {
         root.innerHTML = `
           <div class="panel-error stack">

@@ -35,12 +35,12 @@
     </header>`;
 
   const alphaBanner = `
-    <div class="govbb-status-banner govbb-status-banner--alpha">
+    <div class="govbb-status-banner govbb-status-banner--service" style="border-top: 6px solid var(--color-red-00); border-bottom: 6px solid var(--color-red-00);">
       <div class="govbb-container">
         <p>
-          <strong>Alpha</strong> — this is a new service running on synthetic data,
-          published as a static demo. Verification here proves only that the letter
-          says what its URL says; the real signed version runs on a server.
+          <strong>STAGING</strong> — you are looking at a pre-release build.
+          Not the live service. Changes appear here first so the team can
+          review them before they go to <a class="govbb-link" href="../">production</a>.
         </p>
       </div>
     </div>`;

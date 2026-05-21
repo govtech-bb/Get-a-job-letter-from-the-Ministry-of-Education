@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verify a letter — Job letters</title>
+  <link rel="icon" href="assets/images/favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="page.css" />
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Verify a letter"}]'>
+    <div id="verify-root">
+      <p class="govbb-text-body">Checking the letter…</p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="chrome.js"></script>
+  <script>
+    (async () => {
+      const root = document.getElementById("verify-root");
+      const token = location.hash.replace(/^#/, "");
+      if (!token) {
+        root.innerHTML = `
+          <div class="panel-warning">
+            <h1 class="govbb-text-h2">No letter reference provided</h1>
+            <p>This page is opened by scanning the QR code on a Ministry of Education job letter.</p>
+          </div>`;
+        return;
+      }
+
+      const result = await JobLetters.decodeAndVerify(token);
+      if (!result.valid) {
+        root.innerHTML = `
+          <div class="panel-error stack">
+            <span class="verify-stamp verify-stamp--invalid">✗ Verification failed</span>
+            <h1 class="govbb-text-h2">This letter could not be verified</h1>
+            <p class="govbb-text-body">${JobLetters.escapeHtml(result.reason)}</p>
+          </div>
+
+          <div class="stack">
+            <h2 class="govbb-text-h3">What to do</h2>
+            <p class="govbb-text-body">
+              If you received this letter from someone claiming to be a Ministry of Education employee,
+              do not rely on it. Ask them to issue a new letter via this service.
+            </p>
+            <p class="govbb-text-body">For help, contact the Ministry's Personnel Department.</p>
+          </div>`;
+        return;
+      }
+
+      const letter = result.letter;
+      const emp = letter.employee;
+      const postLine = JobLetters.escapeHtml(emp.post) + (emp.school ? ", " + JobLetters.escapeHtml(emp.school) : "");
+
+      root.innerHTML = `
+        <div class="stack">
+          <span class="verify-stamp">✓ Verified — this letter is genuine</span>
+          <h1 class="govbb-text-h1">Job letter verification</h1>
+          <p class="govbb-text-body-lg">
+            This letter was issued by the Ministry of Education Transformation.
+          </p>
+        </div>
+
+        <div class="stack">
+          <h2 class="govbb-text-h3">What this letter confirms</h2>
+          <dl class="key-value">
+            <dt>Employee</dt>
+            <dd>${JobLetters.escapeHtml(emp.title)} ${JobLetters.escapeHtml(emp.firstName)} ${JobLetters.escapeHtml(emp.lastName)}</dd>
+            <dt>Post</dt>
+            <dd>${postLine}</dd>
+            <dt>Employer</dt>
+            <dd>${JobLetters.escapeHtml(emp.employer)}</dd>
+            <dt>Employment status</dt>
+            <dd>${JobLetters.escapeHtml(JobLetters.employmentLabel(emp.letterType))}</dd>
+            <dt>Issued on</dt>
+            <dd>${JobLetters.escapeHtml(JobLetters.formatLongDate(letter.issuedAt))}</dd>
+            <dt>Reference</dt>
+            <dd><code>${JobLetters.escapeHtml(letter.id)}</code></dd>
+          </dl>
+          <p class="govbb-text-caption" style="color: var(--color-text-muted);">
+            Salary information is on the letter itself and is not shown on this public page.
+          </p>
+        </div>
+
+        <details class="govbb-show-hide">
+          <summary class="govbb-show-hide__summary">About this verification</summary>
+          <div class="govbb-show-hide__content">
+            <p>
+              Each letter is signed with a code held by the Ministry. We check the code on this page.
+              If the letter has been altered, the code will not match and verification will fail.
+            </p>
+            <p>
+              <strong>Static demo note:</strong> on this GitHub Pages build the signing key is in the
+              bundle, so this page proves only that the letter says what its URL says. The production
+              service uses a server-side key so the check is genuinely tamper-evident.
+            </p>
+          </div>
+        </details>`;
+    })();
+  </script>
+</body>
+</html>

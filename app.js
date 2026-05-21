@@ -266,38 +266,21 @@ async function downloadPdf(letter, verifyUrl) {
   const safe = s => (s || "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const filename = `Job-Letter-${safe(letter.employee.firstName)}-${safe(letter.employee.lastName)}-${letter.id}.pdf`;
 
-  // html2pdf slices the canvas into multiple A4 pages whenever the source is
-  // even one pixel taller than the page — that's what was producing "cut into
-  // two pages". We let html2pdf bootstrap the canvas + jsPDF instance, then
-  // discard its (paginated) output and place the entire canvas on a single
-  // A4 page ourselves.
+  // Drive html2canvas + jsPDF directly. We avoid html2pdf because it slices
+  // the canvas into multiple A4 pages when content is even one pixel taller
+  // than the page, which produced the previous "cut into two pages" output.
   try {
-    const worker = html2pdf().set({
-      margin: 0,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        width: wrap.offsetWidth,
-        height: wrap.offsetHeight,
-        windowWidth: wrap.offsetWidth,
-      },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    }).from(wrap);
+    const canvas = await html2canvas(wrap, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      width: wrap.offsetWidth,
+      height: wrap.offsetHeight,
+      windowWidth: wrap.offsetWidth,
+    });
 
-    await worker.toCanvas();
-    const canvas = worker.prop.canvas;
-
-    await worker.toPdf();
-    const pdf = worker.prop.pdf;
-
-    // Drop whatever pages html2pdf created and start with a single fresh A4.
-    const pageCount = pdf.internal.getNumberOfPages();
-    for (let i = pageCount; i >= 1; i--) pdf.deletePage(i);
-    pdf.addPage("a4", "portrait");
-
-    // Place the entire captured canvas to fill exactly one A4 page.
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     const imgData = canvas.toDataURL("image/jpeg", 0.98);
     pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
     pdf.save(filename);

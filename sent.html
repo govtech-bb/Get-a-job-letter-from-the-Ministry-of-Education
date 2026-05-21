@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your letter is on its way — Job letters</title>
+  <link rel="icon" href="assets/images/favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="page.css" />
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your email","href":"request.html"},{"label":"Letter sent"}]'>
+
+    <div class="panel-success stack">
+      <h1 class="govbb-text-h2">Your letter is on its way</h1>
+      <p class="govbb-text-body">
+        We've sent your job letter to <strong id="recipient-email"></strong>.
+        It should arrive within a few minutes.
+      </p>
+    </div>
+
+    <div class="stack">
+      <h2 class="govbb-text-h3">What happens next</h2>
+      <ol class="govbb-list govbb-list--number">
+        <li>Open the email from <strong>noreply@moe.gov.bb</strong>.</li>
+        <li>Download the attached PDF letter.</li>
+        <li>Forward or print the letter to share with your bank or retailer.</li>
+      </ol>
+    </div>
+
+    <div class="panel-info stack">
+      <h2 class="govbb-text-h4">For this prototype</h2>
+      <p class="govbb-text-body">
+        Email isn't actually sent in this alpha. You can open your letter directly to see what it looks like.
+      </p>
+      <p>
+        <a class="govbb-btn--tertiary" id="open-letter" href="#">Open your letter</a>
+      </p>
+    </div>
+
+    <p><a class="govbb-link" href="index.html">Back to start</a></p>
+  </main>
+
+  <script src="chrome.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const email = params.get("email") || "";
+    const token = location.hash.replace(/^#/, "");
+    document.getElementById("recipient-email").textContent = email;
+    const link = document.getElementById("open-letter");
+    if (token) link.href = "letter.html#" + token;
+    else link.style.display = "none";
+  </script>
+</body>
+</html>

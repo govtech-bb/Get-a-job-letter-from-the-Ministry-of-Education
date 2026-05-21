@@ -1,0 +1,58 @@
+name: Deploy to GitHub Pages
+
+# Publishes main at the site root and staging at /staging/. A push to either
+# branch triggers a fresh combined deploy.
+
+on:
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out main into site/
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: site
+
+      - name: Check out staging into site/staging/
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          path: site/staging
+        continue-on-error: true
+
+      - name: Strip server-only files from the published site
+        run: |
+          for dir in site site/staging; do
+            if [ -d "$dir" ]; then
+              rm -rf "$dir/server" "$dir/data" "$dir/node_modules" "$dir/dist" \
+                     "$dir/sample-letters" "$dir/principles" \
+                     "$dir/package.json" "$dir/package-lock.json" \
+                     "$dir/.github" "$dir/.git"
+            fi
+          done
+          ls -la site/
+          if [ -d site/staging ]; then ls -la site/staging/; fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+      - id: deployment
+        uses: actions/deploy-pages@v4

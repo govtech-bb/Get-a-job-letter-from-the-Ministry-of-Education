@@ -14,7 +14,18 @@ function client() {
 
 export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyUrl }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
-  const subject = "Your Ministry of Education job letter";
+
+  // While the sender domain is unverified, Resend will only deliver to
+  // addresses you've explicitly verified in your account. For testing on
+  // staging we redirect every send to RESEND_OVERRIDE_TO if set. The original
+  // intended recipient is then prefixed onto the subject so you can tell which
+  // employee was matched. Once a real `moe.gov.bb` subdomain is verified,
+  // unset RESEND_OVERRIDE_TO and mail goes to the actual employee.
+  const overrideTo = process.env.RESEND_OVERRIDE_TO || null;
+  const deliverTo = overrideTo || to;
+  const subject = overrideTo
+    ? `[TEST → ${to}] Your Ministry of Education job letter`
+    : "Your Ministry of Education job letter";
 
   const safe = s => (s || "").replace(/[^A-Za-z0-9.\-]+/g, "-");
   const filename = `Job-Letter-${safe(employee.firstName)}-${safe(employee.lastName)}.pdf`;
@@ -55,7 +66,7 @@ Ministry of Education Transformation`;
 
   const { data, error } = await client().emails.send({
     from,
-    to: [to],
+    to: [deliverTo],
     subject,
     text,
     html,

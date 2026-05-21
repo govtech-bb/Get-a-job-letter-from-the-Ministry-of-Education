@@ -1,7 +1,12 @@
 node_modules/
 .DS_Store
 *.log
+
+# Local environment — never commit secrets. Use .env.example as the template.
 .env
+.env.local
+.env.*.local
+.vercel
 
 # Excluded from the public repo:
 #  - sample-letters/ contains the original MoE Word/PDF samples that may have real names

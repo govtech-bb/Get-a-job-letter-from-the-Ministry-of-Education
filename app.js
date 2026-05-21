@@ -1,10 +1,23 @@
-// Static port of the Job Letters service, for GitHub Pages.
-//
-// IMPORTANT: this is the demo-only static build. On the real Node server,
-// HMAC signing keeps the verification key secret. In the browser, the key
-// must ship with the bundle — see DEMO_KEY below. So the static verify page
-// proves "the letter says what its URL says" rather than "the letter was
-// issued by MoE". The real deployment uses the server in /server.
+// Static frontend of the Job Letters service. On staging the client talks to
+// a real backend (Vercel functions in /api/*) which queries Neon Postgres and
+// sends mail via Resend. The legacy fully-client-side helpers (issueLetter /
+// decodeAndVerify) are kept around as a fallback for environments where the
+// API isn't reachable.
+
+// Where the API lives. Local dev: same origin (Express server on :3000).
+// GitHub Pages: explicit Vercel URL — set this once the Vercel project is
+// deployed.
+const API_BASE_URL = (() => {
+  // Allow per-page override via <meta name="api-base" content="...">.
+  const meta = document.querySelector('meta[name="api-base"]');
+  if (meta && meta.content) return meta.content.replace(/\/$/, "");
+  // Local dev — same origin.
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return "";
+  // Public Pages demo — point at the Vercel deploy. Update this string when
+  // the Vercel project URL changes.
+  if (location.hostname.endsWith("github.io")) return "https://moe-letters.vercel.app";
+  return "";
+})();
 
 const DEMO_KEY = "alpha-demo-key-not-for-production";
 const LETTER_TTL_MS = 90 * 24 * 60 * 60 * 1000;
@@ -315,7 +328,29 @@ function employmentLabel(letterType) {
   }
 }
 
+/* ---------- API client ---------- */
+// Talks to the backend at API_BASE_URL. Each method returns the parsed JSON
+// body and a `status` code so callers can render the right outcome.
+
+async function apiRequestLetter(email) {
+  const res = await fetch(`${API_BASE_URL}/api/request-letter`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, publicBaseUrl: location.origin + location.pathname.replace(/[^/]*$/, "") }),
+  });
+  const body = await res.json().catch(() => ({}));
+  return { status: res.status, ...body };
+}
+
+async function apiVerifyLetter(id, signature) {
+  const url = `${API_BASE_URL}/api/verify-letter?id=${encodeURIComponent(id)}&t=${encodeURIComponent(signature)}`;
+  const res = await fetch(url);
+  const body = await res.json().catch(() => ({}));
+  return { status: res.status, ...body };
+}
+
 window.JobLetters = {
+  API_BASE_URL,
   findEmployeeByEmail,
   issueLetter,
   decodeAndVerify,
@@ -327,4 +362,6 @@ window.JobLetters = {
   employmentLabel,
   escapeHtml,
   buildLetterBody,
+  apiRequestLetter,
+  apiVerifyLetter,
 };

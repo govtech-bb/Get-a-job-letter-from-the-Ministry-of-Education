@@ -180,7 +180,7 @@
     </div>
 
     <p class="demo-note">
-      <strong>Demo preview.</strong> No real email is sent. Below is what the message would look like in your inbox.
+      <strong>Inbox preview.</strong> Your real letter has been emailed to you — check your inbox. The view below shows what that message looks like.
     </p>
 
     <div class="inbox" role="region" aria-label="Email inbox preview">
@@ -262,7 +262,7 @@
   <script>
     const params = new URLSearchParams(location.search);
     const email = params.get("email") || "";
-    const token = location.hash.replace(/^#/, "");
+    const letterId = params.get("id") || "";
     const now = new Date();
 
     document.getElementById("recipient-email").textContent = email;
@@ -278,14 +278,14 @@
     const safeEmail = (email.split("@")[0] || "letter").replace(/[^A-Za-z0-9.-]+/g, "-");
     document.getElementById("msg-attachment-name").textContent = "Job-Letter-" + safeEmail + ".pdf";
 
+    // The attachment is rendered as a static visual — the real PDF is in the
+    // user's actual inbox, sent by the API. We don't navigate anywhere when it
+    // is clicked.
     const attachment = document.getElementById("msg-attachment");
-    if (token) {
-      attachment.href = "letter.html#" + token;
-    } else {
-      attachment.removeAttribute("href");
-      attachment.style.opacity = "0.6";
-      attachment.style.cursor = "not-allowed";
-    }
+    attachment.removeAttribute("href");
+    attachment.setAttribute("role", "img");
+    attachment.style.cursor = "default";
+    attachment.addEventListener("click", e => e.preventDefault());
   </script>
 </body>
 </html>

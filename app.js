@@ -145,37 +145,60 @@ async function decodeAndVerify(token) {
 }
 
 /* ---------- HTML preview of the letter ---------- */
+// `mode` is "preview" (on-screen card with a border) or "pdf" (full-bleed A4
+// content, no border). Both share the same inner layout so what the user sees
+// in the preview is what comes out of the PDF.
 function renderLetterHtml(letter, opts = {}) {
-  const paragraphs = buildLetterBody(letter.employee).map(p => `<p>${escapeHtml(p)}</p>`).join("");
+  const paragraphs = buildLetterBody(letter.employee).map(p => `<p style="margin:0 0 10pt;text-align:justify;text-indent:24pt;">${escapeHtml(p)}</p>`).join("");
   const issuedLong = formatLongDate(letter.issuedAt);
   const verifyUrl = opts.verifyUrl || (location.origin + location.pathname.replace(/[^/]*$/, "verify.html") + "#" + opts.token);
+  const mode = opts.mode || "preview";
+
+  // Outer container: preview gets a card border, pdf is flush to the page.
+  const outerStyle = mode === "pdf"
+    ? "background:#fff;font-family:'Times New Roman',Times,serif;font-size:12pt;line-height:1.45;color:#111;padding:0;"
+    : "background:#fff;border:1px solid #d8dde3;border-radius:4px;padding:32pt 36pt;font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.45;color:#111;max-width:720px;";
+
   return `
-    <div class="letter-paper">
-      <div style="display:flex;gap:1rem;margin-bottom:1rem;">
-        <img src="assets/images/govbb-creast.svg" alt="" style="width:48px;height:auto;" />
-        <div>
-          <div style="font-weight:bold;text-transform:uppercase;">MINISTRY OF EDUCATION TRANSFORMATION</div>
-          <div>'Elsie Payne Complex'</div>
-          <div>Constitution Road</div>
-          <div>St. Michael BB 11124</div>
-          <div>BARBADOS, W.I.</div>
+    <div style="${outerStyle}">
+      <!-- Letterhead: coat of arms (left) | address (centre) | MoE logo (right) -->
+      <div style="display:grid;grid-template-columns:90px 1fr 90px;gap:16pt;align-items:center;margin-bottom:14pt;">
+        <img src="assets/images/govbb-creast.svg" alt="Coat of Arms of Barbados"
+             style="width:90px;height:90px;object-fit:contain;display:block;" />
+        <div style="text-align:center;line-height:1.3;">
+          <div style="font-weight:bold;text-transform:uppercase;font-size:11pt;letter-spacing:.02em;">MINISTRY OF EDUCATION TRANSFORMATION</div>
+          <div style="font-size:10.5pt;">'Elsie Payne Complex'</div>
+          <div style="font-size:10.5pt;">Constitution Road</div>
+          <div style="font-size:10.5pt;">St. Michael BB 11124</div>
+          <div style="font-size:10.5pt;">BARBADOS, W.I.</div>
         </div>
+        <img src="assets/images/moe-logo.png" alt="Ministry of Education logo"
+             style="width:90px;height:90px;object-fit:contain;display:block;margin-left:auto;" />
       </div>
-      <div style="display:flex;justify-content:space-between;margin:1rem 0 .25rem;">
+
+      <hr style="border:0;border-top:1px solid #444;margin:6pt 0 12pt;" />
+
+      <div style="display:flex;justify-content:space-between;font-size:10.5pt;">
         <span><strong>Our Ref:</strong> P2954 Vol. I</span>
         <span><strong>Tel. No.:</strong> (246) 535-0600</span>
       </div>
-      <div style="margin-top:1rem;"><strong>Date:</strong> ${escapeHtml(issuedLong)}</div>
-      <h3 style="text-align:center;font-weight:bold;text-decoration:underline;margin:1.5rem 0;font-size:12pt;">TO WHOM IT MAY CONCERN</h3>
-      <div style="text-align:justify;">${paragraphs}</div>
-      <div style="margin-top:2rem;">
-        <div style="border-bottom:1px dotted #555;width:230px;margin-bottom:.25rem;">&nbsp;</div>
-        <div style="font-weight:bold;">H. HOLLIGAN (Ms.)</div>
-        <div style="font-style:italic;">for Permanent Secretary</div>
+      <div style="margin-top:14pt;font-size:10.5pt;"><strong>Date:</strong> ${escapeHtml(issuedLong)}</div>
+
+      <h3 style="text-align:center;font-weight:bold;text-decoration:underline;margin:22pt 0 18pt;font-size:13pt;letter-spacing:.02em;">TO WHOM IT MAY CONCERN</h3>
+
+      <div>${paragraphs}</div>
+
+      <div style="margin-top:36pt;">
+        <div style="border-bottom:1px dotted #555;width:230px;margin-bottom:4pt;">&nbsp;</div>
+        <div style="font-weight:bold;font-size:10.5pt;">H. HOLLIGAN (Ms.)</div>
+        <div style="font-style:italic;font-size:10.5pt;"><i>for</i> Permanent Secretary</div>
       </div>
-      <div style="display:flex;gap:1rem;margin-top:1.5rem;border-top:1px solid #ddd;padding-top:.75rem;font-size:9pt;color:#444;">
+
+      <div style="margin-top:14pt;font-size:9pt;font-weight:bold;">HH/rp</div>
+
+      <div style="display:flex;gap:12pt;margin-top:24pt;border-top:1px solid #ddd;padding-top:10pt;font-size:8.5pt;color:#444;align-items:flex-start;">
         <div id="letter-qr" style="flex:0 0 auto;"></div>
-        <div>
+        <div style="flex:1;">
           <strong>Verify this letter</strong><br />
           Scan the QR code or visit:<br />
           <span style="word-break:break-all;color:#0e5f64;">${escapeHtml(verifyUrl)}</span><br />
@@ -195,15 +218,43 @@ function injectQrInto(target, url) {
 }
 
 /* ---------- PDF generation (client-side via html2pdf) ---------- */
+// Renders the letter into a full A4 page. The wrap is sized exactly to A4
+// portrait (210x297mm) with standard letter margins. We let html2pdf set the
+// margin to 0 because the wrap already has padding for the print margins.
 async function downloadPdf(letter, verifyUrl) {
   const wrap = document.createElement("div");
-  wrap.style.cssText = "position:fixed;left:-9999px;top:0;background:#fff;width:210mm;padding:25mm;font-family:'Times New Roman',Times,serif;font-size:12pt;color:#111;";
-  wrap.innerHTML = renderLetterHtml(letter, { verifyUrl });
+  // html2canvas needs the element to be in real layout (offscreen positioning
+  // or opacity:0 produces a blank capture). `clip-path: inset(100%)` clips it
+  // to nothing visually while preserving layout and image painting.
+  wrap.style.cssText = [
+    "position:absolute",
+    "left:0",
+    "top:0",
+    "width:210mm",
+    "min-height:297mm",
+    "padding:22mm 20mm",  // standard formal-letter margins
+    "background:#fff",
+    "box-sizing:border-box",
+    "font-family:'Times New Roman',Times,serif",
+    "color:#111",
+    "clip-path:inset(100%)",
+    "pointer-events:none",
+  ].join(";");
+  wrap.innerHTML = renderLetterHtml(letter, { verifyUrl, mode: "pdf" });
   document.body.appendChild(wrap);
 
   // Render QR into the placeholder
   const qrTarget = wrap.querySelector("#letter-qr");
   if (qrTarget) injectQrInto(qrTarget, verifyUrl);
+
+  // Wait a tick so the SVG/PNG images finish loading before html2canvas snapshots.
+  await Promise.all(Array.from(wrap.querySelectorAll("img")).map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(resolve => {
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    });
+  }));
 
   const safe = s => (s || "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const filename = `Job-Letter-${safe(letter.employee.firstName)}-${safe(letter.employee.lastName)}-${letter.id}.pdf`;
@@ -212,12 +263,23 @@ async function downloadPdf(letter, verifyUrl) {
     margin: 0,
     filename,
     image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      // Without explicit width/height html2canvas reads height as 0 here and
+      // produces a blank PDF. Setting them to the wrap's actual dimensions
+      // makes it capture the full rendered page.
+      width: wrap.offsetWidth,
+      height: wrap.offsetHeight,
+      windowWidth: wrap.offsetWidth,
+    },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
   };
 
   try {
-    await html2pdf().set(opt).from(wrap.firstElementChild).save();
+    await html2pdf().set(opt).from(wrap).save();
   } finally {
     document.body.removeChild(wrap);
   }

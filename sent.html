@@ -7,39 +7,255 @@
   <link rel="icon" href="assets/images/favicon.ico" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="page.css" />
+  <style>
+    /* Mock email-client styling. Kept local to this page so it doesn't leak
+       into the rest of the service. */
+    .inbox {
+      background: #f5f5f4;
+      border: 1px solid var(--color-grey-00);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      max-width: 56rem;
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 768px) {
+      .inbox { grid-template-columns: 16rem 1fr; }
+    }
+    .inbox__sidebar {
+      background: #ffffff;
+      border-right: 1px solid var(--color-grey-00);
+      padding: var(--spacing-s) 0;
+      font-size: var(--font-size-caption);
+    }
+    .inbox__title {
+      padding: var(--spacing-xs) var(--spacing-s);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+    .inbox__folder {
+      display: flex; justify-content: space-between;
+      padding: var(--spacing-xs) var(--spacing-s);
+      cursor: default;
+    }
+    .inbox__folder--active { background: var(--color-teal-10); font-weight: var(--font-weight-bold); }
+    .inbox__count { color: var(--color-text-muted); }
+    .inbox__list {
+      list-style: none;
+      margin: var(--spacing-xs) 0 0;
+      padding: 0;
+      border-top: 1px solid var(--color-grey-00);
+    }
+    .inbox__item {
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-s);
+      border-bottom: 1px solid var(--color-grey-00);
+      align-items: center;
+      cursor: default;
+    }
+    .inbox__item--unread {
+      background: #fff;
+      font-weight: var(--font-weight-bold);
+      border-left: 3px solid var(--color-teal-00);
+    }
+    .inbox__avatar {
+      width: 2rem; height: 2rem; border-radius: 50%;
+      background: var(--color-blue-100);
+      display: grid; place-items: center;
+      color: #fff; font-weight: bold; font-size: 0.7rem;
+    }
+    .inbox__meta { display: flex; flex-direction: column; min-width: 0; }
+    .inbox__from { font-size: 0.85rem; }
+    .inbox__subject {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: normal;
+    }
+    .inbox__time { font-size: 0.75rem; color: var(--color-text-muted); }
+
+    .message {
+      background: #ffffff;
+      padding: var(--spacing-m);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-s);
+    }
+    .message__toolbar {
+      display: flex; gap: var(--spacing-xs);
+      padding-bottom: var(--spacing-s);
+      border-bottom: 1px solid var(--color-grey-00);
+    }
+    .message__tool {
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: default;
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+    .message__tool:hover { background: #f3f4f6; }
+    .message__head {
+      display: grid;
+      grid-template-columns: 2.5rem 1fr;
+      gap: var(--spacing-s);
+    }
+    .message__avatar {
+      width: 2.5rem; height: 2.5rem; border-radius: 50%;
+      background: var(--color-blue-100);
+      display: grid; place-items: center;
+      color: #fff; font-weight: bold; font-size: 0.8rem;
+    }
+    .message__sender { font-weight: var(--font-weight-bold); font-size: 0.95rem; }
+    .message__sender small { font-weight: normal; color: var(--color-text-muted); font-size: 0.8rem; margin-left: 4px; }
+    .message__to { font-size: 0.8rem; color: var(--color-text-muted); }
+    .message__subject { font-size: 1.25rem; font-weight: var(--font-weight-bold); margin-top: var(--spacing-xs); }
+    .message__time { font-size: 0.75rem; color: var(--color-text-muted); }
+    .message__body { font-size: 1rem; line-height: 1.6; }
+    .message__body p { margin: 0 0 var(--spacing-s); }
+    .message__body ol { margin: 0 0 var(--spacing-s) var(--spacing-m); }
+    .message__sig { color: var(--color-text-muted); font-size: 0.9rem; margin-top: var(--spacing-s); }
+
+    .attachment {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-s);
+      background: #f8fafc;
+      border: 1px solid var(--color-grey-00);
+      border-radius: 6px;
+      padding: var(--spacing-s);
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.15s, border-color 0.15s;
+      max-width: 24rem;
+    }
+    .attachment:hover { background: var(--color-teal-10); border-color: var(--color-teal-00); }
+    .attachment__icon {
+      width: 2.5rem; height: 2.5rem;
+      background: var(--color-red-00);
+      color: #fff;
+      display: grid; place-items: center;
+      font-weight: bold; font-size: 0.7rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .attachment__meta { display: flex; flex-direction: column; min-width: 0; }
+    .attachment__name {
+      font-weight: var(--font-weight-bold);
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .attachment__size { font-size: 0.8rem; color: var(--color-text-muted); }
+
+    .demo-note {
+      background: var(--color-blue-10);
+      border-left: 4px solid var(--color-blue-100);
+      padding: var(--spacing-s);
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      max-width: 56rem;
+    }
+  </style>
 </head>
 <body class="govbb-page">
 
   <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your email","href":"request.html"},{"label":"Letter sent"}]'>
 
-    <div class="panel-success stack">
+    <div class="stack">
       <h1 class="govbb-text-h2">Your letter is on its way</h1>
       <p class="govbb-text-body">
         We've sent your job letter to <strong id="recipient-email"></strong>.
-        It should arrive within a few minutes.
       </p>
     </div>
 
-    <div class="stack">
-      <h2 class="govbb-text-h3">What happens next</h2>
-      <ol class="govbb-list govbb-list--number">
-        <li>Open the email from <strong>noreply@moe.gov.bb</strong>.</li>
-        <li>Download the attached PDF letter.</li>
-        <li>Forward or print the letter to share with your bank or retailer.</li>
-      </ol>
+    <p class="demo-note">
+      <strong>Demo preview.</strong> No real email is sent. Below is what the message would look like in your inbox.
+    </p>
+
+    <div class="inbox" role="region" aria-label="Email inbox preview">
+      <aside class="inbox__sidebar" aria-hidden="true">
+        <div class="inbox__title">Mail</div>
+        <div class="inbox__folder inbox__folder--active">
+          <span>Inbox</span><span class="inbox__count">1</span>
+        </div>
+        <div class="inbox__folder"><span>Sent</span><span class="inbox__count">12</span></div>
+        <div class="inbox__folder"><span>Drafts</span><span class="inbox__count">2</span></div>
+        <div class="inbox__folder"><span>Archive</span></div>
+        <ul class="inbox__list">
+          <li class="inbox__item inbox__item--unread">
+            <div class="inbox__avatar">MoE</div>
+            <div class="inbox__meta">
+              <span class="inbox__from">Ministry of Education</span>
+              <span class="inbox__subject">Your job letter is ready</span>
+            </div>
+            <span class="inbox__time" id="inbox-time">now</span>
+          </li>
+        </ul>
+      </aside>
+
+      <article class="message" aria-label="Email message">
+        <div class="message__toolbar" role="toolbar" aria-label="Message actions">
+          <button class="message__tool" type="button">↩ Reply</button>
+          <button class="message__tool" type="button">↪ Forward</button>
+          <button class="message__tool" type="button">📁 Archive</button>
+        </div>
+
+        <div class="message__head">
+          <div class="message__avatar">MoE</div>
+          <div>
+            <div class="message__sender">
+              Ministry of Education Transformation
+              <small>&lt;noreply@moe.gov.bb&gt;</small>
+            </div>
+            <div class="message__to">to <span id="msg-to"></span></div>
+            <div class="message__time" id="msg-time"></div>
+          </div>
+        </div>
+
+        <h2 class="message__subject">Your job letter is ready</h2>
+
+        <div class="message__body">
+          <p>Hello,</p>
+          <p>
+            Thank you for using the Ministry of Education job letters service.
+            Your letter is attached to this email as a PDF.
+          </p>
+          <p>To use it:</p>
+          <ol>
+            <li>Open the attachment.</li>
+            <li>Forward or print the letter to share with your bank, credit union or retailer.</li>
+            <li>The recipient can scan the QR code on the letter to confirm it is genuine.</li>
+          </ol>
+          <p>If you did not request this letter, you can ignore this email — no further action is needed.</p>
+          <p class="message__sig">
+            Yours,<br />
+            Personnel Department<br />
+            Ministry of Education Transformation
+          </p>
+        </div>
+
+        <a class="attachment" id="msg-attachment" href="#" aria-label="Open the attached PDF letter">
+          <span class="attachment__icon">PDF</span>
+          <span class="attachment__meta">
+            <span class="attachment__name" id="msg-attachment-name">Job-Letter.pdf</span>
+            <span class="attachment__size">PDF · about 30 KB</span>
+          </span>
+        </a>
+      </article>
     </div>
 
-    <div class="panel-info stack">
-      <h2 class="govbb-text-h4">For this prototype</h2>
-      <p class="govbb-text-body">
-        Email isn't actually sent in this alpha. You can open your letter directly to see what it looks like.
-      </p>
-      <p>
-        <a class="govbb-btn--tertiary" id="open-letter" href="#">Open your letter</a>
-      </p>
-    </div>
-
-    <p><a class="govbb-link" href="index.html">Back to start</a></p>
+    <p style="margin-top: var(--spacing-m);"><a class="govbb-link" href="index.html">Back to start</a></p>
   </main>
 
   <script src="chrome.js"></script>
@@ -47,10 +263,29 @@
     const params = new URLSearchParams(location.search);
     const email = params.get("email") || "";
     const token = location.hash.replace(/^#/, "");
+    const now = new Date();
+
     document.getElementById("recipient-email").textContent = email;
-    const link = document.getElementById("open-letter");
-    if (token) link.href = "letter.html#" + token;
-    else link.style.display = "none";
+    document.getElementById("msg-to").textContent = email;
+    document.getElementById("msg-time").textContent = now.toLocaleString("en-GB", {
+      weekday: "short", day: "numeric", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+    document.getElementById("inbox-time").textContent = now.toLocaleTimeString("en-GB", {
+      hour: "2-digit", minute: "2-digit"
+    });
+
+    const safeEmail = (email.split("@")[0] || "letter").replace(/[^A-Za-z0-9.-]+/g, "-");
+    document.getElementById("msg-attachment-name").textContent = "Job-Letter-" + safeEmail + ".pdf";
+
+    const attachment = document.getElementById("msg-attachment");
+    if (token) {
+      attachment.href = "letter.html#" + token;
+    } else {
+      attachment.removeAttribute("href");
+      attachment.style.opacity = "0.6";
+      attachment.style.cursor = "not-allowed";
+    }
   </script>
 </body>
 </html>

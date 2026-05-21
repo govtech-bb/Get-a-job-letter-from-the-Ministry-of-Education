@@ -161,10 +161,12 @@ function renderLetterHtml(letter, opts = {}) {
 
   return `
     <div style="${outerStyle}">
-      <!-- Letterhead: coat of arms (left) | address (centre) | MoE logo (right) -->
-      <div style="display:grid;grid-template-columns:90px 1fr 90px;gap:16pt;align-items:center;margin-bottom:14pt;">
+      <!-- Letterhead: coat of arms (left) | address (centre) | MoE logo (right).
+           Both side marks are square and sized identically so the header is
+           visually balanced. -->
+      <div style="display:grid;grid-template-columns:110px 1fr 110px;gap:20pt;align-items:center;margin-bottom:14pt;">
         <img src="assets/images/govbb-creast.svg" alt="Coat of Arms of Barbados"
-             style="width:90px;height:90px;object-fit:contain;display:block;" />
+             style="width:110px;height:110px;object-fit:contain;display:block;" />
         <div style="text-align:center;line-height:1.3;">
           <div style="font-weight:bold;text-transform:uppercase;font-size:11pt;letter-spacing:.02em;">MINISTRY OF EDUCATION TRANSFORMATION</div>
           <div style="font-size:10.5pt;">'Elsie Payne Complex'</div>
@@ -173,7 +175,7 @@ function renderLetterHtml(letter, opts = {}) {
           <div style="font-size:10.5pt;">BARBADOS, W.I.</div>
         </div>
         <img src="assets/images/moe-logo.png" alt="Ministry of Education logo"
-             style="width:90px;height:90px;object-fit:contain;display:block;margin-left:auto;" />
+             style="width:110px;height:110px;object-fit:contain;display:block;margin-left:auto;" />
       </div>
 
       <hr style="border:0;border-top:1px solid #444;margin:6pt 0 12pt;" />

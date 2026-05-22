@@ -13,8 +13,8 @@ const API_BASE_URL = (() => {
   if (meta && meta.content) return meta.content.replace(/\/$/, "");
   // Local dev — same origin.
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return "";
-  // Public Pages demo — point at the Vercel deploy. Update this string when
-  // the Vercel project URL changes.
+  // Public Pages demo — point at the live Vercel deploy. The project alias is
+  // stable; new deployments roll out to the same URL.
   if (location.hostname.endsWith("github.io")) return "https://moe-letters.vercel.app";
   return "";
 })();

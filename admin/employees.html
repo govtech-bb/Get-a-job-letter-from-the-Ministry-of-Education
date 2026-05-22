@@ -106,7 +106,13 @@
         .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
     }
 
-    const state = { page: 1, q: "", activeOnly: true };
+    // Pick up ?q= from the URL so the dashboard's search bar can deep-link here.
+    const initialQ = new URLSearchParams(location.search).get("q") || "";
+    const state = { page: 1, q: initialQ, activeOnly: !initialQ };
+    if (initialQ) {
+      document.getElementById("q").value = initialQ;
+      document.getElementById("active").value = "0";
+    }
 
     async function load() {
       const params = new URLSearchParams({ page: state.page });

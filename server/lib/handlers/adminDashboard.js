@@ -1,4 +1,5 @@
-// Admin dashboard data: aggregate counts + the 10 most recent issued letters.
+// Admin dashboard data: aggregate counts, things requiring attention, and
+// recent activity.
 
 import { sql } from "../db.js";
 
@@ -17,6 +18,39 @@ export async function adminDashboardData() {
       (SELECT COUNT(*)::int FROM admins WHERE is_active = TRUE) AS admins_active;
   `;
 
+  // Recent failed emails — the actual rows to investigate, not just a count
+  const failed = await q`
+    SELECT
+      id,
+      recipient_email AS "recipientEmail",
+      employee_snapshot->>'firstName' AS "firstName",
+      employee_snapshot->>'lastName'  AS "lastName",
+      issued_at AS "issuedAt",
+      email_status AS "emailStatus"
+    FROM issued_letters
+    WHERE email_status LIKE 'failed%'
+    ORDER BY issued_at DESC
+    LIMIT 5;
+  `;
+
+  // Recently edited employees — most recently changed records
+  const recentlyEdited = await q`
+    SELECT
+      email,
+      title,
+      first_name AS "firstName",
+      last_name AS "lastName",
+      post,
+      school,
+      letter_type AS "letterType",
+      is_active AS "isActive",
+      updated_at AS "updatedAt"
+    FROM employees
+    ORDER BY updated_at DESC
+    LIMIT 5;
+  `;
+
+  // Recent issued letters
   const recent = await q`
     SELECT
       id,
@@ -28,8 +62,8 @@ export async function adminDashboardData() {
       email_status AS "emailStatus"
     FROM issued_letters
     ORDER BY issued_at DESC
-    LIMIT 10;
+    LIMIT 5;
   `;
 
-  return { counts, recent };
+  return { counts, failed, recentlyEdited, recent };
 }

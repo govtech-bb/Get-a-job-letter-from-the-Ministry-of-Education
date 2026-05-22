@@ -46,3 +46,57 @@ CREATE INDEX IF NOT EXISTS idx_issued_letters_recipient
   ON issued_letters (recipient_email);
 CREATE INDEX IF NOT EXISTS idx_issued_letters_issued_at
   ON issued_letters (issued_at DESC);
+
+
+-- ---------------------------------------------------------------------------
+-- Admin side
+--
+-- admins          — the allowlist. Only addresses in this table can sign in.
+-- admin_codes     — one-time 6-digit codes sent to an admin email at login.
+-- admin_sessions  — long-lived bearer tokens, set as an httpOnly cookie after
+--                   the user proves they received the code.
+-- employee_audit  — paper trail for every change to the employees table.
+
+CREATE TABLE IF NOT EXISTS admins (
+  email       TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  role        TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('admin', 'super_admin')),
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_login  TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS admin_codes (
+  id           TEXT PRIMARY KEY,
+  email        TEXT NOT NULL,
+  code_hash    TEXT NOT NULL,
+  expires_at   TIMESTAMPTZ NOT NULL,
+  consumed_at  TIMESTAMPTZ,
+  attempts     INT NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_codes_email   ON admin_codes (email);
+CREATE INDEX IF NOT EXISTS idx_admin_codes_expires ON admin_codes (expires_at);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  token         TEXT PRIMARY KEY,
+  admin_email   TEXT NOT NULL REFERENCES admins(email) ON DELETE CASCADE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at    TIMESTAMPTZ NOT NULL,
+  last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  user_agent    TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_email   ON admin_sessions (admin_email);
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions (expires_at);
+
+CREATE TABLE IF NOT EXISTS employee_audit (
+  id             BIGSERIAL PRIMARY KEY,
+  employee_email TEXT NOT NULL,
+  action         TEXT NOT NULL CHECK (action IN ('create', 'update', 'deactivate', 'reactivate', 'delete')),
+  changed_by     TEXT NOT NULL,
+  changed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  before_data    JSONB,
+  after_data     JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_employee_audit_email ON employee_audit (employee_email);
+CREATE INDEX IF NOT EXISTS idx_employee_audit_at    ON employee_audit (changed_at DESC);

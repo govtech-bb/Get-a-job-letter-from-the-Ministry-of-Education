@@ -22,6 +22,15 @@ import { generateLetterPdf } from "./pdf.js";
 
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
 import { verifyLetter as apiVerifyLetter } from "./lib/handlers/verifyLetter.js";
+import {
+  issueCode as adminIssueCode,
+  verifyCode as adminVerifyCode,
+  destroySession as adminDestroySession,
+  buildSetCookie as adminBuildSetCookie,
+  buildClearCookie as adminBuildClearCookie,
+  tokenFromReq as adminTokenFromReq,
+  requireAdmin,
+} from "./lib/adminAuth.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 dotenv.config();
@@ -77,6 +86,149 @@ app.get("/api/verify-letter", async (req, res) => {
   }
 });
 
+/* ---------- Admin API (mirrored to /api/admin/*.js for Vercel) ---------- */
+
+app.post("/api/admin/login", async (req, res) => {
+  try {
+    const result = await adminIssueCode({ email: req.body?.email });
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.reason });
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("admin/login:", err);
+    res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.post("/api/admin/verify", async (req, res) => {
+  try {
+    const result = await adminVerifyCode({
+      email: req.body?.email,
+      code: req.body?.code,
+      userAgent: req.headers["user-agent"] || null,
+    });
+    if (!result.ok) return res.status(result.status || 401).json({ error: result.reason });
+    res.setHeader("Set-Cookie", adminBuildSetCookie(result.token, result.expiresAt));
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("admin/verify:", err);
+    res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.post("/api/admin/logout", async (req, res) => {
+  try {
+    await adminDestroySession(adminTokenFromReq(req));
+    res.setHeader("Set-Cookie", adminBuildClearCookie());
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("admin/logout:", err);
+    res.status(500).json({ error: "internal_error" });
+  }
+});
+
+app.get("/api/admin/me", async (req, res) => {
+  await requireAdmin(req, res, () => {
+    res.status(200).json({
+      email: req.admin.adminEmail,
+      name: req.admin.name,
+      role: req.admin.role,
+    });
+  });
+});
+
+app.get("/api/admin/dashboard", async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const { adminDashboardData } = await import("./lib/handlers/adminDashboard.js");
+      const data = await adminDashboardData();
+      res.status(200).json(data);
+    } catch (err) {
+      console.error("admin/dashboard:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+});
+
+app.get("/api/admin/letters", async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const { listIssuedLetters } = await import("./lib/handlers/adminLetters.js");
+      const data = await listIssuedLetters({
+        page: req.query.page, q: req.query.q, status: req.query.status,
+      });
+      res.status(200).json(data);
+    } catch (err) {
+      console.error("admin/letters:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+});
+
+app.get("/api/admin/letter", async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const { getIssuedLetterDetail } = await import("./lib/handlers/adminLetters.js");
+      const id = String(req.query.id || "");
+      if (!id) return res.status(400).json({ error: "missing_id" });
+      const letter = await getIssuedLetterDetail(id);
+      if (!letter) return res.status(404).json({ error: "not_found" });
+      res.status(200).json({ letter });
+    } catch (err) {
+      console.error("admin/letter:", err);
+      res.status(500).json({ error: "internal_error" });
+    }
+  });
+});
+
+// Employees CRUD — mirrors /api/admin/employees.js for Vercel.
+function employeesHandler(method) {
+  return async (req, res) => {
+    await requireAdmin(req, res, async () => {
+      try {
+        const m = await import("./lib/handlers/adminEmployees.js");
+        const { email, op, audit } = req.query;
+        const changedBy = req.admin.adminEmail;
+
+        if (method === "POST" && email && op === "set-active") {
+          const r = await m.setEmployeeActive({ email, isActive: !!req.body?.isActive, changedBy });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "POST" && !email) {
+          const r = await m.createEmployee({ body: req.body, changedBy });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "PUT" && email) {
+          const r = await m.updateEmployee({ email, body: req.body, changedBy });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "GET" && email && audit) {
+          const rows = await m.getEmployeeAudit(email);
+          return res.status(200).json({ audit: rows });
+        }
+        if (method === "GET" && email) {
+          const e = await m.getEmployee(email);
+          if (!e) return res.status(404).json({ error: "not_found" });
+          return res.status(200).json({ employee: e });
+        }
+        if (method === "GET") {
+          const data = await m.listEmployees({
+            page: req.query.page, q: req.query.q, activeOnly: req.query.active === "1",
+          });
+          return res.status(200).json(data);
+        }
+        res.status(405).json({ error: "method_not_allowed" });
+      } catch (err) {
+        console.error("admin/employees:", err);
+        res.status(500).json({ error: "internal_error", message: err.message });
+      }
+    });
+  };
+}
+
+app.get("/api/admin/employees", employeesHandler("GET"));
+app.post("/api/admin/employees", employeesHandler("POST"));
+app.put("/api/admin/employees", employeesHandler("PUT"));
+
 // Short verify URL — matches the vercel.json rewrite. The QR codes on the
 // generated PDFs point at /v?id=...&t=...
 app.get("/v", (req, res) => {
@@ -86,6 +238,14 @@ app.get("/v", (req, res) => {
 // Serve the govbb design system bundle (CSS, fonts, images). Mounted at the
 // URL root so that the CSS's relative font URLs (./assets/fonts/...) resolve.
 app.use(express.static(path.join(ROOT, "dist"), { fallthrough: true }));
+
+// Admin pages live under /admin/. Mount with directory index so /admin/
+// serves admin/index.html (the dashboard).
+app.use("/admin", express.static(path.join(ROOT, "admin"), {
+  fallthrough: true,
+  index: "index.html",
+  extensions: ["html"],
+}));
 
 // Serve the static client (the same files that ship to GitHub Pages) so we
 // can hit /request.html, /sent.html, /verify.html and have them call the

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Employees — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    .toolbar {
+      display: flex; gap: var(--spacing-s);
+      align-items: end; flex-wrap: wrap;
+      margin-bottom: var(--spacing-s);
+    }
+    .toolbar .field { flex: 1; min-width: 200px; }
+    .toolbar input, .toolbar select {
+      width: 100%; padding: var(--spacing-xs) var(--spacing-s);
+      border: 2px solid var(--color-text); border-radius: var(--radius-sm);
+      font: inherit; background: #fff;
+    }
+    table.records {
+      width: 100%; border-collapse: collapse;
+      background: #fff; border: 1px solid var(--color-grey-00);
+      border-radius: 4px; overflow: hidden;
+    }
+    table.records th, table.records td {
+      padding: var(--spacing-xs) var(--spacing-s);
+      text-align: left;
+      border-bottom: 1px solid var(--color-grey-00);
+      font-size: 0.9rem; vertical-align: top;
+    }
+    table.records th {
+      background: #f6f7f9; color: var(--color-text-muted);
+      text-transform: uppercase; font-size: 0.75rem;
+      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+    }
+    table.records tr:last-child td { border-bottom: 0; }
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 3px; font-size: 0.75rem; font-weight: var(--font-weight-bold);
+    }
+    .badge--ok { background: var(--color-green-10); color: var(--color-green-00); }
+    .badge--off { background: #eef0f3; color: var(--color-text-muted); }
+    .badge--acting { background: var(--color-yellow-40); color: #6c4e00; }
+    .actions a { margin-right: var(--spacing-xs); }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+    <div class="stack" style="display:flex;justify-content:space-between;gap:var(--spacing-m);align-items:end;flex-wrap:wrap;">
+      <div>
+        <h1 class="govbb-text-h1">Employees</h1>
+        <p class="govbb-text-body">
+          The dataset that powers letter generation. Every edit is logged.
+        </p>
+      </div>
+      <a class="govbb-btn" href="/admin/employee-edit.html">Add employee</a>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label class="govbb-label" for="q" style="font-size:0.85rem;">Search</label>
+        <input id="q" type="search" placeholder="Name, email, post, school…" />
+      </div>
+      <div class="field" style="max-width:220px;">
+        <label class="govbb-label" for="active" style="font-size:0.85rem;">Status</label>
+        <select id="active">
+          <option value="0">All employees</option>
+          <option value="1" selected>Active only</option>
+        </select>
+      </div>
+    </div>
+
+    <table class="records">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Post</th>
+          <th>Letter type</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="rows-body">
+        <tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">Loading…</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:var(--spacing-s);font-size:0.9rem;color:var(--color-text-muted);" id="pager-info">—</div>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    const LETTER_TYPE_LABELS = {
+      teacher_appointed: "Teacher (permanent)",
+      teacher_special:   "Teacher + allowance",
+      ministry_permanent:"Ministry — permanent",
+      ministry_temporary:"Ministry — temporary",
+    };
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    // Pick up ?q= from the URL so the dashboard's search bar can deep-link here.
+    const initialQ = new URLSearchParams(location.search).get("q") || "";
+    const state = { page: 1, q: initialQ, activeOnly: !initialQ };
+    if (initialQ) {
+      document.getElementById("q").value = initialQ;
+      document.getElementById("active").value = "0";
+    }
+
+    async function load() {
+      const params = new URLSearchParams({ page: state.page });
+      if (state.q) params.set("q", state.q);
+      if (state.activeOnly) params.set("active", "1");
+      const r = await fetch("/api/admin/employees?" + params, { credentials: "same-origin" });
+      if (r.status === 401) { location.href = "/admin/login.html"; return; }
+      if (!r.ok) {
+        document.getElementById("rows-body").innerHTML =
+          `<tr><td colspan="6" style="padding:var(--spacing-m);">Failed to load employees.</td></tr>`;
+        return;
+      }
+      const data = await r.json();
+      const tbody = document.getElementById("rows-body");
+      if (!data.rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No matching employees.</td></tr>`;
+      } else {
+        tbody.innerHTML = data.rows.map(r => `
+          <tr>
+            <td><strong>${escapeHtml(r.title || "")} ${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</strong></td>
+            <td><code>${escapeHtml(r.email)}</code></td>
+            <td>${escapeHtml(r.post || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(r.school || "")}</span></td>
+            <td>${escapeHtml(LETTER_TYPE_LABELS[r.letterType] || r.letterType || "")}</td>
+            <td>${r.isActive
+              ? `<span class="badge badge--ok">active</span>`
+              : `<span class="badge badge--off">inactive</span>`}
+              ${r.isActing ? ` <span class="badge badge--acting">acting</span>` : ""}
+            </td>
+            <td class="actions"><a class="govbb-link" href="/admin/employee-edit.html?email=${encodeURIComponent(r.email)}">Edit</a></td>
+          </tr>`).join("");
+      }
+      document.getElementById("pager-info").textContent = `Showing ${data.rows.length} of ${data.total}`;
+    }
+
+    let timer;
+    document.getElementById("q").addEventListener("input", (e) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { state.q = e.target.value.trim(); state.page = 1; load(); }, 200);
+    });
+    document.getElementById("active").addEventListener("change", (e) => {
+      state.activeOnly = e.target.value === "1"; state.page = 1; load();
+    });
+
+    load();
+  </script>
+</body>
+</html>

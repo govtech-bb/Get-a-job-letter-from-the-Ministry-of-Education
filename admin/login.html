@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+</head>
+<body class="govbb-page" data-admin-auth-page="true">
+
+  <main id="main-content" class="page-main">
+    <div id="error-summary" hidden></div>
+
+    <!-- Step 1 — email -->
+    <section id="step-email">
+      <div class="stack">
+        <h1 class="govbb-text-h1">Sign in to admin</h1>
+        <p class="govbb-text-body">
+          Enter your admin email address. We'll send a 6-digit code to that
+          mailbox; enter it on the next screen to sign in.
+        </p>
+      </div>
+
+      <form id="email-form" novalidate>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="email">Admin email address</label>
+          <span class="govbb-hint">Your work email — must be on the admin allowlist.</span>
+          <span class="govbb-error-message" id="email-error" hidden></span>
+          <div class="govbb-input-wrapper">
+            <input class="govbb-input" id="email" name="email" type="email"
+              autocomplete="email" spellcheck="false" required />
+          </div>
+        </div>
+        <div class="govbb-btn-group" style="margin-top: var(--spacing-m);">
+          <button class="govbb-btn" type="submit" id="email-submit">Send code</button>
+          <a class="govbb-btn--link" href="/">Cancel</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- Step 2 — code -->
+    <section id="step-code" hidden>
+      <div class="stack">
+        <h1 class="govbb-text-h1">Enter your sign-in code</h1>
+        <p class="govbb-text-body">
+          We've sent a 6-digit code to <strong id="code-email"></strong>.
+          It expires in 10 minutes.
+        </p>
+      </div>
+
+      <form id="code-form" novalidate>
+        <div class="govbb-form-group">
+          <label class="govbb-label" for="code">6-digit code</label>
+          <span class="govbb-error-message" id="code-error" hidden></span>
+          <div class="govbb-input-wrapper">
+            <input class="govbb-input" id="code" name="code" type="text"
+              inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code"
+              maxlength="6" style="letter-spacing:0.3em;font-size:1.4rem;text-align:center;" required />
+          </div>
+        </div>
+        <div class="govbb-btn-group" style="margin-top: var(--spacing-m);">
+          <button class="govbb-btn" type="submit" id="code-submit">Sign in</button>
+          <button class="govbb-btn--link" type="button" id="back-to-email">Use a different email</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    const stepEmail = document.getElementById("step-email");
+    const stepCode  = document.getElementById("step-code");
+    const errSum    = document.getElementById("error-summary");
+    const emailInput = document.getElementById("email");
+    const codeInput  = document.getElementById("code");
+    const emailErr   = document.getElementById("email-error");
+    const codeErr    = document.getElementById("code-error");
+
+    function showError(target, msg) {
+      const el = target === "email" ? emailErr : codeErr;
+      el.textContent = msg || "";
+      el.hidden = !msg;
+      errSum.innerHTML = msg
+        ? `<div class="govbb-error-summary" role="alert"><h2 class="govbb-error-summary__title">There is a problem</h2><ul class="govbb-error-summary__list"><li><a class="govbb-error-summary__link" href="#${target === 'email' ? 'email' : 'code'}">${msg}</a></li></ul></div>`
+        : "";
+      errSum.hidden = !msg;
+    }
+
+    document.getElementById("email-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return showError("email", "Enter a valid email address.");
+      }
+      showError("email", null);
+      const btn = document.getElementById("email-submit");
+      btn.disabled = true; btn.textContent = "Sending…";
+      try {
+        const r = await fetch("/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+          credentials: "same-origin",
+        });
+        if (!r.ok) throw new Error("network");
+        document.getElementById("code-email").textContent = email;
+        stepEmail.hidden = true;
+        stepCode.hidden = false;
+        codeInput.focus();
+      } catch {
+        showError("email", "We couldn't reach the service. Please try again.");
+      } finally {
+        btn.disabled = false; btn.textContent = "Send code";
+      }
+    });
+
+    document.getElementById("code-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      const code = codeInput.value.trim();
+      if (!/^\d{6}$/.test(code)) {
+        return showError("code", "Enter the 6-digit code from your email.");
+      }
+      showError("code", null);
+      const btn = document.getElementById("code-submit");
+      btn.disabled = true; btn.textContent = "Checking…";
+      try {
+        const r = await fetch("/api/admin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code }),
+          credentials: "same-origin",
+        });
+        if (r.ok) {
+          location.href = "/admin/";
+          return;
+        }
+        const body = await r.json().catch(() => ({}));
+        if (body.error === "bad_code") {
+          showError("code", "That code didn't match. Check your email and try again.");
+        } else if (body.error === "no_active_code") {
+          showError("code", "Your code expired. Go back and request a new one.");
+        } else if (body.error === "too_many_attempts") {
+          showError("code", "Too many attempts. Go back and request a new code.");
+        } else {
+          showError("code", "We couldn't verify the code. Please try again.");
+        }
+      } catch {
+        showError("code", "We couldn't reach the service. Please try again.");
+      } finally {
+        btn.disabled = false; btn.textContent = "Sign in";
+      }
+    });
+
+    document.getElementById("back-to-email").addEventListener("click", () => {
+      stepCode.hidden = true;
+      stepEmail.hidden = false;
+      showError("code", null);
+      codeInput.value = "";
+    });
+  </script>
+</body>
+</html>

@@ -87,20 +87,28 @@
       gap: var(--spacing-xs);
       align-items: center;
       justify-content: flex-end;
+      flex-wrap: wrap;
     }
-    .row-actions button {
+    .row-btn {
       background: transparent;
       border: 1px solid var(--color-grey-00);
       color: var(--color-text);
       padding: 4px 10px;
       border-radius: 4px;
-      font: inherit;
       font-size: 0.8rem;
       cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      white-space: nowrap;
     }
-    .row-actions button:hover { background: #f3f4f6; }
-    .row-actions button.danger { color: var(--color-red-00); border-color: var(--color-red-00); }
-    .row-actions button.danger:hover { background: var(--color-red-10); }
+    a.row-btn:hover { background: #f3f4f6; }
+    .row-btn--danger { color: var(--color-red-00); border-color: var(--color-red-00); }
+    a.row-btn--danger:hover { background: var(--color-red-10); }
+    .row-btn--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .row-btn--disabled:hover { background: transparent; }
 
     .info-panel {
       background: var(--color-blue-10);
@@ -115,6 +123,55 @@
       border-left-color: var(--color-yellow-00);
       color: #6c4e00;
     }
+
+    /* "About these roles" disclosure — standard GDS <details> pattern.
+       Keeps the explainer out of the way for people who already know,
+       and one click away for people who don't. */
+    details.roles-explainer {
+      margin-bottom: var(--spacing-m);
+    }
+    details.roles-explainer > summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--color-blue-100);
+      cursor: pointer;
+      text-decoration: underline;
+      font-size: 0.95rem;
+      padding: 2px 0;
+    }
+    details.roles-explainer > summary::-webkit-details-marker { display: none; }
+    details.roles-explainer > summary::before {
+      content: "▸";
+      font-size: 0.75rem;
+      text-decoration: none;
+      display: inline-block;
+      transform: translateY(-1px);
+    }
+    details.roles-explainer[open] > summary::before { content: "▾"; }
+    details.roles-explainer > div.roles-explainer__body {
+      border-left: 4px solid var(--color-grey-00);
+      padding: var(--spacing-xs) var(--spacing-s);
+      margin-top: var(--spacing-xs);
+      font-size: 0.9rem;
+      color: var(--color-text);
+    }
+    details.roles-explainer dl {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      gap: 4px var(--spacing-s);
+      margin: 0;
+    }
+    details.roles-explainer dt {
+      font-weight: var(--font-weight-bold);
+      white-space: nowrap;
+    }
+    details.roles-explainer dd { margin: 0; }
+    details.roles-explainer ul {
+      margin: 4px 0 var(--spacing-xs);
+      padding-left: var(--spacing-m);
+    }
+    details.roles-explainer li { margin-bottom: 2px; }
   </style>
 </head>
 <body class="govbb-page">
@@ -125,6 +182,36 @@
       People who can sign in to this console. Adding someone here lets them request a
       sign-in code for their work email.
     </p>
+
+    <details class="roles-explainer">
+      <summary>About these roles</summary>
+      <div class="roles-explainer__body">
+        <dl>
+          <dt>Admin</dt>
+          <dd>
+            <ul>
+              <li>View the dashboard and all issued letters.</li>
+              <li>Add, edit, deactivate and reactivate employees.</li>
+              <li>View the change history for any employee.</li>
+            </ul>
+          </dd>
+          <dt>Super admin</dt>
+          <dd>
+            Everything an admin can do, plus:
+            <ul>
+              <li>Add new admins and remove existing ones.</li>
+              <li>Promote an admin to super admin, or change a super admin back.</li>
+              <li>Deactivate or reactivate another admin's sign-in access.</li>
+            </ul>
+            <p style="margin: var(--spacing-xs) 0 0; color: var(--color-text-muted);">
+              At least one active super admin must remain at all times. Super admins
+              cannot change their own role or deactivate their own account — ask another
+              super admin to do it for you.
+            </p>
+          </dd>
+        </dl>
+      </div>
+    </details>
 
     <p class="info-panel" id="info-banner" hidden></p>
 
@@ -184,7 +271,7 @@
       return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
         .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
     }
-    function fmtDateTime(iso) {
+    function fmtAbsolute(iso) {
       if (!iso) return "—";
       return new Date(iso).toLocaleString("en-GB", {
         day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -220,71 +307,64 @@
 
     function renderRows(admins) {
       const tbody = document.getElementById("rows-body");
+      // Empty state should be rare (the signed-in admin's own row would be
+      // here at minimum) but handle it gracefully for completeness.
+      if (!admins.length) {
+        tbody.innerHTML = `
+          <tr><td colspan="6" style="padding:var(--spacing-l);text-align:center;color:var(--color-text-muted);">
+            <strong style="color: var(--color-text); display:block; margin-bottom: var(--spacing-xs);">No admins on file.</strong>
+            If you can see this page, you must already be signed in — try refreshing.
+          </td></tr>`;
+        return;
+      }
       tbody.innerHTML = admins.map(a => {
         const isMe = me && a.email.toLowerCase() === me.email.toLowerCase();
-        const canEdit = me && me.role === "super_admin" && !isMe;
+        const isSuper = me && me.role === "super_admin";
+        // Buttons are always rendered. Disabled when:
+        //  - you're not a super_admin (regular admin viewing the page)
+        //  - the row is you (can't change your own role/status)
+        // Tooltip explains why.
+        const disabled = !isSuper || isMe;
+        const reasonTitle = !isSuper
+          ? "Only super admins can change other admins."
+          : isMe
+          ? "You can't change your own role or status. Ask another super admin."
+          : "";
+        const roleHref = isSuper && !isMe
+          ? `/admin/confirm.html?action=${a.role === "super_admin" ? "admin-demote" : "admin-promote"}&email=${encodeURIComponent(a.email)}`
+          : null;
+        const statusHref = isSuper && !isMe
+          ? `/admin/confirm.html?action=${a.isActive ? "admin-deactivate" : "admin-reactivate"}&email=${encodeURIComponent(a.email)}`
+          : null;
+
+        const roleBtn = roleHref
+          ? `<a class="row-btn" href="${roleHref}">${a.role === "super_admin" ? "Change to admin" : "Promote to super admin"}</a>`
+          : `<span class="row-btn row-btn--disabled" title="${escapeHtml(reasonTitle)}" aria-disabled="true">${a.role === "super_admin" ? "Change to admin" : "Promote to super admin"}</span>`;
+        const statusBtn = statusHref
+          ? `<a class="row-btn ${a.isActive ? 'row-btn--danger' : ''}" href="${statusHref}">${a.isActive ? "Deactivate" : "Reactivate"}</a>`
+          : `<span class="row-btn ${a.isActive ? 'row-btn--danger' : ''} row-btn--disabled" title="${escapeHtml(reasonTitle)}" aria-disabled="true">${a.isActive ? "Deactivate" : "Reactivate"}</span>`;
+
         return `
           <tr>
             <td>
               <strong>${escapeHtml(a.name)}</strong>
               ${isMe ? ` <span class="badge badge--plain">you</span>` : ""}
             </td>
-            <td><code>${escapeHtml(a.email)}</code></td>
+            <td>${escapeHtml(a.email)}</td>
             <td>${roleBadge(a.role)}</td>
-            <td title="${escapeHtml(fmtDateTime(a.lastLogin))}">${escapeHtml(fmtRelative(a.lastLogin))}</td>
+            <td><time datetime="${escapeHtml(a.lastLogin || '')}" title="${escapeHtml(fmtRelative(a.lastLogin))}">${escapeHtml(fmtAbsolute(a.lastLogin))}</time></td>
             <td>${a.isActive
               ? `<span class="badge badge--ok">active</span>`
               : `<span class="badge badge--off">deactivated</span>`}
             </td>
             <td>
               <div class="row-actions">
-                ${canEdit ? `
-                  <button type="button" data-act="role" data-email="${escapeHtml(a.email)}" data-current="${escapeHtml(a.role)}">
-                    ${a.role === "super_admin" ? "Demote" : "Promote"}
-                  </button>
-                  <button type="button" class="${a.isActive ? "danger" : ""}" data-act="${a.isActive ? "deactivate" : "reactivate"}" data-email="${escapeHtml(a.email)}">
-                    ${a.isActive ? "Deactivate" : "Reactivate"}
-                  </button>
-                ` : ""}
+                ${roleBtn}
+                ${statusBtn}
               </div>
             </td>
           </tr>`;
       }).join("");
-
-      tbody.querySelectorAll("button[data-act]").forEach(b => {
-        b.addEventListener("click", () => handleAction(b.dataset.act, b.dataset.email, b.dataset.current));
-      });
-    }
-
-    async function handleAction(act, email, current) {
-      let body;
-      let confirmMsg;
-      if (act === "role") {
-        const next = current === "super_admin" ? "admin" : "super_admin";
-        confirmMsg = `Change ${email}'s role to ${next === "super_admin" ? "super admin" : "admin"}?`;
-        body = { role: next };
-      } else if (act === "deactivate") {
-        confirmMsg = `Deactivate ${email}? They won't be able to sign in.`;
-        body = { isActive: false };
-      } else if (act === "reactivate") {
-        confirmMsg = `Reactivate ${email}?`;
-        body = { isActive: true };
-      } else return;
-
-      if (!confirm(confirmMsg)) return;
-
-      const r = await fetch("/api/admin/admins?email=" + encodeURIComponent(email), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        credentials: "same-origin",
-      });
-      const result = await r.json().catch(() => ({}));
-      if (r.ok) {
-        load();
-      } else {
-        alert(result.message || "We couldn't make that change.");
-      }
     }
 
     // Add form

@@ -13,7 +13,10 @@ export default async function handler(req, res) {
     const { email } = req.body || {};
     const result = await issueCode({ email });
     if (!result.ok) {
-      return res.status(result.status || 400).json({ error: result.reason, detail: result.detail });
+      // Deliberately do NOT pass through internal details (e.g. provider
+      // error strings). The reason code is enough for the UI to decide
+      // what to say; operators see the full error in the server log.
+      return res.status(result.status || 400).json({ error: result.reason });
     }
     return res.status(200).json({ ok: true });
   } catch (err) {

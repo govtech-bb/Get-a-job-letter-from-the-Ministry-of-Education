@@ -113,11 +113,9 @@
           return;
         }
         if (body.error === "email_send_failed") {
-          // Most likely: this address isn't verified in Resend yet (free-tier).
-          // Show the actual rejection reason so the user can fix it.
           showError("email",
-            "We couldn't send the sign-in code to that address. " +
-            (body.detail || "Check the address is verified in Resend, or that the sender domain is verified."));
+            "We couldn't send a sign-in code to that address right now. " +
+            "If this keeps happening, please contact a super admin to check your account is set up correctly.");
           return;
         }
         showError("email", "We couldn't send the code. Please try again.");

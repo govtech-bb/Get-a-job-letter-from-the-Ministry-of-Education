@@ -74,14 +74,15 @@ export async function issueCode({ email }) {
     await sendCodeEmail({ to: admin.email, name: admin.name, code });
     return { ok: true, sent: true };
   } catch (err) {
-    // Most common cause in staging: the address isn't verified in Resend yet
-    // (free-tier restriction with the onboarding@resend.dev sender). Surface
-    // the actual message so the user can fix it without guessing.
+    // Log the underlying provider error for operators (server log /
+    // Vercel function log) but never surface it to the browser — it's
+    // an implementation detail that confuses end users and can leak
+    // information about our infrastructure.
+    console.error("adminAuth.issueCode: email send failed for", admin.email, "—", err.message || err);
     return {
       ok: false,
       status: 502,
       reason: "email_send_failed",
-      detail: err.message || String(err),
     };
   }
 }

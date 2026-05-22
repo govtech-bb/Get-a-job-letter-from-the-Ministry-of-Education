@@ -33,58 +33,53 @@
       line-height: 1.2;
     }
 
-    /* Primary actions: what an admin actually opens this page to do */
-    .actions {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: var(--spacing-m);
-      align-items: stretch;
-      margin-bottom: var(--spacing-l);
-    }
-    @media (max-width: 700px) {
-      .actions { grid-template-columns: 1fr; }
-    }
-    .actions__cta {
-      background: var(--color-teal-00);
-      color: #fff;
-      padding: var(--spacing-m);
-      border-radius: 4px;
+    /* Page header — title on the left, "Add employee" action on the right.
+       GDS pattern: standard button, not an oversized coloured panel. */
+    .page-header {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 220px;
+      justify-content: space-between;
+      align-items: end;
+      gap: var(--spacing-m);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-m);
     }
-    .actions__cta a {
-      color: #fff;
-      text-decoration: underline;
-      font-weight: var(--font-weight-bold);
-      font-size: 1.05rem;
-    }
-    .actions__cta .sub { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+    .page-header__intro { flex: 1 1 320px; min-width: 0; }
 
-    .search-card {
+    /* Search section — two clearly-labelled inputs side by side. Each goes
+       to its own list page; no smart prefix routing. */
+    .search-section {
       background: #fff;
       border: 1px solid var(--color-grey-00);
       border-radius: 4px;
       padding: var(--spacing-m);
+      margin-bottom: var(--spacing-l);
     }
-    .search-card label {
+    .search-section__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-m);
+    }
+    @media (max-width: 700px) {
+      .search-section__grid { grid-template-columns: 1fr; }
+    }
+    .search-section label {
       font-weight: var(--font-weight-bold);
       font-size: 0.95rem;
       display: block;
       margin-bottom: 4px;
     }
-    .search-card .hint {
+    .search-section .hint {
       font-size: 0.8rem;
       color: var(--color-text-muted);
       margin-bottom: var(--spacing-xs);
     }
-    .search-card form {
+    .search-section form {
       display: flex;
       gap: var(--spacing-xs);
     }
-    .search-card input {
+    .search-section input {
       flex: 1;
+      min-width: 0;
       padding: var(--spacing-xs) var(--spacing-s);
       border: 2px solid var(--color-text);
       border-radius: var(--radius-sm);
@@ -201,9 +196,12 @@
 <body class="govbb-page">
 
   <main id="main-content" class="page-main">
-    <div class="stack">
-      <h1 class="govbb-text-h1">Welcome back<span id="hello-name"></span></h1>
-      <p class="govbb-text-body" id="welcome-line">Loading…</p>
+    <div class="page-header">
+      <div class="page-header__intro">
+        <h1 class="govbb-text-h1">Service overview</h1>
+        <p class="govbb-text-body" id="welcome-line">Loading…</p>
+      </div>
+      <a class="govbb-btn" href="/admin/employee-edit.html">Add employee</a>
     </div>
 
     <div id="dashboard-content" hidden>
@@ -227,24 +225,29 @@
         </div>
       </div>
 
-      <!-- Primary actions -->
-      <div class="actions">
-        <div class="actions__cta">
-          <strong style="font-size:1.05rem;display:block;margin-bottom:4px;">Add a new employee</strong>
-          <a href="/admin/employee-edit.html">Open the form →</a>
-          <span class="sub">Use this when someone joins the Ministry.</span>
+      <!-- Two clearly-labelled search boxes — no smart prefix detection -->
+      <section class="search-section" aria-label="Search">
+        <div class="search-section__grid">
+          <div>
+            <label for="search-employees">Find an employee</label>
+            <p class="hint">Search by name, email, post or school.</p>
+            <form id="employees-search-form">
+              <input id="search-employees" type="search" autocomplete="off"
+                placeholder="e.g. Anya Forde" />
+              <button class="govbb-btn" type="submit">Search</button>
+            </form>
+          </div>
+          <div>
+            <label for="search-letters">Find a letter</label>
+            <p class="hint">Search by recipient name, email or letter reference (MOE&#8209;…).</p>
+            <form id="letters-search-form">
+              <input id="search-letters" type="search" autocomplete="off"
+                placeholder="e.g. MOE-2026-AB12" />
+              <button class="govbb-btn" type="submit">Search</button>
+            </form>
+          </div>
         </div>
-
-        <div class="search-card">
-          <label for="dash-search">Find an employee or a letter</label>
-          <p class="hint">Type a name, email or letter reference (MOE-…). Enter to search.</p>
-          <form id="dash-search-form">
-            <input id="dash-search" type="search" autocomplete="off"
-              placeholder="Name, email, or MOE-XXXX-XXXX" />
-            <button class="govbb-btn" type="submit">Search</button>
-          </form>
-        </div>
-      </div>
+      </section>
 
       <!-- Needs attention -->
       <div id="attention-panel" class="attention attention--quiet" style="display:none;">
@@ -292,6 +295,16 @@
         hour: "2-digit", minute: "2-digit",
       });
     }
+    // Absolute as primary on the dashboard activity columns. We use the
+    // short month form to keep the meta cell compact, but still show the
+    // full year + time so the reader can be precise without hovering.
+    function fmtAbsolute(iso) {
+      if (!iso) return "—";
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    }
     function fmtRelative(iso) {
       const d = new Date(iso);
       const mins = Math.floor((Date.now() - d.getTime()) / 60000);
@@ -304,16 +317,19 @@
       return d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" });
     }
 
-    // Smart search: MOE-* → letters page, anything else → employees page
-    document.getElementById("dash-search-form").addEventListener("submit", e => {
+    // Two clearly-labelled search boxes. Each form deep-links straight to
+    // the relevant list page; there's no clever prefix routing to learn.
+    document.getElementById("employees-search-form").addEventListener("submit", e => {
       e.preventDefault();
-      const v = document.getElementById("dash-search").value.trim();
+      const v = document.getElementById("search-employees").value.trim();
       if (!v) return;
-      if (/^MOE-/i.test(v)) {
-        location.href = "/admin/letters.html?q=" + encodeURIComponent(v);
-      } else {
-        location.href = "/admin/employees.html?q=" + encodeURIComponent(v);
-      }
+      location.href = "/admin/employees.html?q=" + encodeURIComponent(v);
+    });
+    document.getElementById("letters-search-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const v = document.getElementById("search-letters").value.trim();
+      if (!v) return;
+      location.href = "/admin/letters.html?q=" + encodeURIComponent(v);
     });
 
     (async () => {
@@ -329,18 +345,19 @@
         document.getElementById("stat-total").textContent     = c.letters_total;
         document.getElementById("stat-empactive").textContent = c.employees_active;
 
-        // Personalise greeting from /api/admin/me (already fetched by chrome.js, but it's not exposed)
-        try {
-          const me = await fetch("/api/admin/me", { credentials: "same-origin" }).then(x => x.json());
-          if (me.name) {
-            const first = me.name.split(" ")[0];
-            document.getElementById("hello-name").textContent = ", " + first;
-          }
-        } catch {}
+        // A neutral one-line status summary for the top of the page. We do
+        // not personalise the heading — this is a working tool, not a
+        // consumer dashboard.
+        const isFirstRun = c.letters_total === 0 && c.employees_active === 0;
+        const failedClause = c.letters_failed > 0
+          ? ` ${c.letters_failed} email${c.letters_failed === 1 ? " requires" : "s require"} investigation.`
+          : "";
         document.getElementById("welcome-line").textContent =
-          c.letters_24h === 0
-            ? "No letters issued in the last 24 hours."
-            : `${c.letters_24h} letter${c.letters_24h === 1 ? "" : "s"} issued in the last 24 hours, ${c.letters_failed} email${c.letters_failed === 1 ? "" : "s"} need investigation.`;
+          isFirstRun
+            ? "This service has no employees on file yet. Add an employee to allow them to request a job letter."
+            : c.letters_24h === 0
+              ? "No letters have been issued in the last 24 hours." + failedClause
+              : `${c.letters_24h} letter${c.letters_24h === 1 ? " was" : "s were"} issued in the last 24 hours.` + failedClause;
 
         // Attention panel
         const pane = document.getElementById("attention-panel");
@@ -354,7 +371,7 @@
           pane.className = "attention";
           title.textContent = `${c.letters_failed} email${c.letters_failed === 1 ? "" : "s"} failed — investigate`;
           body.innerHTML = `
-            <p style="margin:0;font-size:0.9rem;">These letters were generated but their emails didn't deliver. Click through to see why.</p>
+            <p style="margin:0;font-size:0.9rem;">These letters were generated, but their emails did not deliver. Open each to view the failure reason.</p>
             <ul class="attention__list">
               ${data.failed.map(f => `
                 <li>
@@ -383,7 +400,7 @@
               </div>
               <div style="text-align:right;">
                 <a class="govbb-link" href="/admin/employee-edit.html?email=${encodeURIComponent(e.email)}">Edit</a>
-                <div class="activity__meta">${escapeHtml(fmtRelative(e.updatedAt))}</div>
+                <div class="activity__meta"><time datetime="${escapeHtml(e.updatedAt)}" title="${escapeHtml(fmtRelative(e.updatedAt))}">${escapeHtml(fmtAbsolute(e.updatedAt))}</time></div>
               </div>
             </li>`).join("");
         }
@@ -397,11 +414,11 @@
             <li>
               <div>
                 <span class="activity__name">${escapeHtml(r.firstName || "")} ${escapeHtml(r.lastName || "")}</span>
-                <div class="activity__sub"><code>${escapeHtml(r.recipientEmail)}</code></div>
+                <div class="activity__sub">${escapeHtml(r.recipientEmail)}</div>
               </div>
               <div style="text-align:right;">
                 <a class="govbb-link" href="/admin/letters.html?q=${encodeURIComponent(r.id)}">Open</a>
-                <div class="activity__meta">${escapeHtml(fmtRelative(r.issuedAt))}</div>
+                <div class="activity__meta"><time datetime="${escapeHtml(r.issuedAt)}" title="${escapeHtml(fmtRelative(r.issuedAt))}">${escapeHtml(fmtAbsolute(r.issuedAt))}</time></div>
               </div>
             </li>`).join("");
         }

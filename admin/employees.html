@@ -128,12 +128,20 @@
       const data = await r.json();
       const tbody = document.getElementById("rows-body");
       if (!data.rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No matching employees.</td></tr>`;
+        // Differentiate "service is empty" from "filters returned nothing"
+        // so the user knows whether to seed data or relax their search.
+        const isEmptyService = data.total === 0 && !state.q && !state.activeOnly;
+        tbody.innerHTML = isEmptyService
+          ? `<tr><td colspan="6" style="padding:var(--spacing-l);text-align:center;color:var(--color-text-muted);">
+               <strong style="color: var(--color-text); display:block; margin-bottom: var(--spacing-xs);">No employees on file yet.</strong>
+               Add an employee using the button above. They will then be able to request a job letter.
+             </td></tr>`
+          : `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No employees match those filters.</td></tr>`;
       } else {
         tbody.innerHTML = data.rows.map(r => `
           <tr>
             <td><strong>${escapeHtml(r.title || "")} ${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</strong></td>
-            <td><code>${escapeHtml(r.email)}</code></td>
+            <td>${escapeHtml(r.email)}</td>
             <td>${escapeHtml(r.post || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(r.school || "")}</span></td>
             <td>${escapeHtml(LETTER_TYPE_LABELS[r.letterType] || r.letterType || "")}</td>
             <td>${r.isActive

@@ -100,3 +100,15 @@ CREATE TABLE IF NOT EXISTS employee_audit (
 );
 CREATE INDEX IF NOT EXISTS idx_employee_audit_email ON employee_audit (employee_email);
 CREATE INDEX IF NOT EXISTS idx_employee_audit_at    ON employee_audit (changed_at DESC);
+
+CREATE TABLE IF NOT EXISTS admin_audit (
+  id           BIGSERIAL PRIMARY KEY,
+  admin_email  TEXT NOT NULL,
+  action       TEXT NOT NULL CHECK (action IN ('invite', 'update', 'deactivate', 'reactivate', 'delete')),
+  changed_by   TEXT NOT NULL,
+  changed_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  before_data  JSONB,
+  after_data   JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_email ON admin_audit (admin_email);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_at    ON admin_audit (changed_at DESC);

@@ -37,7 +37,7 @@
       letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
     }
     table.records tr:last-child td { border-bottom: 0; }
-    table.records tr:hover td { background: var(--color-teal-10); cursor: pointer; }
+    table.records tbody tr:hover td { background: #fafbfc; }
     .badge {
       display: inline-block; padding: 2px 8px;
       border-radius: 3px; font-size: 0.75rem; font-weight: var(--font-weight-bold);
@@ -51,21 +51,6 @@
       margin-top: var(--spacing-s); font-size: 0.9rem;
       color: var(--color-text-muted);
     }
-    .drawer {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-      display: flex; justify-content: flex-end; z-index: 1000;
-    }
-    .drawer__panel {
-      width: min(560px, 90vw); background: #fff; padding: var(--spacing-m);
-      overflow: auto; box-shadow: -4px 0 20px rgba(0,0,0,0.15);
-    }
-    .drawer__close {
-      background: transparent; border: 0; font-size: 1.5rem;
-      cursor: pointer; float: right;
-    }
-    .kv { display: grid; grid-template-columns: 12rem 1fr; gap: var(--spacing-xs); }
-    .kv dt { color: var(--color-text-muted); }
-    .kv dd { margin: 0; font-weight: var(--font-weight-bold); word-break: break-word; }
   </style>
 </head>
 <body class="govbb-page">
@@ -74,9 +59,9 @@
     <div class="stack">
       <h1 class="govbb-text-h1">Letters</h1>
       <p class="govbb-text-body">
-        Every job letter the service has issued. Read-only — there is nothing to
-        approve. Click a row to see the snapshotted record and email delivery
-        status.
+        A record of every job letter the service has issued. This list is read-only —
+        there is nothing to approve. Select <strong>View</strong> on a row to see the
+        snapshotted record and email delivery status.
       </p>
     </div>
 
@@ -105,10 +90,11 @@
           <th>Sent to</th>
           <th style="width:6rem;">Email</th>
           <th>Reference</th>
+          <th style="text-align:right;">Action</th>
         </tr>
       </thead>
       <tbody id="rows-body">
-        <tr><td colspan="6" style="color:var(--color-text-muted);padding:var(--spacing-m);text-align:center;">Loading…</td></tr>
+        <tr><td colspan="7" style="color:var(--color-text-muted);padding:var(--spacing-m);text-align:center;">Loading…</td></tr>
       </tbody>
     </table>
 
@@ -120,8 +106,6 @@
       </div>
     </div>
 
-    <!-- Detail drawer -->
-    <div id="drawer" hidden></div>
   </main>
 
   <script src="/admin/admin-chrome.js"></script>
@@ -133,11 +117,21 @@
       ministry_temporary:"Ministry — temporary",
     };
 
-    function fmtDateTime(iso) {
+    function fmtAbsolute(iso) {
       return new Date(iso).toLocaleString("en-GB", {
-        day: "numeric", month: "short", year: "numeric",
+        day: "numeric", month: "long", year: "numeric",
         hour: "2-digit", minute: "2-digit",
       });
+    }
+    function fmtRelative(iso) {
+      const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+      if (mins < 1)  return "just now";
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24)  return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      if (days < 30) return `${days}d ago`;
+      return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
     }
     function escapeHtml(s) {
       if (s == null) return "";
@@ -145,13 +139,9 @@
         .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
     }
     function emailBadge(status) {
-      if (status === "sent") return `<span class="badge badge--sent">sent</span>`;
-      if (status && status.startsWith("failed")) return `<span class="badge badge--failed" title="${escapeHtml(status)}">failed</span>`;
+      if (status === "sent") return `<span class="badge badge--sent">Delivered</span>`;
+      if (status && status.startsWith("failed")) return `<span class="badge badge--failed">Failed</span>`;
       return `<span class="badge badge--other">${escapeHtml(status || "pending")}</span>`;
-    }
-    function moneyFmt(v) {
-      if (v == null || v === "") return "—";
-      return "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     // Pick up ?q= from the URL so the dashboard's search bar can deep-link here.
@@ -167,7 +157,7 @@
       if (r.status === 401) { location.href = "/admin/login.html"; return; }
       if (!r.ok) {
         document.getElementById("rows-body").innerHTML =
-          `<tr><td colspan="6" style="padding:var(--spacing-m);">Failed to load letters.</td></tr>`;
+          `<tr><td colspan="7" style="padding:var(--spacing-m);">Failed to load letters.</td></tr>`;
         return;
       }
       const data = await r.json();
@@ -175,18 +165,24 @@
 
       const tbody = document.getElementById("rows-body");
       if (!data.rows.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No matching letters.</td></tr>`;
+        const isEmptyService = state.total === 0 && !state.q && !state.status;
+        tbody.innerHTML = isEmptyService
+          ? `<tr><td colspan="7" style="padding:var(--spacing-l);text-align:center;color:var(--color-text-muted);">
+               <strong style="color: var(--color-text); display:block; margin-bottom: var(--spacing-xs);">No letters issued yet.</strong>
+               Letters issued by the service will appear here, with full delivery status.
+             </td></tr>`
+          : `<tr><td colspan="7" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No letters match those filters.</td></tr>`;
       } else {
         tbody.innerHTML = data.rows.map(row => `
-          <tr data-id="${escapeHtml(row.id)}">
-            <td>${escapeHtml(fmtDateTime(row.issuedAt))}</td>
+          <tr>
+            <td><time datetime="${escapeHtml(row.issuedAt)}" title="${escapeHtml(fmtRelative(row.issuedAt))}">${escapeHtml(fmtAbsolute(row.issuedAt))}</time></td>
             <td>${escapeHtml(row.firstName || "")} ${escapeHtml(row.lastName || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(row.post || "")}</span></td>
             <td>${escapeHtml(LETTER_TYPE_LABELS[row.letterType] || row.letterType || "")}</td>
-            <td><code>${escapeHtml(row.recipientEmail)}</code></td>
+            <td>${escapeHtml(row.recipientEmail)}</td>
             <td>${emailBadge(row.emailStatus)}</td>
-            <td><code style="font-size:0.8rem;">${escapeHtml(row.id)}</code></td>
+            <td><span class="ref" style="font-family:ui-monospace,Consolas,monospace;font-size:0.8rem;">${escapeHtml(row.id)}</span></td>
+            <td style="text-align:right;"><a class="govbb-link" href="/admin/letter.html?id=${encodeURIComponent(row.id)}">View</a></td>
           </tr>`).join("");
-        tbody.querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => openDetail(tr.dataset.id)));
       }
 
       const from = (state.page - 1) * state.pageSize + 1;
@@ -195,56 +191,6 @@
         state.total === 0 ? "No results" : `Showing ${from}–${to} of ${state.total}`;
       document.getElementById("prev-page").disabled = state.page <= 1;
       document.getElementById("next-page").disabled = to >= state.total;
-    }
-
-    async function openDetail(id) {
-      const drawer = document.getElementById("drawer");
-      drawer.hidden = false;
-      drawer.className = "drawer";
-      drawer.innerHTML = `<div class="drawer__panel"><button class="drawer__close" aria-label="Close">×</button><p>Loading…</p></div>`;
-      drawer.querySelector(".drawer__close").addEventListener("click", closeDetail);
-      drawer.addEventListener("click", e => { if (e.target === drawer) closeDetail(); });
-
-      const r = await fetch("/api/admin/letter?id=" + encodeURIComponent(id), { credentials: "same-origin" });
-      if (!r.ok) {
-        drawer.querySelector(".drawer__panel").innerHTML += `<p>Could not load that letter.</p>`;
-        return;
-      }
-      const { letter } = await r.json();
-      const e = letter.employee;
-      drawer.querySelector(".drawer__panel").innerHTML = `
-        <button class="drawer__close" aria-label="Close">×</button>
-        <h2 class="govbb-text-h3">Letter ${escapeHtml(letter.id)}</h2>
-        <p style="margin: var(--spacing-xs) 0 var(--spacing-s);">${emailBadge(letter.emailStatus)}</p>
-        <h3 class="govbb-text-h4" style="margin-top: var(--spacing-m);">Delivery</h3>
-        <dl class="kv">
-          <dt>Issued</dt>            <dd>${escapeHtml(fmtDateTime(letter.issuedAt))}</dd>
-          <dt>Valid until</dt>       <dd>${escapeHtml(fmtDateTime(letter.validUntil))}</dd>
-          <dt>Sent to</dt>           <dd><code>${escapeHtml(letter.recipientEmail)}</code></dd>
-          <dt>Email message ID</dt>  <dd><code>${escapeHtml(letter.emailMessageId || "—")}</code></dd>
-          <dt>Email status</dt>      <dd>${escapeHtml(letter.emailStatus)}</dd>
-        </dl>
-        <h3 class="govbb-text-h4" style="margin-top: var(--spacing-m);">Employee snapshot at issue</h3>
-        <dl class="kv">
-          <dt>Name</dt>     <dd>${escapeHtml(e.title || "")} ${escapeHtml(e.firstName || "")} ${escapeHtml(e.lastName || "")}</dd>
-          <dt>Letter type</dt> <dd>${escapeHtml(LETTER_TYPE_LABELS[e.letterType] || e.letterType || "")}</dd>
-          <dt>Post</dt>     <dd>${escapeHtml(e.post || "")}</dd>
-          <dt>School / employer</dt> <dd>${escapeHtml(e.school || e.employer || "")}</dd>
-          <dt>Address</dt>  <dd>${escapeHtml(e.address || "—")}</dd>
-          <dt>Appointed</dt><dd>${escapeHtml(e.appointmentDate || "")}</dd>
-          <dt>Monthly salary</dt> <dd>${escapeHtml(moneyFmt(e.monthlySalary))}</dd>
-          <dt>Monthly allowance</dt> <dd>${escapeHtml(moneyFmt(e.monthlyAllowance))}</dd>
-          <dt>Acting</dt>   <dd>${e.isActing ? "yes" : "no"}</dd>
-          <dt>Active at issue</dt> <dd>${e.isActive ? "yes" : "no"}</dd>
-        </dl>`;
-      drawer.querySelector(".drawer__close").addEventListener("click", closeDetail);
-    }
-
-    function closeDetail() {
-      const drawer = document.getElementById("drawer");
-      drawer.hidden = true;
-      drawer.className = "";
-      drawer.innerHTML = "";
     }
 
     let timer;

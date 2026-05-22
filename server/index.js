@@ -91,7 +91,7 @@ app.get("/api/verify-letter", async (req, res) => {
 app.post("/api/admin/login", async (req, res) => {
   try {
     const result = await adminIssueCode({ email: req.body?.email });
-    if (!result.ok) return res.status(result.status || 400).json({ error: result.reason });
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.reason, detail: result.detail });
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error("admin/login:", err);
@@ -228,6 +228,50 @@ function employeesHandler(method) {
 app.get("/api/admin/employees", employeesHandler("GET"));
 app.post("/api/admin/employees", employeesHandler("POST"));
 app.put("/api/admin/employees", employeesHandler("PUT"));
+
+// Admins management — mirrors /api/admin/admins.js for Vercel.
+function adminsHandler(method) {
+  return async (req, res) => {
+    await requireAdmin(req, res, async () => {
+      try {
+        const m = await import("./lib/handlers/adminAdmins.js");
+        const { email, audit } = req.query;
+        const changedBy = req.admin.adminEmail;
+        const isSuperAdmin = req.admin.role === "super_admin";
+
+        if (method === "POST" && !email) {
+          const r = await m.createAdmin({ body: req.body, changedBy, isSuperAdmin });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "PUT" && email) {
+          const r = await m.updateAdmin({ email, body: req.body, changedBy, isSuperAdmin });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "GET" && email && audit) {
+          const rows = await m.getAdminAudit(email);
+          return res.status(200).json({ audit: rows });
+        }
+        if (method === "GET" && email) {
+          const a = await m.getAdmin(email);
+          if (!a) return res.status(404).json({ error: "not_found" });
+          return res.status(200).json({ admin: a });
+        }
+        if (method === "GET") {
+          const admins = await m.listAdmins();
+          return res.status(200).json({ admins });
+        }
+        res.status(405).json({ error: "method_not_allowed" });
+      } catch (err) {
+        console.error("admin/admins:", err);
+        res.status(500).json({ error: "internal_error", message: err.message });
+      }
+    });
+  };
+}
+
+app.get("/api/admin/admins",  adminsHandler("GET"));
+app.post("/api/admin/admins", adminsHandler("POST"));
+app.put("/api/admin/admins",  adminsHandler("PUT"));
 
 // Short verify URL — matches the vercel.json rewrite. The QR codes on the
 // generated PDFs point at /v?id=...&t=...

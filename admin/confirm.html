@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confirm action — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    .confirm-card {
+      background: #fff;
+      border: 1px solid var(--color-grey-00);
+      border-left: 8px solid var(--color-red-00);
+      padding: var(--spacing-m);
+      border-radius: 4px;
+      max-width: 36rem;
+    }
+    .confirm-card--reversible {
+      border-left-color: var(--color-blue-100);
+    }
+    .confirm-card h1 {
+      font-size: 1.4rem;
+      margin-top: 0;
+      margin-bottom: var(--spacing-s);
+    }
+    .confirm-card .consequence {
+      font-size: 1rem;
+      color: var(--color-text);
+      margin-bottom: var(--spacing-m);
+    }
+    .actions {
+      display: flex;
+      gap: var(--spacing-s);
+      flex-wrap: wrap;
+    }
+    .actions .govbb-btn--destructive {
+      background: var(--color-red-00);
+      color: #fff;
+      border: 0;
+      padding: var(--spacing-xs) var(--spacing-m);
+      border-radius: 4px;
+      font: inherit;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+    }
+    .actions .govbb-btn--destructive:hover { background: #841f1f; }
+    .actions .cancel {
+      padding: var(--spacing-xs) var(--spacing-m);
+      color: var(--color-text);
+      background: transparent;
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .actions form { display: inline; }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+    <p style="margin-bottom: var(--spacing-s);">
+      <a class="govbb-link" id="back-link" href="#">← Back</a>
+    </p>
+
+    <div id="confirm-root">
+      <p class="govbb-text-body">Loading…</p>
+    </div>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    // Action catalogue. Each entry knows where to fetch the target's name from,
+    // the heading and consequence copy, the API call to make on confirmation,
+    // and where to return on success.
+    const ACTIONS = {
+      "admin-deactivate": {
+        target: "admin",
+        reversible: false,
+        heading: (n) => `Are you sure you want to deactivate ${n}?`,
+        consequence: () => "They will no longer be able to sign in to the admin console. You can reactivate them later.",
+        confirmLabel: "Yes, deactivate",
+        request: (email) => ({
+          url: "/api/admin/admins?email=" + encodeURIComponent(email),
+          method: "PUT",
+          body: { isActive: false },
+        }),
+        backTo: "/admin/admins.html",
+      },
+      "admin-reactivate": {
+        target: "admin",
+        reversible: true,
+        heading: (n) => `Reactivate ${n}?`,
+        consequence: () => "They will be able to sign in to the admin console again.",
+        confirmLabel: "Yes, reactivate",
+        request: (email) => ({
+          url: "/api/admin/admins?email=" + encodeURIComponent(email),
+          method: "PUT",
+          body: { isActive: true },
+        }),
+        backTo: "/admin/admins.html",
+      },
+      "admin-promote": {
+        target: "admin",
+        reversible: true,
+        heading: (n) => `Promote ${n} to super admin?`,
+        consequence: () => "They will be able to add, change and deactivate other admins.",
+        confirmLabel: "Yes, promote",
+        request: (email) => ({
+          url: "/api/admin/admins?email=" + encodeURIComponent(email),
+          method: "PUT",
+          body: { role: "super_admin" },
+        }),
+        backTo: "/admin/admins.html",
+      },
+      "admin-demote": {
+        target: "admin",
+        reversible: true,
+        heading: (n) => `Change ${n} to admin?`,
+        consequence: () => "They will lose the ability to add, change or deactivate other admins. They will still be able to view everything and edit employees.",
+        confirmLabel: "Yes, change to admin",
+        request: (email) => ({
+          url: "/api/admin/admins?email=" + encodeURIComponent(email),
+          method: "PUT",
+          body: { role: "admin" },
+        }),
+        backTo: "/admin/admins.html",
+      },
+      "employee-deactivate": {
+        target: "employee",
+        reversible: false,
+        heading: (n) => `Are you sure you want to deactivate ${n}?`,
+        consequence: () => "They will be hidden from the public service and will not be able to request a job letter. You can reactivate them later.",
+        confirmLabel: "Yes, deactivate",
+        request: (email) => ({
+          url: "/api/admin/employees?email=" + encodeURIComponent(email) + "&op=set-active",
+          method: "POST",
+          body: { isActive: false },
+        }),
+        backTo: (email) => "/admin/employee-edit.html?email=" + encodeURIComponent(email),
+      },
+      "employee-reactivate": {
+        target: "employee",
+        reversible: true,
+        heading: (n) => `Reactivate ${n}?`,
+        consequence: () => "They will be able to request a job letter again.",
+        confirmLabel: "Yes, reactivate",
+        request: (email) => ({
+          url: "/api/admin/employees?email=" + encodeURIComponent(email) + "&op=set-active",
+          method: "POST",
+          body: { isActive: true },
+        }),
+        backTo: (email) => "/admin/employee-edit.html?email=" + encodeURIComponent(email),
+      },
+    };
+
+    async function fetchTargetName(target, email) {
+      const url = target === "admin"
+        ? "/api/admin/admins?email=" + encodeURIComponent(email)
+        : "/api/admin/employees?email=" + encodeURIComponent(email);
+      const r = await fetch(url, { credentials: "same-origin" });
+      if (r.status === 401) { location.href = "/admin/login.html"; return null; }
+      if (!r.ok) return null;
+      const body = await r.json();
+      const row = body.admin || body.employee;
+      if (!row) return null;
+      return [row.title || "", row.firstName || row.name || "", row.lastName || ""].filter(Boolean).join(" ").trim() || email;
+    }
+
+    (async () => {
+      const root = document.getElementById("confirm-root");
+      const params = new URLSearchParams(location.search);
+      const action = params.get("action");
+      const email  = params.get("email");
+      const spec   = ACTIONS[action];
+
+      if (!spec || !email) {
+        root.innerHTML = `
+          <div class="panel-warning">
+            <h1 class="govbb-text-h2">Nothing to confirm</h1>
+            <p>This page is opened from the admins or employees pages.</p>
+          </div>`;
+        return;
+      }
+
+      const backTo = typeof spec.backTo === "function" ? spec.backTo(email) : spec.backTo;
+      document.getElementById("back-link").href = backTo;
+
+      const name = await fetchTargetName(spec.target, email);
+      if (!name) {
+        root.innerHTML = `
+          <div class="panel-warning">
+            <h1 class="govbb-text-h2">Record not found</h1>
+            <p>We couldn't find the record you tried to act on. <a class="govbb-link" href="${escapeHtml(backTo)}">Go back</a>.</p>
+          </div>`;
+        return;
+      }
+
+      const cardClass = spec.reversible ? "confirm-card confirm-card--reversible" : "confirm-card";
+      root.innerHTML = `
+        <div class="${cardClass}">
+          <h1>${escapeHtml(spec.heading(name))}</h1>
+          <p class="consequence">${escapeHtml(spec.consequence())}</p>
+          <div class="actions">
+            <button class="govbb-btn--destructive" id="confirm-btn" type="button">${escapeHtml(spec.confirmLabel)}</button>
+            <a class="cancel" href="${escapeHtml(backTo)}">Cancel</a>
+          </div>
+          <p id="error" style="color:var(--color-red-00);margin-top:var(--spacing-s);" hidden></p>
+        </div>`;
+
+      document.getElementById("confirm-btn").addEventListener("click", async () => {
+        const btn = document.getElementById("confirm-btn");
+        const err = document.getElementById("error");
+        btn.disabled = true; btn.textContent = "Working…";
+        err.hidden = true;
+        try {
+          const req = spec.request(email);
+          const r = await fetch(req.url, {
+            method: req.method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(req.body),
+            credentials: "same-origin",
+          });
+          const body = await r.json().catch(() => ({}));
+          if (r.ok) {
+            // Tag a small success message into the destination URL so the
+            // back page can render a confirmation banner if it wants to.
+            const sep = backTo.includes("?") ? "&" : "?";
+            location.href = `${backTo}${sep}confirmed=${encodeURIComponent(action)}&name=${encodeURIComponent(name)}`;
+            return;
+          }
+          err.textContent = body.message || "We couldn't apply that change. Please try again.";
+          err.hidden = false;
+          btn.disabled = false; btn.textContent = spec.confirmLabel;
+        } catch {
+          err.textContent = "We couldn't reach the service. Please try again.";
+          err.hidden = false;
+          btn.disabled = false; btn.textContent = spec.confirmLabel;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

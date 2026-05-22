@@ -70,17 +70,31 @@ export async function issueCode({ email }) {
     VALUES (${id}, ${admin.email}, ${hashCode(code)}, ${expiresAt});
   `;
 
-  await sendCodeEmail({ to: admin.email, name: admin.name, code });
-  return { ok: true, sent: true };
+  try {
+    await sendCodeEmail({ to: admin.email, name: admin.name, code });
+    return { ok: true, sent: true };
+  } catch (err) {
+    // Log the underlying provider error for operators (server log /
+    // Vercel function log) but never surface it to the browser — it's
+    // an implementation detail that confuses end users and can leak
+    // information about our infrastructure.
+    console.error("adminAuth.issueCode: email send failed for", admin.email, "—", err.message || err);
+    return {
+      ok: false,
+      status: 502,
+      reason: "email_send_failed",
+    };
+  }
 }
 
 async function sendCodeEmail({ to, name, code }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
-  const overrideTo = process.env.RESEND_OVERRIDE_TO || null;
-  const deliverTo = overrideTo || to;
-  const subject = overrideTo
-    ? `[TEST → ${to}] Your Job Letters admin sign-in code`
-    : "Your Job Letters admin sign-in code";
+  // Admin sign-in codes are a credential — they have to reach the actual
+  // admin. We deliberately do NOT honour RESEND_OVERRIDE_TO here. The address
+  // is on the admins allowlist (already checked above) and must also be a
+  // verified recipient in Resend (or covered by a verified sender domain).
+  const deliverTo = to;
+  const subject = "Your Job Letters admin sign-in code";
 
   const greeting = name ? `Hello ${name.split(" ")[0]},` : "Hello,";
 

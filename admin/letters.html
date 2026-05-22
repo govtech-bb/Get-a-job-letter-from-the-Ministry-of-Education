@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Letters — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    .toolbar {
+      display: flex; gap: var(--spacing-s);
+      align-items: end; flex-wrap: wrap;
+      margin-bottom: var(--spacing-s);
+    }
+    .toolbar .field { flex: 1; min-width: 200px; }
+    .toolbar input, .toolbar select {
+      width: 100%; padding: var(--spacing-xs) var(--spacing-s);
+      border: 2px solid var(--color-text);
+      border-radius: var(--radius-sm);
+      font: inherit; background: #fff;
+    }
+    table.records {
+      width: 100%; border-collapse: collapse;
+      background: #fff; border: 1px solid var(--color-grey-00);
+      border-radius: 4px; overflow: hidden;
+    }
+    table.records th, table.records td {
+      padding: var(--spacing-xs) var(--spacing-s);
+      text-align: left;
+      border-bottom: 1px solid var(--color-grey-00);
+      font-size: 0.9rem; vertical-align: top;
+    }
+    table.records th {
+      background: #f6f7f9; color: var(--color-text-muted);
+      text-transform: uppercase; font-size: 0.75rem;
+      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+    }
+    table.records tr:last-child td { border-bottom: 0; }
+    table.records tr:hover td { background: var(--color-teal-10); cursor: pointer; }
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 3px; font-size: 0.75rem; font-weight: var(--font-weight-bold);
+    }
+    .badge--sent   { background: var(--color-green-10); color: var(--color-green-00); }
+    .badge--failed { background: var(--color-red-10);   color: var(--color-red-00); }
+    .badge--other  { background: #eef0f3;                color: var(--color-text-muted); }
+    .pager {
+      display: flex; gap: var(--spacing-s);
+      justify-content: space-between; align-items: center;
+      margin-top: var(--spacing-s); font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+    .drawer {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      display: flex; justify-content: flex-end; z-index: 1000;
+    }
+    .drawer__panel {
+      width: min(560px, 90vw); background: #fff; padding: var(--spacing-m);
+      overflow: auto; box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    }
+    .drawer__close {
+      background: transparent; border: 0; font-size: 1.5rem;
+      cursor: pointer; float: right;
+    }
+    .kv { display: grid; grid-template-columns: 12rem 1fr; gap: var(--spacing-xs); }
+    .kv dt { color: var(--color-text-muted); }
+    .kv dd { margin: 0; font-weight: var(--font-weight-bold); word-break: break-word; }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+    <div class="stack">
+      <h1 class="govbb-text-h1">Letters</h1>
+      <p class="govbb-text-body">
+        Every job letter the service has issued. Read-only — there is nothing to
+        approve. Click a row to see the snapshotted record and email delivery
+        status.
+      </p>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label class="govbb-label" for="q" style="font-size:0.85rem;">Search</label>
+        <input id="q" type="search" placeholder="Name, email, or reference…" />
+      </div>
+      <div class="field" style="max-width:200px;">
+        <label class="govbb-label" for="status" style="font-size:0.85rem;">Email status</label>
+        <select id="status">
+          <option value="">All</option>
+          <option value="sent">Delivered</option>
+          <option value="failed">Failed</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+    </div>
+
+    <table class="records" id="rows-table">
+      <thead>
+        <tr>
+          <th style="width:12rem;">Issued</th>
+          <th>Employee</th>
+          <th>Type</th>
+          <th>Sent to</th>
+          <th style="width:6rem;">Email</th>
+          <th>Reference</th>
+        </tr>
+      </thead>
+      <tbody id="rows-body">
+        <tr><td colspan="6" style="color:var(--color-text-muted);padding:var(--spacing-m);text-align:center;">Loading…</td></tr>
+      </tbody>
+    </table>
+
+    <div class="pager">
+      <div id="pager-info">—</div>
+      <div>
+        <button class="govbb-btn--link" type="button" id="prev-page" disabled>← Previous</button>
+        <button class="govbb-btn--link" type="button" id="next-page" disabled>Next →</button>
+      </div>
+    </div>
+
+    <!-- Detail drawer -->
+    <div id="drawer" hidden></div>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    const LETTER_TYPE_LABELS = {
+      teacher_appointed: "Teacher (permanent)",
+      teacher_special:   "Teacher + allowance",
+      ministry_permanent:"Ministry — permanent",
+      ministry_temporary:"Ministry — temporary",
+    };
+
+    function fmtDateTime(iso) {
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    }
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+    function emailBadge(status) {
+      if (status === "sent") return `<span class="badge badge--sent">sent</span>`;
+      if (status && status.startsWith("failed")) return `<span class="badge badge--failed" title="${escapeHtml(status)}">failed</span>`;
+      return `<span class="badge badge--other">${escapeHtml(status || "pending")}</span>`;
+    }
+    function moneyFmt(v) {
+      if (v == null || v === "") return "—";
+      return "$" + Number(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    const state = { page: 1, q: "", status: "", total: 0, pageSize: 50 };
+
+    async function load() {
+      const params = new URLSearchParams({ page: state.page });
+      if (state.q) params.set("q", state.q);
+      if (state.status) params.set("status", state.status);
+      const r = await fetch("/api/admin/letters?" + params, { credentials: "same-origin" });
+      if (r.status === 401) { location.href = "/admin/login.html"; return; }
+      if (!r.ok) {
+        document.getElementById("rows-body").innerHTML =
+          `<tr><td colspan="6" style="padding:var(--spacing-m);">Failed to load letters.</td></tr>`;
+        return;
+      }
+      const data = await r.json();
+      state.total = data.total; state.pageSize = data.pageSize;
+
+      const tbody = document.getElementById("rows-body");
+      if (!data.rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No matching letters.</td></tr>`;
+      } else {
+        tbody.innerHTML = data.rows.map(row => `
+          <tr data-id="${escapeHtml(row.id)}">
+            <td>${escapeHtml(fmtDateTime(row.issuedAt))}</td>
+            <td>${escapeHtml(row.firstName || "")} ${escapeHtml(row.lastName || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(row.post || "")}</span></td>
+            <td>${escapeHtml(LETTER_TYPE_LABELS[row.letterType] || row.letterType || "")}</td>
+            <td><code>${escapeHtml(row.recipientEmail)}</code></td>
+            <td>${emailBadge(row.emailStatus)}</td>
+            <td><code style="font-size:0.8rem;">${escapeHtml(row.id)}</code></td>
+          </tr>`).join("");
+        tbody.querySelectorAll("tr").forEach(tr => tr.addEventListener("click", () => openDetail(tr.dataset.id)));
+      }
+
+      const from = (state.page - 1) * state.pageSize + 1;
+      const to = Math.min(state.page * state.pageSize, state.total);
+      document.getElementById("pager-info").textContent =
+        state.total === 0 ? "No results" : `Showing ${from}–${to} of ${state.total}`;
+      document.getElementById("prev-page").disabled = state.page <= 1;
+      document.getElementById("next-page").disabled = to >= state.total;
+    }
+
+    async function openDetail(id) {
+      const drawer = document.getElementById("drawer");
+      drawer.hidden = false;
+      drawer.className = "drawer";
+      drawer.innerHTML = `<div class="drawer__panel"><button class="drawer__close" aria-label="Close">×</button><p>Loading…</p></div>`;
+      drawer.querySelector(".drawer__close").addEventListener("click", closeDetail);
+      drawer.addEventListener("click", e => { if (e.target === drawer) closeDetail(); });
+
+      const r = await fetch("/api/admin/letter?id=" + encodeURIComponent(id), { credentials: "same-origin" });
+      if (!r.ok) {
+        drawer.querySelector(".drawer__panel").innerHTML += `<p>Could not load that letter.</p>`;
+        return;
+      }
+      const { letter } = await r.json();
+      const e = letter.employee;
+      drawer.querySelector(".drawer__panel").innerHTML = `
+        <button class="drawer__close" aria-label="Close">×</button>
+        <h2 class="govbb-text-h3">Letter ${escapeHtml(letter.id)}</h2>
+        <p style="margin: var(--spacing-xs) 0 var(--spacing-s);">${emailBadge(letter.emailStatus)}</p>
+        <h3 class="govbb-text-h4" style="margin-top: var(--spacing-m);">Delivery</h3>
+        <dl class="kv">
+          <dt>Issued</dt>            <dd>${escapeHtml(fmtDateTime(letter.issuedAt))}</dd>
+          <dt>Valid until</dt>       <dd>${escapeHtml(fmtDateTime(letter.validUntil))}</dd>
+          <dt>Sent to</dt>           <dd><code>${escapeHtml(letter.recipientEmail)}</code></dd>
+          <dt>Email message ID</dt>  <dd><code>${escapeHtml(letter.emailMessageId || "—")}</code></dd>
+          <dt>Email status</dt>      <dd>${escapeHtml(letter.emailStatus)}</dd>
+        </dl>
+        <h3 class="govbb-text-h4" style="margin-top: var(--spacing-m);">Employee snapshot at issue</h3>
+        <dl class="kv">
+          <dt>Name</dt>     <dd>${escapeHtml(e.title || "")} ${escapeHtml(e.firstName || "")} ${escapeHtml(e.lastName || "")}</dd>
+          <dt>Letter type</dt> <dd>${escapeHtml(LETTER_TYPE_LABELS[e.letterType] || e.letterType || "")}</dd>
+          <dt>Post</dt>     <dd>${escapeHtml(e.post || "")}</dd>
+          <dt>School / employer</dt> <dd>${escapeHtml(e.school || e.employer || "")}</dd>
+          <dt>Address</dt>  <dd>${escapeHtml(e.address || "—")}</dd>
+          <dt>Appointed</dt><dd>${escapeHtml(e.appointmentDate || "")}</dd>
+          <dt>Monthly salary</dt> <dd>${escapeHtml(moneyFmt(e.monthlySalary))}</dd>
+          <dt>Monthly allowance</dt> <dd>${escapeHtml(moneyFmt(e.monthlyAllowance))}</dd>
+          <dt>Acting</dt>   <dd>${e.isActing ? "yes" : "no"}</dd>
+          <dt>Active at issue</dt> <dd>${e.isActive ? "yes" : "no"}</dd>
+        </dl>`;
+      drawer.querySelector(".drawer__close").addEventListener("click", closeDetail);
+    }
+
+    function closeDetail() {
+      const drawer = document.getElementById("drawer");
+      drawer.hidden = true;
+      drawer.className = "";
+      drawer.innerHTML = "";
+    }
+
+    let timer;
+    document.getElementById("q").addEventListener("input", (e) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { state.q = e.target.value.trim(); state.page = 1; load(); }, 200);
+    });
+    document.getElementById("status").addEventListener("change", (e) => {
+      state.status = e.target.value; state.page = 1; load();
+    });
+    document.getElementById("prev-page").addEventListener("click", () => { if (state.page > 1) { state.page--; load(); }});
+    document.getElementById("next-page").addEventListener("click", () => { state.page++; load(); });
+
+    load();
+  </script>
+</body>
+</html>

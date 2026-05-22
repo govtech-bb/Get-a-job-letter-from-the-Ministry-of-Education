@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--spacing-s);
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid var(--color-grey-00);
+      border-left: 4px solid var(--color-teal-00);
+      border-radius: 4px;
+      padding: var(--spacing-s) var(--spacing-m);
+    }
+    .stat-card__label {
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .stat-card__value {
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      line-height: 1.2;
+    }
+    .stat-card__sub { font-size: 0.85rem; color: var(--color-text-muted); }
+    .stat-card--ok { border-left-color: var(--color-green-00); }
+    .stat-card--warn { border-left-color: var(--color-yellow-00); }
+    .stat-card--bad { border-left-color: var(--color-red-00); }
+
+    table.records {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--color-grey-00);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    table.records th, table.records td {
+      padding: var(--spacing-xs) var(--spacing-s);
+      text-align: left;
+      border-bottom: 1px solid var(--color-grey-00);
+      font-size: 0.9rem;
+    }
+    table.records th {
+      background: #f6f7f9;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+    table.records tr:last-child td { border-bottom: 0; }
+    table.records tr:hover td { background: var(--color-teal-10); }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: var(--font-weight-bold);
+    }
+    .badge--sent   { background: var(--color-green-10); color: var(--color-green-00); }
+    .badge--failed { background: var(--color-red-10);   color: var(--color-red-00); }
+    .badge--other  { background: #eef0f3;                color: var(--color-text-muted); }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+    <div class="stack">
+      <h1 class="govbb-text-h1">Dashboard</h1>
+      <p class="govbb-text-body" id="loading-msg">Loading…</p>
+    </div>
+
+    <div id="dashboard-content" hidden>
+      <h2 class="govbb-text-h3">At a glance</h2>
+      <div class="stat-grid" style="margin-top: var(--spacing-s);">
+        <div class="stat-card">
+          <div class="stat-card__label">Letters today</div>
+          <div class="stat-card__value" id="stat-24h">—</div>
+          <div class="stat-card__sub">in the last 24 hours</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Letters this week</div>
+          <div class="stat-card__value" id="stat-7d">—</div>
+          <div class="stat-card__sub">in the last 7 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Letters total</div>
+          <div class="stat-card__value" id="stat-total">—</div>
+          <div class="stat-card__sub">since launch</div>
+        </div>
+        <div class="stat-card stat-card--ok">
+          <div class="stat-card__label">Delivered</div>
+          <div class="stat-card__value" id="stat-sent">—</div>
+          <div class="stat-card__sub">email status: sent</div>
+        </div>
+        <div class="stat-card stat-card--bad">
+          <div class="stat-card__label">Email failures</div>
+          <div class="stat-card__value" id="stat-failed">—</div>
+          <div class="stat-card__sub">need investigation</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Active employees</div>
+          <div class="stat-card__value" id="stat-empactive">—</div>
+          <div class="stat-card__sub"><span id="stat-empinactive">—</span> inactive</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__label">Active admins</div>
+          <div class="stat-card__value" id="stat-admins">—</div>
+          <div class="stat-card__sub">on the allowlist</div>
+        </div>
+      </div>
+
+      <h2 class="govbb-text-h3" style="margin-top: var(--spacing-l);">Most recent letters</h2>
+      <table class="records" id="recent-table" style="margin-top: var(--spacing-s);">
+        <thead>
+          <tr>
+            <th>Issued</th>
+            <th>Employee</th>
+            <th>Type</th>
+            <th>Sent to</th>
+            <th>Email</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody id="recent-rows"></tbody>
+      </table>
+      <p style="margin-top: var(--spacing-s);">
+        <a class="govbb-link" href="/admin/letters.html">See all letters →</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    const LETTER_TYPE_LABELS = {
+      teacher_appointed: "Teacher (permanent)",
+      teacher_special:   "Teacher + allowance",
+      ministry_permanent:"Ministry — permanent",
+      ministry_temporary:"Ministry — temporary",
+    };
+
+    function fmtDateTime(iso) {
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      });
+    }
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+    function emailBadge(status) {
+      if (status === "sent") return `<span class="badge badge--sent">sent</span>`;
+      if (status && status.startsWith("failed")) return `<span class="badge badge--failed" title="${escapeHtml(status)}">failed</span>`;
+      return `<span class="badge badge--other">${escapeHtml(status || "pending")}</span>`;
+    }
+
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/dashboard", { credentials: "same-origin" });
+        if (r.status === 401) { location.href = "/admin/login.html"; return; }
+        if (!r.ok) throw new Error("Bad response: " + r.status);
+        const data = await r.json();
+
+        const c = data.counts;
+        document.getElementById("stat-24h").textContent      = c.letters_24h;
+        document.getElementById("stat-7d").textContent       = c.letters_7d;
+        document.getElementById("stat-total").textContent    = c.letters_total;
+        document.getElementById("stat-sent").textContent     = c.letters_sent;
+        document.getElementById("stat-failed").textContent   = c.letters_failed;
+        document.getElementById("stat-empactive").textContent= c.employees_active;
+        document.getElementById("stat-empinactive").textContent = c.employees_inactive;
+        document.getElementById("stat-admins").textContent   = c.admins_active;
+
+        const tbody = document.getElementById("recent-rows");
+        if (!data.recent.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="color:var(--color-text-muted);padding:var(--spacing-m);text-align:center;">No letters issued yet.</td></tr>`;
+        } else {
+          tbody.innerHTML = data.recent.map(row => `
+            <tr>
+              <td>${escapeHtml(fmtDateTime(row.issuedAt))}</td>
+              <td>${escapeHtml(row.firstName || "")} ${escapeHtml(row.lastName || "")}</td>
+              <td>${escapeHtml(LETTER_TYPE_LABELS[row.letterType] || row.letterType || "")}</td>
+              <td><code>${escapeHtml(row.recipientEmail)}</code></td>
+              <td>${emailBadge(row.emailStatus)}</td>
+              <td><code style="font-size:0.8rem;">${escapeHtml(row.id)}</code></td>
+            </tr>`).join("");
+        }
+
+        document.getElementById("loading-msg").remove();
+        document.getElementById("dashboard-content").hidden = false;
+      } catch (err) {
+        console.error(err);
+        document.getElementById("loading-msg").textContent =
+          "We couldn't load the dashboard. Try refreshing the page.";
+      }
+    })();
+  </script>
+</body>
+</html>

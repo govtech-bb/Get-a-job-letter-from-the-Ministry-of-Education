@@ -17,3 +17,6 @@ principles/
 # Accidental nested copy of the design system bundle — duplicates of files
 # already at dist/. Excluded so the public repo isn't bloated.
 dist/assets/images/dist/
+
+# Local test output (scripts/test-pdf.js)
+scripts/out/

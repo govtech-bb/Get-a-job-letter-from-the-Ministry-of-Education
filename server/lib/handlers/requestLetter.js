@@ -35,9 +35,10 @@ export async function requestLetter({ email, publicBaseUrl }) {
     validUntil: validUntilIso,
   });
 
-  // Generate the PDF. generateLetterPdf expects the legacy shape with
-  // issuedAt / verifyUrl on the letter object.
-  const verifyUrl = `${publicBaseUrl}/verify.html#${encodeURIComponent(JSON.stringify({ id, signature }))}`;
+  // Short verify URL — easier to read on the printed letter and produces a
+  // simpler QR code. The /v path is rewritten to /verify.html via vercel.json
+  // (and verify.html accepts ?id= and ?t= directly).
+  const verifyUrl = `${publicBaseUrl}/v?id=${encodeURIComponent(id)}&t=${encodeURIComponent(signature)}`;
   const pdfBytes = await generateLetterPdf({
     id,
     employee,

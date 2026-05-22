@@ -30,8 +30,11 @@ export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyU
   const safe = s => (s || "").replace(/[^A-Za-z0-9.\-]+/g, "-");
   const filename = `Job-Letter-${safe(employee.firstName)}-${safe(employee.lastName)}.pdf`;
 
+  const greetingName = employee.firstName || (to.split("@")[0] || "");
+  const greeting = greetingName ? `Hello ${greetingName},` : "Hello,";
+
   const text =
-`Hello,
+`${greeting}
 
 Thank you for using the Ministry of Education job letters service. Your letter is attached to this email as a PDF.
 
@@ -48,7 +51,7 @@ Ministry of Education Transformation`;
 
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#111;max-width:560px;">
-      <p>Hello,</p>
+      <p>${greeting}</p>
       <p>Thank you for using the Ministry of Education job letters service. Your letter is attached to this email as a PDF.</p>
       <p>To use it:</p>
       <ol>

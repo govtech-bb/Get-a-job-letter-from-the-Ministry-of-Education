@@ -77,6 +77,12 @@ app.get("/api/verify-letter", async (req, res) => {
   }
 });
 
+// Short verify URL — matches the vercel.json rewrite. The QR codes on the
+// generated PDFs point at /v?id=...&t=...
+app.get("/v", (req, res) => {
+  res.sendFile(path.join(ROOT, "verify.html"));
+});
+
 // Serve the govbb design system bundle (CSS, fonts, images). Mounted at the
 // URL root so that the CSS's relative font URLs (./assets/fonts/...) resolve.
 app.use(express.static(path.join(ROOT, "dist"), { fallthrough: true }));

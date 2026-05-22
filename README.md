@@ -31,10 +31,51 @@ job-letter-request.html      Earlier single-file staff-input prototype (kept for
 
 ```sh
 npm install
+cp .env.example .env.local      # then fill in the values
+node server/db/migrate.js       # creates the schema and seeds 6 employees in Neon
 npm run dev
 ```
 
-Open <http://localhost:3000>.
+Open <http://localhost:3000>. The Express dev server hosts both the legacy
+server-rendered demo and the new JSON API at `/api/*` (same endpoints Vercel
+serves in production).
+
+## Production deploy (staging branch)
+
+The static frontend lives on GitHub Pages. The API is a tiny Vercel project
+that talks to **Neon** (Postgres) for employees and the issued-letters log,
+and **Resend** for email.
+
+### 1. Neon
+
+Create a Neon project, copy the **pooled connection string**, then run the
+migration locally:
+
+```sh
+DATABASE_URL='postgresql://…?sslmode=require' node server/db/migrate.js
+```
+
+### 2. Resend
+
+Sign up at <https://resend.com>, create an API key, and add yourself as a
+verified test recipient. While you wait for domain verification, send from
+`onboarding@resend.dev` (Resend only delivers to addresses you've verified).
+For real production mail, verify a subdomain of `moe.gov.bb` and set
+`RESEND_FROM=noreply@letters.moe.gov.bb` (or similar).
+
+### 3. Vercel
+
+- Import this repo into Vercel from the GitHub UI
+- In **Project Settings → Environment Variables** add (for Production *and*
+  Preview):
+  - `DATABASE_URL` — Neon pooled URL
+  - `RESEND_API_KEY` — from Resend
+  - `RESEND_FROM` — e.g. `onboarding@resend.dev`
+  - `LETTER_SIGNING_KEY` — a random 32-byte string (used for the verification
+    HMAC; must match what's expected by the QR codes already in the wild)
+- Deploy. The functions will live at `https://<project>.vercel.app/api/*`.
+- Update `API_BASE_URL` in `app.js` (the `endsWith("github.io")` branch) to
+  point at your Vercel URL.
 
 Try the flow with any of the synthetic employees:
 

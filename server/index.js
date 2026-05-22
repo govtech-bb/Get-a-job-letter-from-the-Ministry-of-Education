@@ -4,6 +4,7 @@ import express from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
 import { layout } from "./views/layout.js";
 import {
@@ -18,6 +19,12 @@ import {
 import { issueLetter, getLetter, verifyLetter } from "./letterStore.js";
 import { buildLetterPreviewHtml } from "./letterTemplates.js";
 import { generateLetterPdf } from "./pdf.js";
+
+import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
+import { verifyLetter as apiVerifyLetter } from "./lib/handlers/verifyLetter.js";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -35,10 +42,60 @@ function findEmployeeByEmail(email) {
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "2mb" }));
+
+// Permissive CORS for the API endpoints during local dev. Vercel applies its
+// own (tighter) CORS in the deployed /api/* handlers.
+app.use("/api", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.status(204).end();
+  next();
+});
+
+app.post("/api/request-letter", async (req, res) => {
+  try {
+    const baseUrl = req.body?.publicBaseUrl ||
+      `${req.protocol}://${req.get("host")}`;
+    const result = await apiRequestLetter({ email: req.body?.email, publicBaseUrl: baseUrl });
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("request-letter:", err);
+    res.status(500).json({ error: "internal_error", message: err.message });
+  }
+});
+
+app.get("/api/verify-letter", async (req, res) => {
+  try {
+    const result = await apiVerifyLetter({ id: req.query.id, signature: req.query.t });
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("verify-letter:", err);
+    res.status(500).json({ valid: false, reason: "internal_error" });
+  }
+});
+
+// Short verify URL — matches the vercel.json rewrite. The QR codes on the
+// generated PDFs point at /v?id=...&t=...
+app.get("/v", (req, res) => {
+  res.sendFile(path.join(ROOT, "verify.html"));
+});
 
 // Serve the govbb design system bundle (CSS, fonts, images). Mounted at the
 // URL root so that the CSS's relative font URLs (./assets/fonts/...) resolve.
 app.use(express.static(path.join(ROOT, "dist"), { fallthrough: true }));
+
+// Serve the static client (the same files that ship to GitHub Pages) so we
+// can hit /request.html, /sent.html, /verify.html and have them call the
+// local /api/* endpoints. The dynamic SSR routes below still win for "/" and
+// the other Express-rendered URLs.
+app.use(express.static(ROOT, {
+  fallthrough: true,
+  index: false,           // don't shadow the SSR `app.get("/")`
+  extensions: ["html"],
+}));
 
 function send(res, title, main, opts = {}) {
   res.set("Content-Type", "text/html; charset=utf-8");

@@ -2,12 +2,23 @@
 // the qrcode lib and embedded as an image. The PDF carries the verification
 // URL and reference, so anyone scanning can confirm authenticity.
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import { buildLetterBody } from "./letterTemplates.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "..");
+
 const A4 = { width: 595.28, height: 841.89 }; // points
 const MARGIN = 60;
+
+// Letterhead logos. Loaded once at module init so PDF generation in each
+// serverless invocation doesn't re-read the files.
+const CREST_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "govbb-creast.png"));
+const MOE_LOGO_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "moe-logo.png"));
 
 export async function generateLetterPdf(letter) {
   const doc = await PDFDocument.create();
@@ -24,24 +35,57 @@ export async function generateLetterPdf(letter) {
 
   let y = A4.height - MARGIN;
 
-  // Letterhead — address block
-  page.drawText("MINISTRY OF EDUCATION TRANSFORMATION", {
-    x: MARGIN, y, size: 11, font: timesBold,
+  // Letterhead: coat of arms (left) | address (centre) | MoE logo (right).
+  const crest = await doc.embedPng(CREST_PNG);
+  const moeLogo = await doc.embedPng(MOE_LOGO_PNG);
+  const LOGO_SIZE = 78;
+  const headerTop = y;
+  const headerBottom = headerTop - LOGO_SIZE;
+  // Coat of arms — left
+  page.drawImage(crest, {
+    x: MARGIN,
+    y: headerBottom,
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+  });
+  // MoE logo — right
+  page.drawImage(moeLogo, {
+    x: A4.width - MARGIN - LOGO_SIZE,
+    y: headerBottom,
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+  });
+  // Centred address block
+  const addressLines = [
+    { text: "MINISTRY OF EDUCATION TRANSFORMATION", font: timesBold, size: 11 },
+    { text: "'Elsie Payne Complex'",                font: timesRoman, size: 10 },
+    { text: "Constitution Road",                    font: timesRoman, size: 10 },
+    { text: "St. Michael BB 11124",                 font: timesRoman, size: 10 },
+    { text: "BARBADOS, W.I.",                       font: timesRoman, size: 10 },
+  ];
+  // Vertically centre the address block on the logos
+  const totalAddrHeight = 14 + (addressLines.length - 1) * 13;
+  let addrY = headerBottom + (LOGO_SIZE + totalAddrHeight) / 2 - 4;
+  for (const line of addressLines) {
+    const w = line.font.widthOfTextAtSize(line.text, line.size);
+    page.drawText(line.text, {
+      x: (A4.width - w) / 2,
+      y: addrY,
+      size: line.size,
+      font: line.font,
+    });
+    addrY -= line.size === 11 ? 14 : 13;
+  }
+  y = headerBottom - 18;
+
+  // Thin rule under the letterhead
+  page.drawLine({
+    start: { x: MARGIN, y },
+    end:   { x: A4.width - MARGIN, y },
+    thickness: 0.6,
+    color: rgb(0.2, 0.2, 0.2),
   });
   y -= 16;
-  const addressLines = [
-    "'Elsie Payne Complex'",
-    "Constitution Road",
-    "St. Michael BB 11124",
-    "BARBADOS, W.I.",
-  ];
-  for (const line of addressLines) {
-    page.drawText(line, { x: MARGIN, y, size: 10, font: timesRoman });
-    y -= 13;
-  }
-
-  // Ref / Tel row
-  y -= 18;
   page.drawText("Our Ref:", { x: MARGIN, y, size: 10, font: timesBold });
   page.drawText("P2954 Vol. I", { x: MARGIN + 48, y, size: 10, font: timesRoman });
   page.drawText("Tel. No.:", { x: A4.width - MARGIN - 120, y, size: 10, font: timesBold });

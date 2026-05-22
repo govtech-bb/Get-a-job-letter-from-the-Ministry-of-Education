@@ -83,6 +83,8 @@
       }
     }
 
+    const submitBtn = form.querySelector('button[type="submit"]');
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const email = input.value.trim();
@@ -91,15 +93,41 @@
         return setError("Enter an email address in the correct format, for example name@moe.gov.bb");
       }
       setError(null);
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Sending…";
 
-      const employee = await JobLetters.findEmployeeByEmail(email);
-      if (!employee || !employee.isActive) {
-        location.href = "not-found.html?email=" + encodeURIComponent(email);
-        return;
+      try {
+        const result = await JobLetters.apiRequestLetter(email);
+
+        if (result.status === 200 && result.ok) {
+          const params = new URLSearchParams({ email, id: result.letterId });
+          location.href = "sent.html?" + params.toString();
+          return;
+        }
+
+        if (result.status === 404 && result.error === "not_found") {
+          location.href = "not-found.html?email=" + encodeURIComponent(email);
+          return;
+        }
+
+        if (result.status === 400 && result.error === "invalid_email") {
+          setError(result.message || "Enter a valid work email address.");
+          return;
+        }
+
+        if (result.error === "email_send_failed") {
+          setError("We generated your letter but couldn't send the email. Please try again in a few minutes.");
+          return;
+        }
+
+        setError("Something went wrong on our side. Please try again in a few minutes.");
+      } catch (err) {
+        console.error(err);
+        setError("We couldn't reach the service. Check your connection and try again.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Continue";
       }
-
-      const { token } = await JobLetters.issueLetter(employee);
-      location.href = "sent.html?email=" + encodeURIComponent(email) + "#" + token;
     });
   </script>
 </body>

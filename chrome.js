@@ -45,15 +45,18 @@
       </div>
     </div>`;
 
+  // Service-style footer — standard order, following the GOV.UK pattern.
+  // No "View source" link here; that's a developer concern, not a citizen one.
   const footer = `
     <footer class="govbb-footer">
       <div class="govbb-container">
         <div class="govbb-footer__inner">
           <nav class="govbb-footer__nav" aria-label="Footer">
+            <a class="govbb-footer__link" href="cookies.html">Cookies</a>
             <a class="govbb-footer__link" href="privacy.html">Privacy notice</a>
-            <a class="govbb-footer__link" href="accessibility.html">Accessibility</a>
-            <a class="govbb-footer__link" href="index.html">Job letters home</a>
-            <a class="govbb-footer__link" href="https://github.com/govtech-bb/Get-a-job-letter-from-the-Ministry-of-Education" rel="noopener">View source code</a>
+            <a class="govbb-footer__link" href="accessibility.html">Accessibility statement</a>
+            <a class="govbb-footer__link" href="contact.html">Contact us</a>
+            <a class="govbb-footer__link" href="terms.html">Terms of use</a>
           </nav>
           <hr class="govbb-footer__divider" />
           <div class="govbb-footer__end">

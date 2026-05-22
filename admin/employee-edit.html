@@ -150,13 +150,31 @@
           <input id="employer" name="employer" value="Ministry of Education Transformation" />
         </div>
 
-        <div class="field">
-          <label><input type="checkbox" id="isActing"> Currently acting</label>
-          <div class="hint">Informational. Letters always show the substantive salary.</div>
-        </div>
-        <div class="field">
-          <label><input type="checkbox" id="isActive" checked> Active (can request letters)</label>
-        </div>
+        <fieldset class="govbb-fieldset full" style="margin-top: var(--spacing-s);">
+          <legend class="govbb-fieldset__legend" style="margin-bottom: var(--spacing-xs);">
+            Employee status
+          </legend>
+
+          <div class="govbb-checkbox-item" style="margin-bottom: var(--spacing-s);">
+            <input class="govbb-checkbox" id="isActive" name="isActive" type="checkbox" checked />
+            <label class="govbb-checkbox-item__label" for="isActive">
+              <span style="display:block;">Active — can request letters</span>
+              <span class="govbb-hint" style="display:block; font-size: 0.85rem;">
+                When unchecked, this person is hidden from the public service and cannot receive a letter.
+              </span>
+            </label>
+          </div>
+
+          <div class="govbb-checkbox-item">
+            <input class="govbb-checkbox" id="isActing" name="isActing" type="checkbox" />
+            <label class="govbb-checkbox-item__label" for="isActing">
+              <span style="display:block;">Currently acting in a different role</span>
+              <span class="govbb-hint" style="display:block; font-size: 0.85rem;">
+                Informational only. Letters always show the substantive salary, not the acting one.
+              </span>
+            </label>
+          </div>
+        </fieldset>
       </div>
 
       <div class="govbb-btn-group" style="margin-top: var(--spacing-m);">

@@ -7,10 +7,50 @@
   <link rel="icon" href="assets/images/favicon.ico" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="page.css" />
+  <style>
+    /* Public verification strap — visible to the relying party who scanned
+       the QR. Frames the page as a government verification, not a private
+       letter view. */
+    .verify-strap {
+      background: var(--color-blue-100);
+      color: #fff;
+      padding: var(--spacing-m);
+      border-radius: 4px;
+      margin-bottom: var(--spacing-m);
+    }
+    .verify-strap__title {
+      font-size: 1.75rem;
+      font-weight: var(--font-weight-bold);
+      line-height: 1.2;
+      margin: 0 0 var(--spacing-xs);
+      color: #fff;
+    }
+    .verify-strap__lede {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      margin: 0;
+      opacity: 0.95;
+    }
+    /* Demote any h1 inside the verify-root since the strap already carries the
+       primary heading for the page. */
+    #verify-root h1 { font-size: 1.5rem; }
+  </style>
 </head>
 <body class="govbb-page">
 
   <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Verify a letter"}]'>
+    <!--
+      Public verification strap — for relying parties (banks, retailers).
+      Always shown, regardless of whether the verification succeeded, so the
+      visitor immediately understands what this page is for.
+    -->
+    <div class="verify-strap">
+      <h1 class="verify-strap__title">You scanned a Ministry of Education job letter</h1>
+      <p class="verify-strap__lede">
+        This page confirms whether the letter you received is genuine and current.
+      </p>
+    </div>
+
     <div id="verify-root">
       <p class="govbb-text-body">Checking the letter…</p>
     </div>
@@ -33,8 +73,8 @@
       if (!id && !hashToken) {
         root.innerHTML = `
           <div class="panel-warning">
-            <h1 class="govbb-text-h2">No letter reference provided</h1>
-            <p>This page is opened by scanning the QR code on a Ministry of Education job letter.</p>
+            <h2 class="govbb-text-h3">No letter reference provided</h2>
+            <p>This page is opened by scanning the QR code on a Ministry of Education job letter, or by following the verification link printed on one.</p>
           </div>`;
         return;
       }
@@ -51,7 +91,7 @@
         root.innerHTML = `
           <div class="panel-error stack">
             <span class="verify-stamp verify-stamp--invalid">✗ Verification failed</span>
-            <h1 class="govbb-text-h2">This letter could not be verified</h1>
+            <h2 class="govbb-text-h3">This letter could not be verified</h2>
             <p class="govbb-text-body">${JobLetters.escapeHtml(result.reason)}</p>
           </div>
 
@@ -73,10 +113,7 @@
       root.innerHTML = `
         <div class="stack">
           <span class="verify-stamp">✓ Verified — this letter is genuine</span>
-          <h1 class="govbb-text-h1">Job letter verification</h1>
-          <p class="govbb-text-body-lg">
-            This letter was issued by the Ministry of Education Transformation.
-          </p>
+          <h2 class="govbb-text-h2">This letter was issued by the Ministry of Education Transformation.</h2>
         </div>
 
         <div class="stack">
@@ -101,16 +138,18 @@
         </div>
 
         <details class="govbb-show-hide">
-          <summary class="govbb-show-hide__summary">About this verification</summary>
+          <summary class="govbb-show-hide__summary">How this verification works</summary>
           <div class="govbb-show-hide__content">
             <p>
-              Each letter is signed with a code held by the Ministry. We check the code on this page.
-              If the letter has been altered, the code will not match and verification will fail.
+              Each letter is signed with a code held by the Ministry of Education's service.
+              When you scan the QR code, this page checks that signature against the Ministry's record.
+              If the letter has been altered after it was issued, the signature will no longer match
+              and verification will fail.
             </p>
             <p>
-              <strong>Static demo note:</strong> on this GitHub Pages build the signing key is in the
-              bundle, so this page proves only that the letter says what its URL says. The production
-              service uses a server-side key so the check is genuinely tamper-evident.
+              Verification reflects the Ministry's record at the time the letter was issued. If the
+              employee has since left or changed posts, this page will continue to show what the
+              letter said when it was originally signed.
             </p>
           </div>
         </details>`;

@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admins — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    table.records {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--color-grey-00);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    table.records th, table.records td {
+      padding: var(--spacing-xs) var(--spacing-s);
+      text-align: left;
+      border-bottom: 1px solid var(--color-grey-00);
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+    table.records th {
+      background: #f6f7f9;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      font-weight: var(--font-weight-bold);
+    }
+    table.records tr:last-child td { border-bottom: 0; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.72rem;
+      font-weight: var(--font-weight-bold);
+    }
+    .badge--ok    { background: var(--color-green-10); color: var(--color-green-00); }
+    .badge--off   { background: #eef0f3;                color: var(--color-text-muted); }
+    .badge--super { background: var(--color-yellow-40); color: #6c4e00; }
+    .badge--plain { background: var(--color-blue-10);   color: var(--color-blue-100); }
+
+    .add-card {
+      background: #fff;
+      border: 1px solid var(--color-grey-00);
+      border-radius: 4px;
+      padding: var(--spacing-m);
+      margin-bottom: var(--spacing-m);
+    }
+    .add-card__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap: var(--spacing-s);
+      align-items: end;
+    }
+    @media (max-width: 800px) {
+      .add-card__grid { grid-template-columns: 1fr; }
+    }
+    .add-card .field label {
+      font-weight: var(--font-weight-bold);
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .add-card .field input,
+    .add-card .field select {
+      width: 100%;
+      padding: var(--spacing-xs) var(--spacing-s);
+      border: 2px solid var(--color-text);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      background: #fff;
+    }
+    .add-card .err {
+      font-size: 0.8rem;
+      color: var(--color-red-00);
+      margin-top: 4px;
+      min-height: 1.1em;
+    }
+    .row-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .row-actions button {
+      background: transparent;
+      border: 1px solid var(--color-grey-00);
+      color: var(--color-text);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .row-actions button:hover { background: #f3f4f6; }
+    .row-actions button.danger { color: var(--color-red-00); border-color: var(--color-red-00); }
+    .row-actions button.danger:hover { background: var(--color-red-10); }
+
+    .info-panel {
+      background: var(--color-blue-10);
+      border-left: 4px solid var(--color-blue-100);
+      padding: var(--spacing-s);
+      font-size: 0.9rem;
+      color: var(--color-text);
+      margin-bottom: var(--spacing-m);
+    }
+    .info-panel--read-only {
+      background: var(--color-yellow-40);
+      border-left-color: var(--color-yellow-00);
+      color: #6c4e00;
+    }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+    <h1 class="govbb-text-h1">Admins</h1>
+    <p class="govbb-text-body">
+      People who can sign in to this console. Adding someone here lets them request a
+      sign-in code for their work email.
+    </p>
+
+    <p class="info-panel" id="info-banner" hidden></p>
+
+    <!-- Add admin card — only rendered if the signed-in admin is a super_admin -->
+    <section class="add-card" id="add-card" hidden>
+      <h2 class="govbb-text-h3" style="margin-bottom: var(--spacing-s);">Add a new admin</h2>
+      <form id="add-form" novalidate>
+        <div class="add-card__grid">
+          <div class="field">
+            <label for="new-email">Work email</label>
+            <input id="new-email" name="email" type="email" autocomplete="off" required />
+            <div class="err" data-err="email"></div>
+          </div>
+          <div class="field">
+            <label for="new-name">Full name</label>
+            <input id="new-name" name="name" required />
+            <div class="err" data-err="name"></div>
+          </div>
+          <div class="field">
+            <label for="new-role">Role</label>
+            <select id="new-role" name="role">
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super admin</option>
+            </select>
+            <div class="err" data-err="role"></div>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="govbb-btn" type="submit" id="add-submit">Add</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <table class="records">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Last sign-in</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="rows-body">
+        <tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">Loading…</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    let me = null;
+    function escapeHtml(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+    function fmtDateTime(iso) {
+      if (!iso) return "—";
+      return new Date(iso).toLocaleString("en-GB", {
+        day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+      });
+    }
+    function fmtRelative(iso) {
+      if (!iso) return "never";
+      const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+      if (mins < 1)  return "just now";
+      if (mins < 60) return `${mins} min ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24)  return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      if (days < 30) return `${days}d ago`;
+      return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    }
+    function roleBadge(role) {
+      if (role === "super_admin") return `<span class="badge badge--super">super admin</span>`;
+      return `<span class="badge badge--plain">admin</span>`;
+    }
+
+    async function load() {
+      const r = await fetch("/api/admin/admins", { credentials: "same-origin" });
+      if (r.status === 401) { location.href = "/admin/login.html"; return; }
+      if (!r.ok) {
+        document.getElementById("rows-body").innerHTML =
+          `<tr><td colspan="6" style="padding:var(--spacing-m);">Could not load admins.</td></tr>`;
+        return;
+      }
+      const { admins } = await r.json();
+      renderRows(admins);
+    }
+
+    function renderRows(admins) {
+      const tbody = document.getElementById("rows-body");
+      tbody.innerHTML = admins.map(a => {
+        const isMe = me && a.email.toLowerCase() === me.email.toLowerCase();
+        const canEdit = me && me.role === "super_admin" && !isMe;
+        return `
+          <tr>
+            <td>
+              <strong>${escapeHtml(a.name)}</strong>
+              ${isMe ? ` <span class="badge badge--plain">you</span>` : ""}
+            </td>
+            <td><code>${escapeHtml(a.email)}</code></td>
+            <td>${roleBadge(a.role)}</td>
+            <td title="${escapeHtml(fmtDateTime(a.lastLogin))}">${escapeHtml(fmtRelative(a.lastLogin))}</td>
+            <td>${a.isActive
+              ? `<span class="badge badge--ok">active</span>`
+              : `<span class="badge badge--off">deactivated</span>`}
+            </td>
+            <td>
+              <div class="row-actions">
+                ${canEdit ? `
+                  <button type="button" data-act="role" data-email="${escapeHtml(a.email)}" data-current="${escapeHtml(a.role)}">
+                    ${a.role === "super_admin" ? "Demote" : "Promote"}
+                  </button>
+                  <button type="button" class="${a.isActive ? "danger" : ""}" data-act="${a.isActive ? "deactivate" : "reactivate"}" data-email="${escapeHtml(a.email)}">
+                    ${a.isActive ? "Deactivate" : "Reactivate"}
+                  </button>
+                ` : ""}
+              </div>
+            </td>
+          </tr>`;
+      }).join("");
+
+      tbody.querySelectorAll("button[data-act]").forEach(b => {
+        b.addEventListener("click", () => handleAction(b.dataset.act, b.dataset.email, b.dataset.current));
+      });
+    }
+
+    async function handleAction(act, email, current) {
+      let body;
+      let confirmMsg;
+      if (act === "role") {
+        const next = current === "super_admin" ? "admin" : "super_admin";
+        confirmMsg = `Change ${email}'s role to ${next === "super_admin" ? "super admin" : "admin"}?`;
+        body = { role: next };
+      } else if (act === "deactivate") {
+        confirmMsg = `Deactivate ${email}? They won't be able to sign in.`;
+        body = { isActive: false };
+      } else if (act === "reactivate") {
+        confirmMsg = `Reactivate ${email}?`;
+        body = { isActive: true };
+      } else return;
+
+      if (!confirm(confirmMsg)) return;
+
+      const r = await fetch("/api/admin/admins?email=" + encodeURIComponent(email), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        credentials: "same-origin",
+      });
+      const result = await r.json().catch(() => ({}));
+      if (r.ok) {
+        load();
+      } else {
+        alert(result.message || "We couldn't make that change.");
+      }
+    }
+
+    // Add form
+    document.getElementById("add-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.querySelectorAll("[data-err]").forEach(el => el.textContent = "");
+      const email = document.getElementById("new-email").value.trim();
+      const name  = document.getElementById("new-name").value.trim();
+      const role  = document.getElementById("new-role").value;
+      const btn   = document.getElementById("add-submit");
+      btn.disabled = true; btn.textContent = "Adding…";
+      try {
+        const r = await fetch("/api/admin/admins", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, name, role }),
+          credentials: "same-origin",
+        });
+        const body = await r.json().catch(() => ({}));
+        if (r.ok) {
+          document.getElementById("new-email").value = "";
+          document.getElementById("new-name").value = "";
+          document.getElementById("new-role").value = "admin";
+          const banner = document.getElementById("info-banner");
+          banner.className = "info-panel";
+          banner.hidden = false;
+          banner.textContent = body.emailSent
+            ? `Added ${email}. An invite email has been sent.`
+            : `Added ${email}. Invite email couldn't be sent (${body.emailError || "unknown"}). They can still sign in.`;
+          load();
+        } else if (body.error === "validation") {
+          (body.errors || []).forEach(e => {
+            const slot = document.querySelector(`[data-err="${e.field}"]`);
+            if (slot) slot.textContent = e.message;
+          });
+        } else if (body.error === "conflict") {
+          document.querySelector('[data-err="email"]').textContent = body.message;
+        } else if (body.error === "forbidden") {
+          alert(body.message || "You don't have permission to add admins.");
+        } else {
+          alert(body.message || "We couldn't add that admin.");
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = "Add";
+      }
+    });
+
+    // Boot — fetch /me first so we know whether to show the add form
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/me", { credentials: "same-origin" });
+        if (r.status === 401) { location.href = "/admin/login.html"; return; }
+        me = await r.json();
+        if (me.role === "super_admin") {
+          document.getElementById("add-card").hidden = false;
+        } else {
+          const banner = document.getElementById("info-banner");
+          banner.className = "info-panel info-panel--read-only";
+          banner.hidden = false;
+          banner.textContent = "You're signed in as a regular admin — you can view this page but only super admins can add or change admins.";
+        }
+        load();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("rows-body").innerHTML =
+          `<tr><td colspan="6" style="padding:var(--spacing-m);">Could not load.</td></tr>`;
+      }
+    })();
+  </script>
+</body>
+</html>

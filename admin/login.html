@@ -104,11 +104,23 @@
           body: JSON.stringify({ email }),
           credentials: "same-origin",
         });
-        if (!r.ok) throw new Error("network");
-        document.getElementById("code-email").textContent = email;
-        stepEmail.hidden = true;
-        stepCode.hidden = false;
-        codeInput.focus();
+        const body = await r.json().catch(() => ({}));
+        if (r.ok) {
+          document.getElementById("code-email").textContent = email;
+          stepEmail.hidden = true;
+          stepCode.hidden = false;
+          codeInput.focus();
+          return;
+        }
+        if (body.error === "email_send_failed") {
+          // Most likely: this address isn't verified in Resend yet (free-tier).
+          // Show the actual rejection reason so the user can fix it.
+          showError("email",
+            "We couldn't send the sign-in code to that address. " +
+            (body.detail || "Check the address is verified in Resend, or that the sender domain is verified."));
+          return;
+        }
+        showError("email", "We couldn't send the code. Please try again.");
       } catch {
         showError("email", "We couldn't reach the service. Please try again.");
       } finally {

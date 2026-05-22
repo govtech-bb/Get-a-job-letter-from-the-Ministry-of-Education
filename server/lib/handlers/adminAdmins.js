@@ -73,11 +73,10 @@ async function recordAudit({ adminEmail, action, changedBy, before, after }) {
 
 async function sendInviteEmail({ email, name, invitedBy }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
-  const overrideTo = process.env.RESEND_OVERRIDE_TO || null;
-  const deliverTo = overrideTo || email;
-  const subject = overrideTo
-    ? `[TEST → ${email}] You've been added to the Job Letters admin console`
-    : "You've been added to the Job Letters admin console";
+  // The invite has to reach the actual new admin so they know they have
+  // access. RESEND_OVERRIDE_TO is deliberately not honoured here.
+  const deliverTo = email;
+  const subject = "You've been added to the Job Letters admin console";
 
   const greetingName = name ? name.split(" ")[0] : "";
   const greeting = greetingName ? `Hello ${greetingName},` : "Hello,";

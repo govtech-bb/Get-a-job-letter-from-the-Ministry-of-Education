@@ -91,7 +91,7 @@ app.get("/api/verify-letter", async (req, res) => {
 app.post("/api/admin/login", async (req, res) => {
   try {
     const result = await adminIssueCode({ email: req.body?.email });
-    if (!result.ok) return res.status(result.status || 400).json({ error: result.reason });
+    if (!result.ok) return res.status(result.status || 400).json({ error: result.reason, detail: result.detail });
     res.status(200).json({ ok: true });
   } catch (err) {
     console.error("admin/login:", err);

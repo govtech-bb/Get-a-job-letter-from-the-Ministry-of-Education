@@ -70,17 +70,30 @@ export async function issueCode({ email }) {
     VALUES (${id}, ${admin.email}, ${hashCode(code)}, ${expiresAt});
   `;
 
-  await sendCodeEmail({ to: admin.email, name: admin.name, code });
-  return { ok: true, sent: true };
+  try {
+    await sendCodeEmail({ to: admin.email, name: admin.name, code });
+    return { ok: true, sent: true };
+  } catch (err) {
+    // Most common cause in staging: the address isn't verified in Resend yet
+    // (free-tier restriction with the onboarding@resend.dev sender). Surface
+    // the actual message so the user can fix it without guessing.
+    return {
+      ok: false,
+      status: 502,
+      reason: "email_send_failed",
+      detail: err.message || String(err),
+    };
+  }
 }
 
 async function sendCodeEmail({ to, name, code }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
-  const overrideTo = process.env.RESEND_OVERRIDE_TO || null;
-  const deliverTo = overrideTo || to;
-  const subject = overrideTo
-    ? `[TEST → ${to}] Your Job Letters admin sign-in code`
-    : "Your Job Letters admin sign-in code";
+  // Admin sign-in codes are a credential — they have to reach the actual
+  // admin. We deliberately do NOT honour RESEND_OVERRIDE_TO here. The address
+  // is on the admins allowlist (already checked above) and must also be a
+  // verified recipient in Resend (or covered by a verified sender domain).
+  const deliverTo = to;
+  const subject = "Your Job Letters admin sign-in code";
 
   const greeting = name ? `Hello ${name.split(" ")[0]},` : "Hello,";
 

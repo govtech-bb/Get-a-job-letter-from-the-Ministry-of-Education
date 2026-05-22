@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     const { email } = req.body || {};
     const result = await issueCode({ email });
     if (!result.ok) {
-      return res.status(result.status || 400).json({ error: result.reason });
+      return res.status(result.status || 400).json({ error: result.reason, detail: result.detail });
     }
     return res.status(200).json({ ok: true });
   } catch (err) {

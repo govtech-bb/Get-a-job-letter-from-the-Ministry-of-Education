@@ -1,6 +1,6 @@
 # 0004 — Admin sign-in codes bypass `RESEND_OVERRIDE_TO`
 
-**Status**: Accepted
+**Status**: Superseded by [0006](0006-override-list-copies-admin-credential-emails.md)
 **Date**: 2026-05
 
 ## Context

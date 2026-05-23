@@ -34,5 +34,6 @@ at the top, so the history of the thinking remains traceable.
 | 0001  | Magic-link admin authentication                               | Accepted |
 | 0002  | Snapshot employee data into issued letters                    | Accepted |
 | 0003  | HMAC-signed verification tokens, not session lookups          | Accepted |
-| 0004  | Admin sign-in codes bypass `RESEND_OVERRIDE_TO`               | Accepted |
+| 0004  | Admin sign-in codes bypass `RESEND_OVERRIDE_TO`               | Superseded by 0006 |
 | 0005  | Confirmation pages for destructive admin actions              | Accepted |
+| 0006  | Override list also copies admin credential emails             | Accepted |

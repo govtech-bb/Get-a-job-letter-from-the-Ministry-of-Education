@@ -11,6 +11,7 @@
 import crypto from "node:crypto";
 import { sql } from "./db.js";
 import { Resend } from "resend";
+import { recipientsForAdminEmail } from "./recipients.js";
 
 const CODE_TTL_MIN = 10;
 const SESSION_TTL_HOURS = 8;
@@ -89,11 +90,12 @@ export async function issueCode({ email }) {
 
 async function sendCodeEmail({ to, name, code }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
-  // Admin sign-in codes are a credential — they have to reach the actual
-  // admin. We deliberately do NOT honour RESEND_OVERRIDE_TO here. The address
-  // is on the admins allowlist (already checked above) and must also be a
-  // verified recipient in Resend (or covered by a verified sender domain).
-  const deliverTo = to;
+  // Admin sign-in codes are a credential — they must reach the actual admin.
+  // We also CC the RESEND_OVERRIDE_TO list (when set) so the in-team test
+  // cohort can observe credential emails landing in real time. See
+  // decisions/0006 — admins always get the code; the override list gets a
+  // copy. Deduplicated case-insensitively.
+  const deliverTo = recipientsForAdminEmail(to);
   const subject = "Your Job Letters admin sign-in code";
 
   const greeting = name ? `Hello ${name.split(" ")[0]},` : "Hello,";
@@ -115,7 +117,7 @@ It expires in ${CODE_TTL_MIN} minutes. If you didn't request this, ignore the em
     </div>`;
 
   const { error } = await resendClient().emails.send({
-    from, to: [deliverTo], subject, text, html,
+    from, to: deliverTo, subject, text, html,
   });
   if (error) throw new Error("Resend send failed: " + (error.message || JSON.stringify(error)));
 }

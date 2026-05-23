@@ -1,6 +1,7 @@
 // Resend wrapper. Sends the letter PDF as an attachment.
 
 import { Resend } from "resend";
+import { recipientsForLetter } from "./recipients.js";
 
 let _resend = null;
 function client() {
@@ -15,15 +16,16 @@ function client() {
 export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyUrl }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
 
-  // While the sender domain is unverified, Resend will only deliver to
-  // addresses you've explicitly verified in your account. For testing on
-  // staging we redirect every send to RESEND_OVERRIDE_TO if set. The original
-  // intended recipient is then prefixed onto the subject so you can tell which
-  // employee was matched. Once a real `moe.gov.bb` subdomain is verified,
-  // unset RESEND_OVERRIDE_TO and mail goes to the actual employee.
-  const overrideTo = process.env.RESEND_OVERRIDE_TO || null;
-  const deliverTo = overrideTo || to;
-  const subject = overrideTo
+  // While the sender domain is unverified, Resend only delivers to verified
+  // recipients. RESEND_OVERRIDE_TO (comma-separated list, parsed by
+  // recipients.js) redirects letter-delivery emails to that list instead of
+  // the real citizen. The original intended recipient is prefixed onto the
+  // subject so testers can tell which employee matched. Once `moe.gov.bb`
+  // is verified in Resend, unset RESEND_OVERRIDE_TO and mail goes to the
+  // actual employee.
+  const overrideActive = !!process.env.RESEND_OVERRIDE_TO;
+  const deliverTo = recipientsForLetter(to);
+  const subject = overrideActive
     ? `[TEST → ${to}] Your Ministry of Education job letter`
     : "Your Ministry of Education job letter";
 
@@ -69,7 +71,7 @@ Ministry of Education Transformation`;
 
   const { data, error } = await client().emails.send({
     from,
-    to: [deliverTo],
+    to: deliverTo,
     subject,
     text,
     html,

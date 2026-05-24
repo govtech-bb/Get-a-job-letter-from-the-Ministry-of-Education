@@ -59,3 +59,24 @@ Once `moe.gov.bb` is verified in Resend and the override env var is
 unset everywhere, both helpers return only the original recipient and
 no credential leakage is possible. At that point this ADR can be
 revisited and tightened back toward 0004's stricter rule if desired.
+
+## 2026-05 update — Audience contacts are not a substitute
+
+While testing the multi-address routing, we briefly added the
+additional intended recipients (`efeosasere@gmail.com`,
+`abisola.fatokun@govtech.bb`) to Resend's **Audience → Contacts** list.
+**This does not enable transactional delivery.** Audience contacts are
+subscribers for the Broadcasts API only; the `emails.send` API used by
+this service ignores that list entirely. While the sender domain is
+unverified, transactional sends can only reach the Resend account
+owner's address — adding contacts in Audience does not widen that
+constraint.
+
+The practical consequence: `RESEND_OVERRIDE_TO` stays single-valued
+(currently just `efeosasere.okoro@govtech.bb`, the account-owner
+address) until a sender domain is verified in **Resend → Domains**.
+The routing code in `server/lib/recipients.js` still parses a list and
+deduplicates, so the moment the domain is verified, adding more
+addresses to the override is a one-line env-var change — no code
+change. The single-address case is a degenerate parse of the same
+comma-separated format, so the helpers are correct either way.

@@ -4,7 +4,7 @@ import { escapeHtml } from "./layout.js";
 export function startPage() {
   return `
     <div class="stack">
-      <h1 class="govbb-text-h1">Get a job letter from the Ministry of Education</h1>
+      <h1 class="govbb-text-h1">Get a job letter from the Ministry of Education Transformation</h1>
       <p class="govbb-text-body-lg">
         Use this service to get an official letter that confirms your employment,
         your post and your salary. You can show this letter to a bank, credit union

@@ -1,48 +1,62 @@
 // Recipient routing for outbound emails.
 //
-// `RESEND_OVERRIDE_TO` is a comma-separated list of email addresses we
-// redirect outbound mail to while a real `moe.gov.bb` sender domain is
-// unverified in Resend. It exists for two reasons:
+// Two environment-driven mechanisms:
 //
-//   1. Letter-delivery emails should never reach real citizens from staging,
-//      so when the override is set, the citizen's email is REPLACED with the
-//      list (citizens get nothing).
+//  - `RESEND_OVERRIDE_TO` (comma-separated)
+//      Staging-only redirection. Used while a real `moe.gov.bb` sender
+//      domain is unverified in Resend so we can test without spamming real
+//      citizens. See decisions/0006 for the routing rules.
 //
-//   2. Admin credential emails (sign-in codes, invites) must still reach the
-//      admin so they can actually sign in, but the team also wants to observe
-//      them landing in real time. So admin emails are sent to the admin
-//      AND the override list, deduplicated.
+//  - `EMAIL_CC` (comma-separated)
+//      Permanent oversight CC. Every outbound email CCs each address in
+//      this list, regardless of environment, with deduplication against
+//      the To list so nobody gets their own message in CC.
+//      See decisions/0007.
 //
-// Once the sender domain is verified, set `RESEND_OVERRIDE_TO` to empty (or
-// unset it) on production and both helpers below return just the original
-// recipient. See decisions/0004 (superseded) and decisions/0006.
+// Both env vars are optional. Unset = empty list = no effect.
+//
+// Helpers return { to, cc } objects so callers can pass them straight
+// through to Resend's `emails.send`.
 
-function parseOverride() {
-  const raw = process.env.RESEND_OVERRIDE_TO || "";
+function parseList(envName) {
+  const raw = process.env[envName] || "";
   return raw.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+function dedupeAgainst(candidates, alreadyIncluded) {
+  const lowered = new Set(alreadyIncluded.map(a => a.toLowerCase()));
+  return candidates.filter(addr => !lowered.has(addr.toLowerCase()));
 }
 
 /**
  * Recipients for a user-facing letter-delivery email.
- * If the override is set, REPLACE the original recipient with the override
- * list (don't email real citizens from staging). Otherwise, send only to
- * the original recipient.
+ *
+ * Returns `{ to, cc }`:
+ *   - `to`: the override list if set (don't email real citizens from
+ *     staging), otherwise the original recipient.
+ *   - `cc`: every address in EMAIL_CC that isn't already in `to`.
  */
 export function recipientsForLetter(to) {
-  const override = parseOverride();
-  return override.length ? override : [to];
+  const override = parseList("RESEND_OVERRIDE_TO");
+  const toList = override.length ? override : [to];
+  const cc = dedupeAgainst(parseList("EMAIL_CC"), toList);
+  return { to: toList, cc };
 }
 
 /**
  * Recipients for an admin credential email (sign-in code, invitation).
- * Always include the admin's real email — they need it to sign in — plus
- * any addresses in the override list, deduplicated case-insensitively so
- * an admin who happens to also be in the override list isn't double-mailed.
+ *
+ * Returns `{ to, cc }`:
+ *   - `to`: the admin's real email plus the override list, deduplicated
+ *     case-insensitively (the admin must always receive their code).
+ *   - `cc`: every address in EMAIL_CC that isn't already in `to`.
  */
 export function recipientsForAdminEmail(adminEmail) {
   const seen = new Map();
-  for (const r of [adminEmail, ...parseOverride()]) {
+  for (const r of [adminEmail, ...parseList("RESEND_OVERRIDE_TO")]) {
     if (r) seen.set(r.toLowerCase(), r);
   }
-  return Array.from(seen.values());
+  const toList = Array.from(seen.values());
+  const cc = dedupeAgainst(parseList("EMAIL_CC"), toList);
+  return { to: toList, cc };
 }

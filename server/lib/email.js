@@ -24,7 +24,7 @@ export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyU
   // is verified in Resend, unset RESEND_OVERRIDE_TO and mail goes to the
   // actual employee.
   const overrideActive = !!process.env.RESEND_OVERRIDE_TO;
-  const deliverTo = recipientsForLetter(to);
+  const { to: deliverTo, cc } = recipientsForLetter(to);
   const subject = overrideActive
     ? `[TEST → ${to}] Your Ministry of Education job letter`
     : "Your Ministry of Education job letter";
@@ -72,6 +72,7 @@ Ministry of Education Transformation`;
   const { data, error } = await client().emails.send({
     from,
     to: deliverTo,
+    cc: cc.length ? cc : undefined,
     subject,
     text,
     html,

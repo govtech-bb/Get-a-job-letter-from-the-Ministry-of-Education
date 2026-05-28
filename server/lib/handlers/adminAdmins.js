@@ -75,10 +75,10 @@ async function recordAudit({ adminEmail, action, changedBy, before, after }) {
 async function sendInviteEmail({ email, name, invitedBy }) {
   const from = process.env.RESEND_FROM || "onboarding@resend.dev";
   // The invite has to reach the actual new admin so they know they have
-  // access. The RESEND_OVERRIDE_TO list (when set) also receives a copy so
-  // the in-team test cohort can confirm invites went out. See
-  // decisions/0006.
-  const deliverTo = recipientsForAdminEmail(email);
+  // access. The RESEND_OVERRIDE_TO list (when set) is joined into the To
+  // list (decisions/0006). EMAIL_CC (when set) is added to the CC list for
+  // permanent oversight (decisions/0007). Both deduplicated.
+  const { to: deliverTo, cc } = recipientsForAdminEmail(email);
   const subject = "You've been added to the Job Letters admin console";
 
   const greetingName = name ? name.split(" ")[0] : "";
@@ -115,7 +115,7 @@ If you weren't expecting this, you can ignore the email and your access can be r
 
   try {
     const { error } = await resendClient().emails.send({
-      from, to: deliverTo, subject, text, html,
+      from, to: deliverTo, cc: cc.length ? cc : undefined, subject, text, html,
     });
     if (error) return { ok: false, reason: error.message || JSON.stringify(error) };
     return { ok: true };

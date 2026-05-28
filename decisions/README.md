@@ -37,3 +37,4 @@ at the top, so the history of the thinking remains traceable.
 | 0004  | Admin sign-in codes bypass `RESEND_OVERRIDE_TO`               | Superseded by 0006 |
 | 0005  | Confirmation pages for destructive admin actions              | Accepted |
 | 0006  | Override list also copies admin credential emails             | Accepted |
+| 0007  | Permanent CC for oversight via `EMAIL_CC`                     | Accepted |

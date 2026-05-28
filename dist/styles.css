@@ -358,7 +358,8 @@
     overflow: hidden;
   }
 
-  .govbb-visually-hidden-focusable:not(:focus):not(:focus-visible) {
+  .govbb-visually-hidden-focusable:focus,
+  .govbb-visually-hidden-focusable:focus-visible {
     clip-path: none;
     white-space: normal;
     width: auto;

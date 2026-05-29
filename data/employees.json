@@ -1,7 +1,8 @@
 {
   "_comment": "SYNTHETIC DATA ONLY. Mirrors the field structure the spec describes (service records + SmartStream salary). No real personal data. For production, this would be populated by a scheduled push from MoE.",
   "_source_of_truth": "service_records",
-  "_last_updated": "2026-05-01",
+  "_last_updated": "2026-05-29",
+  "_recent_additions": "2026-05-29: Added Peter Parker and Diana Prince from the Smart Stream sample shared by the team. Emails constructed (Smart Stream doesn't store them); salary converted from annual to monthly; Position Name 'Graduate Teacher, PMS' simplified to 'Graduate Teacher'. Peter's TEMP contract type doesn't map cleanly to our four letter_types — assigned teacher_appointed as the closest fit.",
   "employees": [
     {
       "email": "alexcia.taitt-hope@moe.gov.bb",
@@ -109,6 +110,50 @@
       "monthlyAllowance": null,
       "payFrequency": "monthly",
       "isActing": true,
+      "isActive": true
+    },
+    {
+      "_smartstream_employee_id": "123456-0000",
+      "_smartstream_position_name": "Graduate Teacher, PMS",
+      "_smartstream_employment_type": "TEMP",
+      "_smartstream_salary_annual": 59991.50,
+      "email": "peter.parker@moe.gov.bb",
+      "title": "Mr.",
+      "firstName": "Peter",
+      "lastName": "Parker",
+      "pronoun": "he",
+      "address": null,
+      "letterType": "teacher_appointed",
+      "post": "Graduate Teacher",
+      "school": "A. DaCosta Edwards Primary",
+      "employer": "Ministry of Education Transformation",
+      "appointmentDate": "2021-05-15",
+      "monthlySalary": 4999.29,
+      "monthlyAllowance": null,
+      "payFrequency": "monthly",
+      "isActing": false,
+      "isActive": true
+    },
+    {
+      "_smartstream_employee_id": "123456-0001",
+      "_smartstream_position_name": "Graduate Teacher, Primary, PMS",
+      "_smartstream_employment_type": "PER",
+      "_smartstream_salary_annual": 73734.73,
+      "email": "diana.prince@moe.gov.bb",
+      "title": "Ms.",
+      "firstName": "Diana",
+      "lastName": "Prince",
+      "pronoun": "she",
+      "address": null,
+      "letterType": "teacher_appointed",
+      "post": "Graduate Teacher",
+      "school": "Arthur Smith Primary",
+      "employer": "Ministry of Education Transformation",
+      "appointmentDate": "2020-11-14",
+      "monthlySalary": 6144.56,
+      "monthlyAllowance": null,
+      "payFrequency": "monthly",
+      "isActing": false,
       "isActive": true
     }
   ]

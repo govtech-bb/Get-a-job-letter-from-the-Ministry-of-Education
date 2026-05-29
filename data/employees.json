@@ -2,7 +2,7 @@
   "_comment": "SYNTHETIC DATA ONLY. Mirrors the field structure the spec describes (service records + SmartStream salary). No real personal data. For production, this would be populated by a scheduled push from MoE.",
   "_source_of_truth": "service_records",
   "_last_updated": "2026-05-29",
-  "_recent_additions": "2026-05-29: Added Peter Parker and Diana Prince from the Smart Stream sample shared by the team. Emails constructed (Smart Stream doesn't store them); salary converted from annual to monthly; Position Name 'Graduate Teacher, PMS' simplified to 'Graduate Teacher'. Peter's TEMP contract type doesn't map cleanly to our four letter_types — assigned teacher_appointed as the closest fit.",
+  "_recent_additions": "2026-05-29: Added dateOfBirth and salaryScale columns. Peter and Diana's salary scales are from the Smart Stream sample (Z09, Z02); their DOBs are inferred from the Age column (22 and 45) and a plausible day-of-year. All other employees' DOBs and scales are synthetic — plausible-looking but not derived from any source.",
   "employees": [
     {
       "email": "alexcia.taitt-hope@moe.gov.bb",
@@ -11,6 +11,7 @@
       "lastName": "Taitt-Hope",
       "pronoun": "she",
       "address": null,
+      "dateOfBirth": "1990-03-22",
       "letterType": "teacher_appointed",
       "post": "Graduate Teacher",
       "school": "Alleyne School",
@@ -18,6 +19,7 @@
       "appointmentDate": "2019-09-01",
       "monthlySalary": 5965.60,
       "monthlyAllowance": null,
+      "salaryScale": "Z08",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -29,6 +31,7 @@
       "lastName": "Bynoe",
       "pronoun": "he",
       "address": null,
+      "dateOfBirth": "1978-11-08",
       "letterType": "teacher_special",
       "post": "Graduate Teacher with Special Responsibility for Mathematics",
       "school": "Harrison College",
@@ -36,6 +39,7 @@
       "appointmentDate": "2014-09-01",
       "monthlySalary": 7240.30,
       "monthlyAllowance": 417.85,
+      "salaryScale": "Z04",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -47,6 +51,7 @@
       "lastName": "Greaves",
       "pronoun": "she",
       "address": "#12 Sunset Drive, St. Michael",
+      "dateOfBirth": "1976-07-14",
       "letterType": "ministry_permanent",
       "post": "Administrative Officer III",
       "school": null,
@@ -54,6 +59,7 @@
       "appointmentDate": "2011-04-15",
       "monthlySalary": 6210.00,
       "monthlyAllowance": null,
+      "salaryScale": "Z06",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -65,6 +71,7 @@
       "lastName": "Clarke",
       "pronoun": "he",
       "address": "#4 Coral Ridge, Christ Church",
+      "dateOfBirth": "1995-02-19",
       "letterType": "ministry_temporary",
       "post": "Records Clerk",
       "school": null,
@@ -72,6 +79,7 @@
       "appointmentDate": "2024-11-04",
       "monthlySalary": 3120.50,
       "monthlyAllowance": null,
+      "salaryScale": "Z14",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -83,6 +91,7 @@
       "lastName": "Holder",
       "pronoun": "she",
       "address": null,
+      "dateOfBirth": "1981-09-30",
       "letterType": "teacher_appointed",
       "post": "Senior Teacher",
       "school": "Combermere School",
@@ -90,6 +99,7 @@
       "appointmentDate": "2008-09-01",
       "monthlySalary": 8540.75,
       "monthlyAllowance": null,
+      "salaryScale": "Z03",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -101,6 +111,7 @@
       "lastName": "Skinner",
       "pronoun": "he",
       "address": "Apt. 3B, Pine Gardens, St. Michael",
+      "dateOfBirth": "1968-12-05",
       "letterType": "ministry_permanent",
       "post": "Senior Education Officer",
       "school": null,
@@ -108,6 +119,7 @@
       "appointmentDate": "2005-08-22",
       "monthlySalary": 9985.40,
       "monthlyAllowance": null,
+      "salaryScale": "Z01",
       "payFrequency": "monthly",
       "isActing": true,
       "isActive": true
@@ -123,6 +135,7 @@
       "lastName": "Parker",
       "pronoun": "he",
       "address": null,
+      "dateOfBirth": "2003-04-15",
       "letterType": "teacher_appointed",
       "post": "Graduate Teacher",
       "school": "A. DaCosta Edwards Primary",
@@ -130,6 +143,7 @@
       "appointmentDate": "2021-05-15",
       "monthlySalary": 4999.29,
       "monthlyAllowance": null,
+      "salaryScale": "Z09",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true
@@ -145,6 +159,7 @@
       "lastName": "Prince",
       "pronoun": "she",
       "address": null,
+      "dateOfBirth": "1980-06-22",
       "letterType": "teacher_appointed",
       "post": "Graduate Teacher",
       "school": "Arthur Smith Primary",
@@ -152,6 +167,7 @@
       "appointmentDate": "2020-11-14",
       "monthlySalary": 6144.56,
       "monthlyAllowance": null,
+      "salaryScale": "Z02",
       "payFrequency": "monthly",
       "isActing": false,
       "isActive": true

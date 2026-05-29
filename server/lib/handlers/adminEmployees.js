@@ -13,6 +13,7 @@ function rowToEmployee(r) {
     lastName: r.lastName,
     pronoun: r.pronoun,
     address: r.address,
+    dateOfBirth: r.dateOfBirth,
     letterType: r.letterType,
     post: r.post,
     school: r.school,
@@ -20,6 +21,7 @@ function rowToEmployee(r) {
     appointmentDate: r.appointmentDate,
     monthlySalary: r.monthlySalary != null ? Number(r.monthlySalary) : null,
     monthlyAllowance: r.monthlyAllowance != null ? Number(r.monthlyAllowance) : null,
+    salaryScale: r.salaryScale,
     payFrequency: r.payFrequency,
     isActing: r.isActing,
     isActive: r.isActive,
@@ -123,10 +125,13 @@ export async function getEmployee(email) {
   if (!rows || rows.length === 0) {
     const r = await q`
       SELECT email, title, first_name AS "firstName", last_name AS "lastName",
-             pronoun, address, letter_type AS "letterType", post, school, employer,
+             pronoun, address,
+             to_char(date_of_birth, 'YYYY-MM-DD') AS "dateOfBirth",
+             letter_type AS "letterType", post, school, employer,
              to_char(appointment_date, 'YYYY-MM-DD') AS "appointmentDate",
              monthly_salary AS "monthlySalary",
              monthly_allowance AS "monthlyAllowance",
+             salary_scale AS "salaryScale",
              pay_frequency AS "payFrequency",
              is_acting AS "isActing", is_active AS "isActive",
              updated_at AS "updatedAt"
@@ -147,6 +152,7 @@ function normaliseInput(b) {
     lastName: String(e.lastName || "").trim(),
     pronoun: e.pronoun === "he" || e.pronoun === "she" ? e.pronoun : null,
     address: e.address ? String(e.address).trim() : null,
+    dateOfBirth: e.dateOfBirth ? String(e.dateOfBirth).trim() : null,
     letterType: String(e.letterType || ""),
     post: String(e.post || "").trim(),
     school: e.school ? String(e.school).trim() : null,
@@ -154,6 +160,7 @@ function normaliseInput(b) {
     appointmentDate: String(e.appointmentDate || ""),
     monthlySalary: e.monthlySalary === "" || e.monthlySalary == null ? null : Number(e.monthlySalary),
     monthlyAllowance: e.monthlyAllowance === "" || e.monthlyAllowance == null ? null : Number(e.monthlyAllowance),
+    salaryScale: e.salaryScale ? String(e.salaryScale).trim() : null,
     payFrequency: e.payFrequency === "bi-monthly" ? "bi-monthly" : "monthly",
     isActing: !!e.isActing,
     isActive: e.isActive !== false,
@@ -172,6 +179,9 @@ function validate(input) {
   }
   if (!input.post)  errors.push({ field: "post", message: "Post is required." });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.appointmentDate)) errors.push({ field: "appointmentDate", message: "Date must be YYYY-MM-DD." });
+  if (input.dateOfBirth && !/^\d{4}-\d{2}-\d{2}$/.test(input.dateOfBirth)) {
+    errors.push({ field: "dateOfBirth", message: "Date of birth must be YYYY-MM-DD." });
+  }
   if (input.monthlySalary == null || isNaN(input.monthlySalary) || input.monthlySalary < 0) {
     errors.push({ field: "monthlySalary", message: "Monthly salary must be a positive number." });
   }
@@ -210,14 +220,14 @@ export async function createEmployee({ body, changedBy }) {
 
   await q`
     INSERT INTO employees (
-      email, title, first_name, last_name, pronoun, address,
+      email, title, first_name, last_name, pronoun, address, date_of_birth,
       letter_type, post, school, employer,
-      appointment_date, monthly_salary, monthly_allowance,
+      appointment_date, monthly_salary, monthly_allowance, salary_scale,
       pay_frequency, is_acting, is_active
     ) VALUES (
-      ${input.email}, ${input.title}, ${input.firstName}, ${input.lastName}, ${input.pronoun}, ${input.address},
+      ${input.email}, ${input.title}, ${input.firstName}, ${input.lastName}, ${input.pronoun}, ${input.address}, ${input.dateOfBirth},
       ${input.letterType}, ${input.post}, ${input.school}, ${input.employer},
-      ${input.appointmentDate}, ${input.monthlySalary}, ${input.monthlyAllowance},
+      ${input.appointmentDate}, ${input.monthlySalary}, ${input.monthlyAllowance}, ${input.salaryScale},
       ${input.payFrequency}, ${input.isActing}, ${input.isActive}
     );
   `;
@@ -244,6 +254,7 @@ export async function updateEmployee({ email, body, changedBy }) {
       last_name         = ${input.lastName},
       pronoun           = ${input.pronoun},
       address           = ${input.address},
+      date_of_birth     = ${input.dateOfBirth},
       letter_type       = ${input.letterType},
       post              = ${input.post},
       school            = ${input.school},
@@ -251,6 +262,7 @@ export async function updateEmployee({ email, body, changedBy }) {
       appointment_date  = ${input.appointmentDate},
       monthly_salary    = ${input.monthlySalary},
       monthly_allowance = ${input.monthlyAllowance},
+      salary_scale      = ${input.salaryScale},
       pay_frequency     = ${input.payFrequency},
       is_acting         = ${input.isActing},
       is_active         = ${input.isActive},

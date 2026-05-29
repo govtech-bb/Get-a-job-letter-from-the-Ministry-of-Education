@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS employees (
   last_name         TEXT NOT NULL,
   pronoun           TEXT NOT NULL CHECK (pronoun IN ('he', 'she')),
   address           TEXT,
+  date_of_birth     DATE,
   letter_type       TEXT NOT NULL CHECK (letter_type IN (
                       'teacher_appointed', 'teacher_special',
                       'ministry_permanent', 'ministry_temporary'
@@ -25,11 +26,16 @@ CREATE TABLE IF NOT EXISTS employees (
   appointment_date  DATE NOT NULL,
   monthly_salary    NUMERIC(10, 2) NOT NULL,
   monthly_allowance NUMERIC(10, 2),
+  salary_scale      TEXT,
   pay_frequency     TEXT NOT NULL DEFAULT 'monthly',
   is_acting         BOOLEAN NOT NULL DEFAULT FALSE,
   is_active         BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Backfill new columns on existing databases. Safe to re-run.
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS date_of_birth DATE;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS salary_scale  TEXT;
 
 CREATE TABLE IF NOT EXISTS issued_letters (
   id                 TEXT PRIMARY KEY,

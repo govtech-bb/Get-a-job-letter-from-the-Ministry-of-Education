@@ -50,15 +50,15 @@ async function main() {
   for (const e of employees) {
     await client.query(
       `INSERT INTO employees (
-         email, title, first_name, last_name, pronoun, address,
+         email, title, first_name, last_name, pronoun, address, date_of_birth,
          letter_type, post, school, employer,
-         appointment_date, monthly_salary, monthly_allowance,
+         appointment_date, monthly_salary, monthly_allowance, salary_scale,
          pay_frequency, is_acting, is_active
        ) VALUES (
-         $1, $2, $3, $4, $5, $6,
-         $7, $8, $9, $10,
-         $11, $12, $13,
-         $14, $15, $16
+         $1, $2, $3, $4, $5, $6, $7,
+         $8, $9, $10, $11,
+         $12, $13, $14, $15,
+         $16, $17, $18
        )
        ON CONFLICT (email) DO UPDATE SET
          title             = EXCLUDED.title,
@@ -66,6 +66,7 @@ async function main() {
          last_name         = EXCLUDED.last_name,
          pronoun           = EXCLUDED.pronoun,
          address           = EXCLUDED.address,
+         date_of_birth     = EXCLUDED.date_of_birth,
          letter_type       = EXCLUDED.letter_type,
          post              = EXCLUDED.post,
          school            = EXCLUDED.school,
@@ -73,14 +74,15 @@ async function main() {
          appointment_date  = EXCLUDED.appointment_date,
          monthly_salary    = EXCLUDED.monthly_salary,
          monthly_allowance = EXCLUDED.monthly_allowance,
+         salary_scale      = EXCLUDED.salary_scale,
          pay_frequency     = EXCLUDED.pay_frequency,
          is_acting         = EXCLUDED.is_acting,
          is_active         = EXCLUDED.is_active,
          updated_at        = NOW()`,
       [
-        e.email, e.title, e.firstName, e.lastName, e.pronoun, e.address,
+        e.email, e.title, e.firstName, e.lastName, e.pronoun, e.address, e.dateOfBirth ?? null,
         e.letterType, e.post, e.school, e.employer,
-        e.appointmentDate, e.monthlySalary, e.monthlyAllowance,
+        e.appointmentDate, e.monthlySalary, e.monthlyAllowance, e.salaryScale ?? null,
         e.payFrequency, e.isActing, e.isActive,
       ]
     );

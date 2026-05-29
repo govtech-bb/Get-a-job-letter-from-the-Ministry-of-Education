@@ -104,6 +104,12 @@
             <input id="lastName" name="lastName" required />
             <div class="err" data-err="lastName"></div>
           </div>
+          <div class="field">
+            <label for="dateOfBirth">Date of birth</label>
+            <input id="dateOfBirth" name="dateOfBirth" type="date" />
+            <div class="hint">Optional. Used for HR records, not shown on the letter.</div>
+            <div class="err" data-err="dateOfBirth"></div>
+          </div>
         </div>
       </fieldset>
 
@@ -166,6 +172,12 @@
             <input id="monthlySalary" name="monthlySalary" type="number" step="0.01" min="0" required />
             <div class="err" data-err="monthlySalary"></div>
           </div>
+          <div class="field">
+            <label for="salaryScale">Salary scale</label>
+            <input id="salaryScale" name="salaryScale" placeholder="e.g. Z02" />
+            <div class="hint">Optional. The Smart Stream pay scale code.</div>
+            <div class="err" data-err="salaryScale"></div>
+          </div>
           <div class="field full" id="allowance-field">
             <label for="monthlyAllowance">Monthly allowance (BBD)</label>
             <input id="monthlyAllowance" name="monthlyAllowance" type="number" step="0.01" min="0" />
@@ -215,7 +227,7 @@
     const params = new URLSearchParams(location.search);
     const editEmail = params.get("email");
     const isEdit = !!editEmail;
-    const FIELDS = ["email","title","firstName","lastName","pronoun","address","letterType","post","school","employer","appointmentDate","monthlySalary","monthlyAllowance","payFrequency","isActing","isActive"];
+    const FIELDS = ["email","title","firstName","lastName","pronoun","address","dateOfBirth","letterType","post","school","employer","appointmentDate","monthlySalary","monthlyAllowance","salaryScale","payFrequency","isActing","isActive"];
 
     function setValue(name, val) {
       const el = form.elements[name];

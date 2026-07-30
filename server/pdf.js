@@ -9,8 +9,11 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import QRCode from "qrcode";
 import { buildLetterBody } from "./letterTemplates.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..");
+// Deliberately NOT named __dirname: when this module is bundled to CJS the
+// bundler injects its own __dirname, and a second declaration is a SyntaxError
+// that fails the whole function at load time.
+const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(MODULE_DIR, "..");
 
 const A4 = { width: 595.28, height: 841.89 }; // points
 const MARGIN = 60;

@@ -17,8 +17,31 @@ const MARGIN = 60;
 
 // Letterhead logos. Loaded once at module init so PDF generation in each
 // serverless invocation doesn't re-read the files.
-const CREST_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "govbb-creast.png"));
-const MOE_LOGO_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "moe-logo.png"));
+// Letterhead images are resolved from whichever of these roots actually has
+// them: next to the module (local dev / nft-copied bundle) or the function's
+// working directory (Netlify included_files). Read once, then cached.
+const ASSET_ROOTS = [ROOT, process.cwd(), path.join(process.cwd(), "..")];
+
+const assetCache = new Map();
+
+function readAsset(...segments) {
+  const key = segments.join("/");
+  if (assetCache.has(key)) return assetCache.get(key);
+  const tried = [];
+  for (const root of ASSET_ROOTS) {
+    const candidate = path.join(root, ...segments);
+    tried.push(candidate);
+    if (fs.existsSync(candidate)) {
+      const buf = fs.readFileSync(candidate);
+      assetCache.set(key, buf);
+      return buf;
+    }
+  }
+  throw new Error(`Letterhead asset ${key} not found. Looked in: ${tried.join(", ")}`);
+}
+
+const crestPng = () => readAsset("assets", "images", "govbb-creast.png");
+const moeLogoPng = () => readAsset("assets", "images", "moe-logo.png");
 
 export async function generateLetterPdf(letter) {
   const doc = await PDFDocument.create();
@@ -36,8 +59,8 @@ export async function generateLetterPdf(letter) {
   let y = A4.height - MARGIN;
 
   // Letterhead: coat of arms (left) | address (centre) | MoE logo (right).
-  const crest = await doc.embedPng(CREST_PNG);
-  const moeLogo = await doc.embedPng(MOE_LOGO_PNG);
+  const crest = await doc.embedPng(crestPng());
+  const moeLogo = await doc.embedPng(moeLogoPng());
   const LOGO_SIZE = 78;
   const headerTop = y;
   const headerBottom = headerTop - LOGO_SIZE;

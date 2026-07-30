@@ -197,13 +197,24 @@ export async function destroySession(token) {
 
 /* ---------- cookie helpers ---------- */
 
+// Netlify sets NETLIFY=true in the function runtime but does not necessarily
+// set NODE_ENV=production, so without this the session cookie would be issued
+// without Secure on the Netlify deploy.
+function isProduction() {
+  return (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.NETLIFY === "true"
+  );
+}
+
 export function cookieName() {
   return COOKIE_NAME;
 }
 
 export function buildSetCookie(token, expiresAt) {
   const expires = new Date(expiresAt).toUTCString();
-  const isProd = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+  const isProd = isProduction();
   return [
     `${COOKIE_NAME}=${token}`,
     "Path=/",
@@ -215,7 +226,7 @@ export function buildSetCookie(token, expiresAt) {
 }
 
 export function buildClearCookie() {
-  const isProd = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+  const isProd = isProduction();
   return [
     `${COOKIE_NAME}=`,
     "Path=/",

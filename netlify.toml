@@ -1,13 +1,15 @@
 # Netlify deploy config — mirrors what vercel.json does today.
 #
-# The service is a set of static HTML pages at the repo root plus a JSON API.
+# netlify/build.sh assembles the static pages into _site/ (the repo root minus
+# server-side code and deps); netlify/functions/*.mjs serve the same /api/*
+# routes as Vercel.
 # Both must be served from ONE origin: the admin pages call relative /api/*
 # URLs with credentials:"same-origin" and the session cookie is SameSite=Lax,
 # so a split frontend/API deploy would break admin sign-in entirely.
 
 [build]
-  publish = "."
-  command = ""
+  publish = "_site"
+  command = "bash netlify/build.sh"
   functions = "netlify/functions"
 
 [build.environment]
@@ -25,16 +27,3 @@
   from = "/v"
   to = "/verify.html"
   status = 200
-
-# publish = "." serves the whole repo, so keep server-side sources out of the
-# public tree. Nothing here is secret (no filled-in .env is committed) but
-# there is no reason to hand them out either.
-[[redirects]]
-  from = "/server/*"
-  to = "/not-found.html"
-  status = 404
-
-[[redirects]]
-  from = "/netlify/*"
-  to = "/not-found.html"
-  status = 404

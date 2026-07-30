@@ -9,6 +9,9 @@ node_modules/
 .vercel
 .netlify
 
+# Netlify publish directory, assembled by netlify/build.sh
+_site/
+
 # Excluded from the public repo:
 #  - sample-letters/ contains the original MoE Word/PDF samples that may have real names
 #  - principles/ contains internal product/development principles PDFs

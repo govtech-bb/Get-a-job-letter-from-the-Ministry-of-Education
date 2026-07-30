@@ -77,6 +77,34 @@ For real production mail, verify a subdomain of `moe.gov.bb` and set
 - Update `API_BASE_URL` in `app.js` (the `endsWith("github.io")` branch) to
   point at your Vercel URL.
 
+### 4. Netlify (alternative to Vercel)
+
+`netlify.toml` deploys the same service to Netlify: the repo root is published
+as-is and `netlify/functions/*.mjs` expose the same `/api/*` routes. Each
+function is a three-line wrapper that reuses the corresponding handler in
+`api/` through the adapter in `server/lib/netlifyAdapter.js`, so there is one
+copy of the business logic.
+
+Static pages and API **must** stay on one origin: the admin pages fetch
+relative `/api/*` URLs with `credentials: "same-origin"` and the session cookie
+is `SameSite=Lax`, so splitting them would break admin sign-in.
+
+Set the same four environment variables as Vercel (Site configuration →
+Environment variables), for all deploy contexts:
+
+```sh
+netlify env:set DATABASE_URL        'postgresql://…?sslmode=require'
+netlify env:set RESEND_API_KEY      're_…'
+netlify env:set RESEND_FROM         'onboarding@resend.dev'
+netlify env:set LETTER_SIGNING_KEY  '…'   # must match the key used by QR codes already issued
+```
+
+Deploy a preview (does not touch production):
+
+```sh
+netlify deploy --alias <preview-name>
+```
+
 Try the flow with any of the synthetic employees:
 
 | Email | Letter type |

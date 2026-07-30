@@ -10,22 +10,23 @@
 </head>
 <body class="govbb-page">
 
-  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your email","href":"request.html"},{"label":"No record found"}]'>
+  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your details","href":"request.html"},{"label":"No record found"}]'>
 
     <div class="panel-warning stack">
-      <h1 class="govbb-text-h2">We could not find a record for that email</h1>
+      <h1 class="govbb-text-h2">We could not find a record matching those details</h1>
       <p class="govbb-text-body">
         We have no employee record matching
-        <strong id="tried-email"></strong>.
+        <strong id="tried-name"></strong>
+        with employee ID <strong id="tried-id"></strong>.
       </p>
     </div>
 
     <div class="stack">
       <h2 class="govbb-text-h3">What you can do</h2>
       <ul class="govbb-list govbb-list--bullet">
-        <li>Check the address for typos and <a class="govbb-link" href="request.html">try again</a>.</li>
+        <li>Check your name and employee ID for typos and <a class="govbb-link" href="request.html">try again</a>.</li>
         <li>If you've recently joined, your record may not have reached this system yet — contact your school's personnel officer.</li>
-        <li>If your work email has changed, your record may still have the old one. Ask your personnel officer to update it.</li>
+        <li>If your name has changed, your record may still have the old one. Ask your personnel officer to update it.</li>
       </ul>
     </div>
 
@@ -34,8 +35,13 @@
 
   <script src="chrome.js"></script>
   <script>
-    const email = new URLSearchParams(location.search).get("email") || "";
-    document.getElementById("tried-email").textContent = email;
+    const params = new URLSearchParams(location.search);
+    const firstName = params.get("firstName") || "";
+    const lastName = params.get("lastName") || "";
+    const employeeId = params.get("employeeId") || "";
+
+    document.getElementById("tried-name").textContent = [firstName, lastName].filter(Boolean).join(" ") || "—";
+    document.getElementById("tried-id").textContent = employeeId || "—";
   </script>
 </body>
 </html>

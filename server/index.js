@@ -39,7 +39,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 // Load synthetic employee dataset
-const employeesPath = path.join(ROOT, "data", "employees.json");
+const employeesPath = path.join(ROOT, "data", "employees-2000.json");
 const employeesFile = JSON.parse(fs.readFileSync(employeesPath, "utf-8"));
 const employees = employeesFile.employees;
 
@@ -47,6 +47,12 @@ function findEmployeeByEmail(email) {
   const needle = String(email || "").trim().toLowerCase();
   if (!needle) return null;
   return employees.find(e => e.email.toLowerCase() === needle) || null;
+}
+
+function findEmployeeByEmployeeId(employeeId) {
+  const needle = String(employeeId || "").trim();
+  if (!needle) return null;
+  return employees.find(e => e.employeeId === needle) || null;
 }
 
 const app = express();
@@ -68,8 +74,49 @@ app.post("/api/request-letter", async (req, res) => {
   try {
     const baseUrl = req.body?.publicBaseUrl ||
       `${req.protocol}://${req.get("host")}`;
-    const result = await apiRequestLetter({ email: req.body?.email, publicBaseUrl: baseUrl });
-    res.status(result.status).json(result.body);
+    const { firstName, lastName, employeeId, email } = req.body || {};
+
+    if (process.env.DATABASE_URL) {
+      const result = await apiRequestLetter({ firstName, lastName, employeeId, email, publicBaseUrl: baseUrl });
+      return res.status(result.status).json(result.body);
+    }
+
+    // Local dev fallback: use in-memory JSON data instead of the database.
+    const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const GOV_BB_RX = /^[^\s@]+@[^\s@]+\.gov\.bb$/i;
+    const errors = [];
+    if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
+    if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
+    if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
+    if (!email || !EMAIL_RX.test(email)) {
+      errors.push({ field: "email", message: "Enter a valid email address" });
+    } else if (!GOV_BB_RX.test(email)) {
+      errors.push({ field: "email", message: "Enter a Government of Barbados email address (ending in .gov.bb)" });
+    }
+    if (errors.length) return res.status(400).json({ error: "validation", errors });
+
+    const local = email.split("@")[0].toLowerCase();
+    const fNorm = firstName.trim().toLowerCase();
+    const lNorm = lastName.trim().toLowerCase();
+    const lastParts = lNorm.split(/[-']/).filter(Boolean);
+    const nameParts = [fNorm, ...lastParts];
+    if (!nameParts.some(p => p.length >= 2 && local.includes(p))) {
+      return res.status(400).json({
+        error: "validation",
+        errors: [{ field: "email", message: "Your email address does not appear to match the name you entered" }],
+      });
+    }
+
+    const employee = findEmployeeByEmployeeId(employeeId.trim());
+    if (!employee || !employee.isActive) {
+      return res.status(404).json({ error: "not_found", message: "We could not find a record for that employee ID." });
+    }
+    if (fNorm !== employee.firstName.toLowerCase() || lNorm !== employee.lastName.toLowerCase()) {
+      return res.status(404).json({ error: "not_found", message: "The name you entered does not match the record for that employee ID." });
+    }
+
+    const letter = issueLetter(employee);
+    return res.status(200).json({ ok: true, letterId: letter.id, letterToken: letter.token });
   } catch (err) {
     console.error("request-letter:", err);
     res.status(500).json({ error: "internal_error", message: err.message });

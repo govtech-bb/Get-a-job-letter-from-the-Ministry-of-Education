@@ -306,7 +306,7 @@ async function downloadPdf(letter, verifyUrl) {
 let _employeesPromise = null;
 function loadEmployees() {
   if (!_employeesPromise) {
-    _employeesPromise = fetch("employees.json").then(r => r.json()).then(d => d.employees);
+    _employeesPromise = fetch("data/employees-2000.json").then(r => r.json()).then(d => d.employees);
   }
   return _employeesPromise;
 }
@@ -316,6 +316,13 @@ async function findEmployeeByEmail(email) {
   const needle = String(email || "").trim().toLowerCase();
   if (!needle) return null;
   return list.find(e => e.email.toLowerCase() === needle) || null;
+}
+
+async function findEmployeeByEmployeeId(employeeId) {
+  const list = await loadEmployees();
+  const needle = String(employeeId || "").trim();
+  if (!needle) return null;
+  return list.find(e => e.employeeId === needle) || null;
 }
 
 function employmentLabel(letterType) {
@@ -332,11 +339,14 @@ function employmentLabel(letterType) {
 // Talks to the backend at API_BASE_URL. Each method returns the parsed JSON
 // body and a `status` code so callers can render the right outcome.
 
-async function apiRequestLetter(email) {
+async function apiRequestLetter({ firstName, lastName, employeeId, email }) {
   const res = await fetch(`${API_BASE_URL}/api/request-letter`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, publicBaseUrl: location.origin + location.pathname.replace(/[^/]*$/, "") }),
+    body: JSON.stringify({
+      firstName, lastName, employeeId, email,
+      publicBaseUrl: location.origin + location.pathname.replace(/[^/]*$/, ""),
+    }),
   });
   const body = await res.json().catch(() => ({}));
   return { status: res.status, ...body };
@@ -352,6 +362,7 @@ async function apiVerifyLetter(id, signature) {
 window.JobLetters = {
   API_BASE_URL,
   findEmployeeByEmail,
+  findEmployeeByEmployeeId,
   issueLetter,
   decodeAndVerify,
   renderLetterHtml,

@@ -14,12 +14,11 @@ export function sql() {
   return _sql;
 }
 
-// Look up an employee by their work email. Returns the row in the same shape
-// as the JSON file (camelCase) so existing code paths don't need to change.
 export async function findEmployeeByEmail(email) {
   const q = sql();
   const rows = await q`
     SELECT
+      employee_id AS "employeeId",
       email, title, first_name AS "firstName", last_name AS "lastName",
       pronoun, address, letter_type AS "letterType",
       post, school, employer,
@@ -31,6 +30,27 @@ export async function findEmployeeByEmail(email) {
       is_active AS "isActive"
     FROM employees
     WHERE LOWER(email) = LOWER(${email})
+    LIMIT 1;
+  `;
+  return rows[0] || null;
+}
+
+export async function findEmployeeByEmployeeId(employeeId) {
+  const q = sql();
+  const rows = await q`
+    SELECT
+      employee_id AS "employeeId",
+      email, title, first_name AS "firstName", last_name AS "lastName",
+      pronoun, address, letter_type AS "letterType",
+      post, school, employer,
+      to_char(appointment_date, 'YYYY-MM-DD') AS "appointmentDate",
+      monthly_salary::float8 AS "monthlySalary",
+      monthly_allowance::float8 AS "monthlyAllowance",
+      pay_frequency AS "payFrequency",
+      is_acting AS "isActing",
+      is_active AS "isActive"
+    FROM employees
+    WHERE employee_id = ${employeeId}
     LIMIT 1;
   `;
   return rows[0] || null;

@@ -30,10 +30,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { email, publicBaseUrl } = req.body || {};
+    const { firstName, lastName, employeeId, email, publicBaseUrl } = req.body || {};
     const baseUrl = publicBaseUrl ||
       `${req.headers["x-forwarded-proto"] || "https"}://${req.headers.host}`;
-    const result = await requestLetter({ email, publicBaseUrl: baseUrl });
+    const result = await requestLetter({ firstName, lastName, employeeId, email, publicBaseUrl: baseUrl });
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("request-letter failed:", err);

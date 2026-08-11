@@ -26,9 +26,10 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+const isLocal = /localhost|127\.0\.0\.1/.test(process.env.DATABASE_URL);
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ...(!isLocal && { ssl: { rejectUnauthorized: false } }),
 });
 
 async function main() {
@@ -42,6 +43,12 @@ async function main() {
   const schemaSql = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf-8");
   await client.query(schemaSql);
   console.log("  Schema applied.");
+
+  console.log("→ Running column migrations…");
+  await client.query(`
+    ALTER TABLE issued_letters ADD COLUMN IF NOT EXISTS document_code TEXT;
+  `);
+  console.log("  Column migrations done.");
 
   console.log("→ Seeding employees…");
   const json = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "employees.json"), "utf-8"));
@@ -87,6 +94,32 @@ async function main() {
     upserted++;
   }
   console.log(`  Upserted ${upserted} employees.`);
+
+  console.log("→ Seeding admins…");
+  const admins = [
+    { email: "abisola.fatokun@govtech.bb", name: "Abisola Fatokun", role: "super_admin" },
+  ];
+  for (const a of admins) {
+    await client.query(
+      `INSERT INTO admins (email, name, role)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (email) DO NOTHING`,
+      [a.email, a.name, a.role]
+    );
+  }
+  console.log(`  ${admins.length} admin(s) seeded.`);
+
+  console.log("→ Seeding allowed domains…");
+  const domains = ["moe.gov.bb"];
+  for (const d of domains) {
+    await client.query(
+      `INSERT INTO allowed_domains (domain, added_by)
+       VALUES ($1, 'migration')
+       ON CONFLICT (domain) DO NOTHING`,
+      [d]
+    );
+  }
+  console.log(`  ${domains.length} domain(s) seeded.`);
 
   console.log("→ Verifying…");
   const counts = await client.query("SELECT COUNT(*)::int AS count FROM employees");

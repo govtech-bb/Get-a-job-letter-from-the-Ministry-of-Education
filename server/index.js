@@ -21,7 +21,8 @@ import { buildLetterPreviewHtml } from "./letterTemplates.js";
 import { generateLetterPdf } from "./pdf.js";
 
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
-import { verifyLetter as apiVerifyLetter } from "./lib/handlers/verifyLetter.js";
+import { findIssuedLetter } from "./lib/db.js";
+import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
   issueCode as adminIssueCode,
   verifyCode as adminVerifyCode,
@@ -83,15 +84,12 @@ app.post("/api/request-letter", async (req, res) => {
 
     // Local dev fallback: use in-memory JSON data instead of the database.
     const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const GOV_BB_RX = /^[^\s@]+@[^\s@]+\.gov\.bb$/i;
     const errors = [];
     if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
     if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
     if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
     if (!email || !EMAIL_RX.test(email)) {
       errors.push({ field: "email", message: "Enter a valid email address" });
-    } else if (!GOV_BB_RX.test(email)) {
-      errors.push({ field: "email", message: "Enter a Government of Barbados email address (ending in .gov.bb)" });
     }
     if (errors.length) return res.status(400).json({ error: "validation", errors });
 
@@ -125,10 +123,23 @@ app.post("/api/request-letter", async (req, res) => {
 
 app.get("/api/verify-letter", async (req, res) => {
   try {
-    const result = await apiVerifyLetter({ id: req.query.id, signature: req.query.t });
+    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress;
+    const result = await apiVerifyLetter({ id: req.query.id, signature: req.query.t, sourceIp });
     res.status(result.status).json(result.body);
   } catch (err) {
     console.error("verify-letter:", err);
+    res.status(500).json({ valid: false, reason: "internal_error" });
+  }
+});
+
+app.post("/api/verify-challenge", async (req, res) => {
+  try {
+    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress;
+    const { id, t: signature, code } = req.body || {};
+    const result = await apiChallengeLetter({ id, signature, code, sourceIp });
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("verify-challenge:", err);
     res.status(500).json({ valid: false, reason: "internal_error" });
   }
 });
@@ -276,6 +287,52 @@ app.get("/api/admin/employees", employeesHandler("GET"));
 app.post("/api/admin/employees", employeesHandler("POST"));
 app.put("/api/admin/employees", employeesHandler("PUT"));
 
+// Employee CSV upload — super_admin only
+app.post("/api/admin/employees/upload-preview", async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      if (req.admin.role !== "super_admin") return res.status(403).json({ error: "forbidden" });
+      const { previewUpload } = await import("./lib/handlers/adminUpload.js");
+      const csv = req.body?.csv;
+      if (!csv) return res.status(400).json({ error: "No CSV data provided." });
+      const result = await previewUpload(csv);
+      if (result.error && result.error !== "validation") return res.status(400).json(result);
+      if (result.error === "validation") return res.status(422).json(result);
+      res.status(200).json(result);
+    } catch (err) {
+      console.error("admin/upload-preview:", err);
+      res.status(500).json({ error: "internal_error", message: err.message });
+    }
+  });
+});
+
+app.post("/api/admin/employees/upload-apply", async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      if (req.admin.role !== "super_admin") return res.status(403).json({ error: "forbidden" });
+      const { applyUpload } = await import("./lib/handlers/adminUpload.js");
+      const csv = req.body?.csv;
+      if (!csv) return res.status(400).json({ error: "No CSV data provided." });
+      const result = await applyUpload(csv, req.admin.adminEmail);
+      res.status(result.status).json(result.body);
+    } catch (err) {
+      console.error("admin/upload-apply:", err);
+      res.status(500).json({ error: "internal_error", message: err.message });
+    }
+  });
+});
+
+app.get("/api/admin/employees/template.csv", async (req, res) => {
+  await requireAdmin(req, res, () => {
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=employee-template.csv");
+    res.send(
+      "employee_id,email,title,first_name,last_name,pronoun,letter_type,post,school,employer,appointment_date,monthly_salary,monthly_allowance,pay_frequency,address,is_acting\n" +
+      '123456-0001,jane.doe@moe.gov.bb,Ms.,Jane,Doe,she,teacher_appointed,Graduate Teacher,Alleyne School,Ministry of Education Transformation,2019-09-01,5965.60,,monthly,,false\n'
+    );
+  });
+});
+
 // Admins management — mirrors /api/admin/admins.js for Vercel.
 function adminsHandler(method) {
   return async (req, res) => {
@@ -319,6 +376,54 @@ function adminsHandler(method) {
 app.get("/api/admin/admins",  adminsHandler("GET"));
 app.post("/api/admin/admins", adminsHandler("POST"));
 app.put("/api/admin/admins",  adminsHandler("PUT"));
+
+// Allowed domains — public read, admin write
+app.get("/api/allowed-domains", async (req, res) => {
+  try {
+    if (!process.env.DATABASE_URL) {
+      return res.status(200).json({ domains: [{ domain: "gov.bb" }] });
+    }
+    const { getDomains } = await import("./lib/handlers/adminSettings.js");
+    const result = await getDomains();
+    res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error("allowed-domains:", err);
+    res.status(500).json({ error: "internal_error" });
+  }
+});
+
+function settingsHandler(method) {
+  return async (req, res) => {
+    await requireAdmin(req, res, async () => {
+      try {
+        const m = await import("./lib/handlers/adminSettings.js");
+        const changedBy = req.admin.adminEmail;
+        const isSuperAdmin = req.admin.role === "super_admin";
+
+        if (method === "GET") {
+          const r = await m.getDomains();
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "POST") {
+          const r = await m.addDomain({ domain: req.body?.domain, changedBy, isSuperAdmin });
+          return res.status(r.status).json(r.body);
+        }
+        if (method === "DELETE") {
+          const r = await m.deleteDomain({ domain: req.query.domain, changedBy, isSuperAdmin });
+          return res.status(r.status).json(r.body);
+        }
+        res.status(405).json({ error: "method_not_allowed" });
+      } catch (err) {
+        console.error("admin/settings/domains:", err);
+        res.status(500).json({ error: "internal_error", message: err.message });
+      }
+    });
+  };
+}
+
+app.get("/api/admin/settings/domains", settingsHandler("GET"));
+app.post("/api/admin/settings/domains", settingsHandler("POST"));
+app.delete("/api/admin/settings/domains", settingsHandler("DELETE"));
 
 // Short verify URL — matches the vercel.json rewrite. The QR codes on the
 // generated PDFs point at /v?id=...&t=...
@@ -435,13 +540,30 @@ app.get("/letter/:id", async (req, res) => {
 
 // PDF download
 app.get("/letter/:id/download", async (req, res) => {
-  const letter = getLetter(req.params.id);
   const token = String(req.query.t || "");
-  if (!letter || letter.token !== token) {
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  // Try in-memory store first, then fall back to database.
+  let letter = getLetter(req.params.id);
+  if (letter) {
+    if (letter.token !== token) return res.status(404).send("Letter not found");
+    letter.verifyUrl = `${baseUrl}/v?id=${encodeURIComponent(letter.id)}&t=${encodeURIComponent(letter.token)}`;
+  } else if (process.env.DATABASE_URL) {
+    const row = await findIssuedLetter(req.params.id);
+    if (!row || row.signature !== token) return res.status(404).send("Letter not found");
+    const { formatDocumentCode } = await import("./lib/fingerprint.js");
+    letter = {
+      id: row.id,
+      employee: typeof row.employee === "string" ? JSON.parse(row.employee) : row.employee,
+      issuedAt: row.issuedAt,
+      validUntil: row.validUntil,
+      verifyUrl: `${baseUrl}/v?id=${encodeURIComponent(row.id)}&t=${encodeURIComponent(row.signature)}`,
+      documentCode: row.documentCode ? formatDocumentCode(row.documentCode) : null,
+    };
+  } else {
     return res.status(404).send("Letter not found");
   }
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
-  letter.verifyUrl = `${baseUrl}/verify/${letter.id}?t=${letter.token}`;
+
   const pdfBytes = await generateLetterPdf(letter);
   const filename = `Job-Letter-${letter.employee.firstName}-${letter.employee.lastName}-${letter.id}.pdf`
     .replace(/[^A-Za-z0-9.\-]/g, "_");
@@ -450,11 +572,28 @@ app.get("/letter/:id/download", async (req, res) => {
   res.send(Buffer.from(pdfBytes));
 });
 
-// Public verification page (the QR code points here)
+// Public verification page — redirect to client-side verify.html which
+// handles the document-code challenge flow.
 app.get("/verify/:id", (req, res) => {
   const id = req.params.id;
   const token = String(req.query.t || "");
-  const result = verifyLetter(id, token);
+  return res.redirect(`/v?id=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`);
+});
+
+// Legacy SSR verification (kept for no-JS fallback)
+app.get("/verify-ssr/:id", async (req, res) => {
+  const id = req.params.id;
+  const token = String(req.query.t || "");
+
+  let result;
+  if (process.env.DATABASE_URL) {
+    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress;
+    const apiResult = await apiVerifyLetter({ id, signature: token, sourceIp });
+    result = apiResult.body;
+  } else {
+    result = verifyLetter(id, token);
+  }
+
   send(res, result.valid ? "Letter verified" : "Verification failed", verifyPage(result), {
     breadcrumbs: [
       { label: "Job letters", href: "/" },

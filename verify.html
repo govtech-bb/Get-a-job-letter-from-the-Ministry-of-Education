@@ -8,9 +8,6 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="page.css" />
   <style>
-    /* Public verification strap — visible to the relying party who scanned
-       the QR. Frames the page as a government verification, not a private
-       letter view. */
     .verify-strap {
       background: var(--color-blue-100);
       color: #fff;
@@ -31,19 +28,55 @@
       margin: 0;
       opacity: 0.95;
     }
-    /* Demote any h1 inside the verify-root since the strap already carries the
-       primary heading for the page. */
     #verify-root h1 { font-size: 1.5rem; }
+
+    .challenge-field {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: var(--spacing-xs);
+    }
+    .challenge-field__prefix,
+    .challenge-field__sep {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.5rem;
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text);
+      user-select: none;
+    }
+    .challenge-field__input {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      width: 6.5ch;
+      text-align: center;
+      padding: var(--spacing-xs);
+      border: 2px solid var(--color-grey-00);
+      border-radius: 4px;
+    }
+    .challenge-field__input:focus {
+      outline: 3px solid var(--color-blue-100);
+      outline-offset: 0;
+      border-color: var(--color-blue-100);
+    }
+    .challenge-field__input.govbb-input--error {
+      border-color: var(--color-red-00);
+    }
+    .challenge-field__input.govbb-input--error:focus {
+      outline-color: var(--color-red-00);
+      border-color: var(--color-red-00);
+    }
+    .challenge-hint {
+      color: var(--color-text-muted);
+      font-size: 0.875rem;
+      margin-top: var(--spacing-xs);
+    }
   </style>
 </head>
 <body class="govbb-page">
 
   <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Verify a letter"}]'>
-    <!--
-      Public verification strap — for relying parties (banks, retailers).
-      Always shown, regardless of whether the verification succeeded, so the
-      visitor immediately understands what this page is for.
-    -->
     <div class="verify-strap">
       <h1 class="verify-strap__title">You scanned a Ministry of Education job letter</h1>
       <p class="verify-strap__lede">
@@ -61,10 +94,8 @@
   <script>
     (async () => {
       const root = document.getElementById("verify-root");
+      const esc = JobLetters.escapeHtml;
 
-      // The QR/URL carries the letter id and HMAC signature as query params
-      // (id, t). For backwards-compat the page still accepts the older
-      // client-side payload-in-hash form and falls back to client decode.
       const qs = new URLSearchParams(location.search);
       const hashToken = location.hash.replace(/^#/, "");
       const id = qs.get("id");
@@ -83,18 +114,27 @@
       if (id && signature) {
         result = await JobLetters.apiVerifyLetter(id, signature);
       } else {
-        // Old self-contained URL format — verify locally.
         result = await JobLetters.decodeAndVerify(hashToken);
       }
 
       if (!result.valid) {
+        renderInvalid(result.reason);
+        return;
+      }
+
+      if (result.hasDocumentCode) {
+        renderChallenge(result.letter);
+      } else {
+        renderVerified(result.letter);
+      }
+
+      function renderInvalid(reason) {
         root.innerHTML = `
           <div class="panel-error stack">
             <span class="verify-stamp verify-stamp--invalid">✗ Verification failed</span>
             <h2 class="govbb-text-h3">This letter could not be verified</h2>
-            <p class="govbb-text-body">${JobLetters.escapeHtml(result.reason)}</p>
+            <p class="govbb-text-body">${esc(reason)}</p>
           </div>
-
           <div class="stack">
             <h2 class="govbb-text-h3">What to do</h2>
             <p class="govbb-text-body">
@@ -103,56 +143,193 @@
             </p>
             <p class="govbb-text-body">For help, contact the Ministry's Personnel Department.</p>
           </div>`;
-        return;
       }
 
-      const letter = result.letter;
-      const emp = letter.employee;
-      const postLine = JobLetters.escapeHtml(emp.post) + (emp.school ? ", " + JobLetters.escapeHtml(emp.school) : "");
+      function renderChallenge(letter) {
+        const emp = letter.employee;
+        root.innerHTML = `
+          <div class="stack">
+            <span class="verify-stamp verify-stamp--pending">○ Record found</span>
+            <h2 class="govbb-text-h3">We found a record for this letter</h2>
+            <dl class="key-value">
+              <dt>Employee</dt>
+              <dd>${esc(emp.title)} ${esc(emp.firstName)} ${esc(emp.lastName)}</dd>
+              <dt>Reference</dt>
+              <dd><code>${esc(letter.id)}</code></dd>
+            </dl>
+          </div>
 
-      root.innerHTML = `
-        <div class="stack">
-          <span class="verify-stamp">✓ Verified — this letter is genuine</span>
-          <h2 class="govbb-text-h2">This letter was issued by the Ministry of Education Transformation.</h2>
-        </div>
-
-        <div class="stack">
-          <h2 class="govbb-text-h3">What this letter confirms</h2>
-          <dl class="key-value">
-            <dt>Employee</dt>
-            <dd>${JobLetters.escapeHtml(emp.title)} ${JobLetters.escapeHtml(emp.firstName)} ${JobLetters.escapeHtml(emp.lastName)}</dd>
-            <dt>Post</dt>
-            <dd>${postLine}</dd>
-            <dt>Employer</dt>
-            <dd>${JobLetters.escapeHtml(emp.employer)}</dd>
-            <dt>Employment status</dt>
-            <dd>${JobLetters.escapeHtml(JobLetters.employmentLabel(emp.letterType))}</dd>
-            <dt>Issued on</dt>
-            <dd>${JobLetters.escapeHtml(JobLetters.formatLongDate(letter.issuedAt))}</dd>
-            <dt>Reference</dt>
-            <dd><code>${JobLetters.escapeHtml(letter.id)}</code></dd>
-          </dl>
-          <p class="govbb-text-caption" style="color: var(--color-text-muted);">
-            Salary information is on the letter itself and is not shown on this public page.
-          </p>
-        </div>
-
-        <details class="govbb-show-hide">
-          <summary class="govbb-show-hide__summary">How this verification works</summary>
-          <div class="govbb-show-hide__content">
-            <p>
-              Each letter is signed with a code held by the Ministry of Education's service.
-              When you scan the QR code, this page checks that signature against the Ministry's record.
-              If the letter has been altered after it was issued, the signature will no longer match
-              and verification will fail.
+          <div class="stack" id="challenge-section">
+            <h2 class="govbb-text-h3">Document code</h2>
+            <p class="govbb-text-body">
+              Enter the code printed near the bottom of the letter to confirm it is genuine.
             </p>
-            <p>
-              Verification reflects the Ministry's record at the time the letter was issued. If the
-              employee has since left or changed posts, this page will continue to show what the
-              letter said when it was originally signed.
+            <div class="govbb-form-group" id="code-group">
+              <label class="govbb-label" for="doc-code-1">Enter the 8-character code</label>
+              <div class="challenge-field">
+                <span class="challenge-field__prefix">0 –</span>
+                <input class="challenge-field__input" type="text" id="doc-code-1"
+                       autocomplete="off" spellcheck="false" inputmode="text"
+                       maxlength="4" aria-label="First four characters" />
+                <span class="challenge-field__sep">–</span>
+                <input class="challenge-field__input" type="text" id="doc-code-2"
+                       autocomplete="off" spellcheck="false" inputmode="text"
+                       maxlength="4" aria-label="Last four characters" />
+              </div>
+            </div>
+            <button class="govbb-btn" id="verify-code-btn">Check code</button>
+            <div id="code-error" role="alert"></div>
+          </div>`;
+
+        const btn = document.getElementById("verify-code-btn");
+        const input1 = document.getElementById("doc-code-1");
+        const input2 = document.getElementById("doc-code-2");
+        const errorEl = document.getElementById("code-error");
+
+        input1.addEventListener("input", () => {
+          if (input1.value.length >= 4) input2.focus();
+        });
+        input2.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && input2.value === "") input1.focus();
+        });
+
+        function getCode() {
+          const a = input1.value.trim().toUpperCase();
+          const b = input2.value.trim().toUpperCase();
+          if (!a && !b) return "";
+          return "0" + a + b;
+        }
+
+        btn.addEventListener("click", async () => {
+          const code = getCode();
+          if (!code) {
+            showCodeError("Enter the document code from the letter.");
+            return;
+          }
+
+          btn.disabled = true;
+          btn.textContent = "Checking…";
+          errorEl.innerHTML = "";
+
+          try {
+            const base = JobLetters.apiBase();
+            const res = await fetch(base + "/api/verify-challenge", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id, t: signature, code }),
+            });
+            const data = await res.json();
+
+            if (data.rateLimited) {
+              renderRateLimited();
+              return;
+            }
+
+            if (data.codeMatch) {
+              renderVerified(data.letter);
+              return;
+            }
+
+            if (data.codeMatch === false) {
+              const remaining = data.attemptsRemaining;
+              let msg = data.reason;
+              if (remaining !== undefined && remaining > 0) {
+                msg += ` You have ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`;
+              } else if (remaining === 0) {
+                msg += " This is your last attempt before the code is temporarily locked.";
+              }
+              showCodeError(msg);
+              btn.disabled = false;
+              btn.textContent = "Check code";
+              return;
+            }
+
+            showCodeError(data.reason || "Something went wrong. Please try again.");
+            btn.disabled = false;
+            btn.textContent = "Check code";
+          } catch {
+            showCodeError("Could not check the code. Check your connection and try again.");
+            btn.disabled = false;
+            btn.textContent = "Check code";
+          }
+        });
+
+        [input1, input2].forEach(inp => {
+          inp.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") btn.click();
+          });
+        });
+
+        function showCodeError(msg) {
+          errorEl.innerHTML = `<p class="govbb-error-message" style="margin-top: var(--spacing-s);">${esc(msg)}</p>`;
+          input1.classList.add("govbb-input--error");
+          input2.classList.add("govbb-input--error");
+          input1.focus();
+        }
+      }
+
+      function renderRateLimited() {
+        root.innerHTML = `
+          <div class="panel-warning stack">
+            <h2 class="govbb-text-h3">Too many attempts</h2>
+            <p class="govbb-text-body">
+              The document code check has been temporarily locked for this letter.
+              Please wait 15 minutes before trying again.
             </p>
           </div>
-        </details>`;
+          <div class="stack">
+            <p class="govbb-text-body">For help, contact the Ministry's Personnel Department.</p>
+          </div>`;
+      }
+
+      function renderVerified(letter) {
+        const emp = letter.employee;
+        const postLine = esc(emp.post) + (emp.school ? ", " + esc(emp.school) : "");
+
+        root.innerHTML = `
+          <div class="stack">
+            <span class="verify-stamp">✓ Verified — this letter is genuine</span>
+            <h2 class="govbb-text-h2">This letter was issued by the Ministry of Education Transformation.</h2>
+          </div>
+
+          <div class="stack">
+            <h2 class="govbb-text-h3">What this letter confirms</h2>
+            <dl class="key-value">
+              <dt>Employee</dt>
+              <dd>${esc(emp.title)} ${esc(emp.firstName)} ${esc(emp.lastName)}</dd>
+              <dt>Post</dt>
+              <dd>${postLine}</dd>
+              <dt>Employer</dt>
+              <dd>${esc(emp.employer)}</dd>
+              <dt>Employment status</dt>
+              <dd>${esc(JobLetters.employmentLabel(emp.letterType))}</dd>
+              <dt>Issued on</dt>
+              <dd>${esc(JobLetters.formatLongDate(letter.issuedAt))}</dd>
+              <dt>Reference</dt>
+              <dd><code>${esc(letter.id)}</code></dd>
+            </dl>
+            <p class="govbb-text-caption" style="color: var(--color-text-muted);">
+              Salary information is on the letter itself and is not shown on this public page.
+            </p>
+          </div>
+
+          <details class="govbb-show-hide">
+            <summary class="govbb-show-hide__summary">How this verification works</summary>
+            <div class="govbb-show-hide__content">
+              <p>
+                Each letter is signed with a code held by the Ministry of Education's service.
+                When you scan the QR code, this page checks that signature against the Ministry's record.
+                If the letter has been altered after it was issued, the signature will no longer match
+                and verification will fail.
+              </p>
+              <p>
+                Verification reflects the Ministry's record at the time the letter was issued. If the
+                employee has since left or changed posts, this page will continue to show what the
+                letter said when it was originally signed.
+              </p>
+            </div>
+          </details>`;
+      }
     })();
   </script>
 </body>

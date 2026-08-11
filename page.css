@@ -47,6 +47,11 @@
   border-color: var(--color-red-00);
   color: var(--color-red-00);
 }
+.verify-stamp--pending {
+  background: var(--color-blue-10);
+  border-color: var(--color-blue-100);
+  color: var(--color-blue-100);
+}
 
 .letter-paper {
   background: #fff;

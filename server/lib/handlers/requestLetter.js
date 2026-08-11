@@ -1,13 +1,13 @@
 // Pure handler logic. Called by both the Express dev server and the Vercel
 // serverless wrapper in /api/request-letter.js.
 
-import { findEmployeeByEmployeeId, insertIssuedLetter, updateLetterEmailStatus } from "../db.js";
+import { findEmployeeByEmployeeId, insertIssuedLetter, updateLetterEmailStatus, listAllowedDomains } from "../db.js";
 import { newLetterId, signLetterId, validUntil } from "../sign.js";
+import { generateDocumentCode, formatDocumentCode } from "../fingerprint.js";
 import { generateLetterPdf } from "../../pdf.js";
 import { sendLetterEmail } from "../email.js";
 
 const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const GOV_BB_RX = /^[^\s@]+@[^\s@]+\.gov\.bb$/i;
 
 function normalise(s) {
   return String(s || "").trim().toLowerCase();
@@ -39,8 +39,13 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
 
   if (!email || !EMAIL_RX.test(email)) {
     errors.push({ field: "email", message: "Enter a valid email address" });
-  } else if (!GOV_BB_RX.test(email)) {
-    errors.push({ field: "email", message: "Enter a Government of Barbados email address (ending in .gov.bb)" });
+  } else {
+    const allowedDomains = (await listAllowedDomains()).map(r => r.domain.toLowerCase());
+    const emailDomain = email.split("@")[1].toLowerCase();
+    if (allowedDomains.length && !allowedDomains.includes(emailDomain)) {
+      const domainList = allowedDomains.join(", ");
+      errors.push({ field: "email", message: `Enter an email address from an allowed domain (${domainList})` });
+    }
   }
 
   if (errors.length) {
@@ -74,9 +79,19 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
   const validUntilIso = validUntil();
   const issuedAt = new Date().toISOString();
 
+  let documentCode = null;
+  let formattedCode = null;
+  try {
+    documentCode = generateDocumentCode(employee);
+    formattedCode = formatDocumentCode(documentCode);
+  } catch (err) {
+    console.warn("fingerprint: could not generate document code:", err.message);
+  }
+
   await insertIssuedLetter({
     id,
     signature,
+    documentCode,
     recipientEmail: email,
     employeeSnapshot: employee,
     validUntil: validUntilIso,
@@ -89,29 +104,35 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
     issuedAt,
     validUntil: validUntilIso,
     verifyUrl,
+    documentCode: formattedCode,
   });
 
   let messageId = null;
-  try {
-    const result = await sendLetterEmail({
-      to: email,
-      employee,
-      pdfBuffer: pdfBytes,
-      letter: { id, issuedAt, validUntil: validUntilIso },
-      verifyUrl,
-    });
-    messageId = result?.id || null;
-    await updateLetterEmailStatus(id, messageId, "sent");
-  } catch (err) {
-    await updateLetterEmailStatus(id, null, "failed: " + (err.message || "unknown"));
-    return {
-      status: 502,
-      body: {
-        error: "email_send_failed",
-        message: "The letter was generated but we couldn't send the email. Please try again.",
-        letterId: id,
-      },
-    };
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`request-letter: RESEND_API_KEY not set — skipping email to ${email}`);
+    await updateLetterEmailStatus(id, null, "skipped");
+  } else {
+    try {
+      const result = await sendLetterEmail({
+        to: email,
+        employee,
+        pdfBuffer: pdfBytes,
+        letter: { id, issuedAt, validUntil: validUntilIso },
+        verifyUrl,
+      });
+      messageId = result?.id || null;
+      await updateLetterEmailStatus(id, messageId, "sent");
+    } catch (err) {
+      await updateLetterEmailStatus(id, null, "failed: " + (err.message || "unknown"));
+      return {
+        status: 502,
+        body: {
+          error: "email_send_failed",
+          message: "The letter was generated but we couldn't send the email. Please try again.",
+          letterId: id,
+        },
+      };
+    }
   }
 
   return {
@@ -119,6 +140,7 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
     body: {
       ok: true,
       letterId: id,
+      letterToken: signature,
       messageId,
       verifyUrl,
     },

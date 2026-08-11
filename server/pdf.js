@@ -154,15 +154,26 @@ export async function generateLetterPdf(letter) {
   const qrY = MARGIN;
   page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
 
+  const courier = await doc.embedFont(StandardFonts.Courier);
+  const courierBold = await doc.embedFont(StandardFonts.CourierBold);
+
   // Footer text next to QR
   const footerY = qrY + qrSize - 12;
   page.drawText("Verify this letter", { x: MARGIN, y: footerY, size: 9, font: helvBold });
   page.drawText("Scan the QR code or visit:", { x: MARGIN, y: footerY - 12, size: 9, font: helv });
   page.drawText(letter.verifyUrl, { x: MARGIN, y: footerY - 24, size: 8.5, font: helv, color: rgb(0.05, 0.36, 0.39) });
   page.drawText("Reference: " + letter.id, { x: MARGIN, y: footerY - 40, size: 8.5, font: helv });
-  page.drawText("Issued: " + issuedLong, { x: MARGIN, y: footerY - 52, size: 8.5, font: helv });
-  page.drawText("This letter is signed digitally. Any alteration will invalidate verification.",
-    { x: MARGIN, y: footerY - 68, size: 7.5, font: helv, color: rgb(0.35, 0.35, 0.35) });
+  if (letter.documentCode) {
+    page.drawText("Document code:", { x: MARGIN, y: footerY - 52, size: 8.5, font: helv });
+    page.drawText(letter.documentCode, { x: MARGIN + 80, y: footerY - 52, size: 10, font: courierBold });
+    page.drawText("Issued: " + issuedLong, { x: MARGIN, y: footerY - 64, size: 8.5, font: helv });
+    page.drawText("This letter is signed digitally. Any alteration will invalidate verification.",
+      { x: MARGIN, y: footerY - 80, size: 7.5, font: helv, color: rgb(0.35, 0.35, 0.35) });
+  } else {
+    page.drawText("Issued: " + issuedLong, { x: MARGIN, y: footerY - 52, size: 8.5, font: helv });
+    page.drawText("This letter is signed digitally. Any alteration will invalidate verification.",
+      { x: MARGIN, y: footerY - 68, size: 7.5, font: helv, color: rgb(0.35, 0.35, 0.35) });
+  }
 
   const bytes = await doc.save();
   return bytes;

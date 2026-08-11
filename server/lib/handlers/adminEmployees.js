@@ -8,6 +8,7 @@ const PAGE_SIZE = 50;
 function rowToEmployee(r) {
   return {
     email: r.email,
+    employeeId: r.employeeId || null,
     title: r.title,
     firstName: r.firstName,
     lastName: r.lastName,
@@ -27,7 +28,7 @@ function rowToEmployee(r) {
 }
 
 const SELECT_COLUMNS = `
-  email, title,
+  email, employee_id AS "employeeId", title,
   first_name AS "firstName", last_name AS "lastName",
   pronoun, address, letter_type AS "letterType",
   post, school, employer,
@@ -115,26 +116,18 @@ export async function getEmployee(email) {
   const q = sql();
   const norm = String(email || "").trim().toLowerCase();
   const rows = await q`
-    SELECT ${q.unsafe ? q.unsafe(SELECT_COLUMNS) : null}
+    SELECT email, employee_id AS "employeeId", title,
+           first_name AS "firstName", last_name AS "lastName",
+           pronoun, address, letter_type AS "letterType", post, school, employer,
+           to_char(appointment_date, 'YYYY-MM-DD') AS "appointmentDate",
+           monthly_salary AS "monthlySalary",
+           monthly_allowance AS "monthlyAllowance",
+           pay_frequency AS "payFrequency",
+           is_acting AS "isActing", is_active AS "isActive",
+           updated_at AS "updatedAt"
     FROM employees WHERE LOWER(email) = ${norm} LIMIT 1;
   `;
-  // The Neon driver doesn't have unsafe(); the SELECT_COLUMNS approach above is
-  // a precaution. Fall back to the explicit form here:
-  if (!rows || rows.length === 0) {
-    const r = await q`
-      SELECT email, title, first_name AS "firstName", last_name AS "lastName",
-             pronoun, address, letter_type AS "letterType", post, school, employer,
-             to_char(appointment_date, 'YYYY-MM-DD') AS "appointmentDate",
-             monthly_salary AS "monthlySalary",
-             monthly_allowance AS "monthlyAllowance",
-             pay_frequency AS "payFrequency",
-             is_acting AS "isActing", is_active AS "isActive",
-             updated_at AS "updatedAt"
-      FROM employees WHERE LOWER(email) = ${norm} LIMIT 1;
-    `;
-    return r[0] ? rowToEmployee(r[0]) : null;
-  }
-  return rowToEmployee(rows[0]);
+  return rows[0] ? rowToEmployee(rows[0]) : null;
 }
 
 function normaliseInput(b) {
@@ -142,6 +135,7 @@ function normaliseInput(b) {
   // Pull through fields, coerce numerics + booleans.
   return {
     email: String(e.email || "").trim().toLowerCase(),
+    employeeId: e.employeeId ? String(e.employeeId).trim() : null,
     title: String(e.title || "").trim(),
     firstName: String(e.firstName || "").trim(),
     lastName: String(e.lastName || "").trim(),
@@ -210,12 +204,12 @@ export async function createEmployee({ body, changedBy }) {
 
   await q`
     INSERT INTO employees (
-      email, title, first_name, last_name, pronoun, address,
+      email, employee_id, title, first_name, last_name, pronoun, address,
       letter_type, post, school, employer,
       appointment_date, monthly_salary, monthly_allowance,
       pay_frequency, is_acting, is_active
     ) VALUES (
-      ${input.email}, ${input.title}, ${input.firstName}, ${input.lastName}, ${input.pronoun}, ${input.address},
+      ${input.email}, ${input.employeeId}, ${input.title}, ${input.firstName}, ${input.lastName}, ${input.pronoun}, ${input.address},
       ${input.letterType}, ${input.post}, ${input.school}, ${input.employer},
       ${input.appointmentDate}, ${input.monthlySalary}, ${input.monthlyAllowance},
       ${input.payFrequency}, ${input.isActing}, ${input.isActive}
@@ -239,6 +233,7 @@ export async function updateEmployee({ email, body, changedBy }) {
   const q = sql();
   await q`
     UPDATE employees SET
+      employee_id       = ${input.employeeId},
       title             = ${input.title},
       first_name        = ${input.firstName},
       last_name         = ${input.lastName},

@@ -74,6 +74,7 @@ function escapeHtml(s) {
 function buildLetterBody(employee) {
   const fullName = [employee.title, employee.firstName, employee.lastName].filter(Boolean).join(" ");
   const titleLast = [employee.title, employee.lastName].filter(Boolean).join(" ");
+  const nameAndAddress = employee.address ? `${fullName} of ${employee.address}` : fullName;
   const pronounSubj = employee.pronoun === "he" ? "He" : "She";
   const pronounObj = employee.pronoun === "he" ? "him" : "her";
   const salaryWords = moneyToWords(employee.monthlySalary);
@@ -98,14 +99,14 @@ function buildLetterBody(employee) {
     }
     case "ministry_permanent":
       return [
-        `This is to certify that ${fullName} of ${employee.address} has been continuously employed in the Public Service with effect from ${startDate}.`,
+        `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} holds the permanent and pensionable post of ${employee.post}, Ministry of Education Transformation.`,
         `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
       ];
     case "ministry_temporary":
       return [
-        `This is to certify that ${fullName} of ${employee.address} has been continuously employed in the Public Service with effect from ${startDate}.`,
+        `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} is temporarily employed in the post of ${employee.post}, Ministry of Education Transformation.`,
         `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
@@ -330,6 +331,7 @@ function employmentLabel(letterType) {
     case "teacher_appointed": return "Permanent and pensionable (teacher)";
     case "teacher_special": return "Permanent and pensionable (teacher with special responsibility)";
     case "ministry_permanent": return "Permanent and pensionable";
+    case "teacher_temporary": return "Temporary employment (teacher)";
     case "ministry_temporary": return "Temporary employment";
     default: return "Employed";
   }
@@ -361,6 +363,7 @@ async function apiVerifyLetter(id, signature) {
 
 window.JobLetters = {
   API_BASE_URL,
+  apiBase: () => API_BASE_URL,
   findEmployeeByEmail,
   findEmployeeByEmployeeId,
   issueLetter,

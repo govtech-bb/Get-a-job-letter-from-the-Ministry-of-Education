@@ -35,10 +35,11 @@
 
   <script src="chrome.js"></script>
   <script>
-    const params = new URLSearchParams(location.search);
-    const firstName = params.get("firstName") || "";
-    const lastName = params.get("lastName") || "";
-    const employeeId = params.get("employeeId") || "";
+    const data = JSON.parse(sessionStorage.getItem("notFound") || "{}");
+    sessionStorage.removeItem("notFound");
+    const firstName = data.firstName || "";
+    const lastName = data.lastName || "";
+    const employeeId = data.employeeId || "";
 
     document.getElementById("tried-name").textContent = [firstName, lastName].filter(Boolean).join(" ") || "—";
     document.getElementById("tried-id").textContent = employeeId || "—";

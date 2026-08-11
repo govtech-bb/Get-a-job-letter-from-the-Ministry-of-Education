@@ -40,6 +40,7 @@
           <a href="/admin/letters.html" style="color:#fff;text-decoration:none;" data-nav="letters">Letters</a>
           <a href="/admin/employees.html" style="color:#fff;text-decoration:none;" data-nav="employees">Employees</a>
           <a href="/admin/admins.html" style="color:#fff;text-decoration:none;" data-nav="admins">Admins</a>
+          <a href="/admin/settings.html" style="color:#fff;text-decoration:none;" data-nav="settings">Settings</a>
         </nav>
         <div style="margin-left:auto; display:flex; align-items:center; gap:var(--spacing-s); font-size:0.85rem;">
           <span id="admin-whoami" style="color:#cfd8e9;"></span>
@@ -94,7 +95,7 @@
     const isAuthPage = body.dataset.adminAuthPage === "true";
     body.insertAdjacentHTML(
       "afterbegin",
-      skipLink + officialBanner + header + (isAuthPage ? "" : adminBar)
+      `<div>` + skipLink + officialBanner + header + (isAuthPage ? "" : adminBar) + `</div>`
     );
     body.insertAdjacentHTML("beforeend", footer);
 
@@ -112,7 +113,8 @@
         (key === "dashboard" && (path === "/admin/" || path === "/admin/index.html" || path === "/admin")) ||
         (key === "letters" && path.includes("/admin/letters")) ||
         (key === "employees" && path.includes("/admin/employees")) ||
-        (key === "admins" && path.includes("/admin/admins"));
+        (key === "admins" && path.includes("/admin/admins")) ||
+        (key === "settings" && path.includes("/admin/settings"));
       if (match) {
         a.style.borderBottom = "2px solid #ffc726";
         a.style.paddingBottom = "2px";

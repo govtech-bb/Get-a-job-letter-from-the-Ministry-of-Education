@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upload employees — Job letters admin</title>
+  <link rel="icon" href="/assets/images/favicon.ico" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/page.css" />
+  <style>
+    .upload-zone {
+      border: 2px dashed var(--color-grey-00);
+      border-radius: 8px;
+      padding: var(--spacing-l) var(--spacing-m);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--color-blue-100);
+      background: var(--color-blue-10);
+    }
+    .upload-zone input[type="file"] { display: none; }
+
+    .diff-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: var(--spacing-s);
+    }
+    .diff-card {
+      padding: var(--spacing-s);
+      border-radius: 4px;
+      text-align: center;
+    }
+    .diff-card__count {
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      line-height: 1.2;
+    }
+    .diff-card__label { font-size: 0.85rem; }
+    .diff-card--added   { background: var(--color-green-10); color: var(--color-green-00); }
+    .diff-card--updated { background: var(--color-blue-10);  color: var(--color-blue-100); }
+    .diff-card--same    { background: #f6f7f9; color: var(--color-text-muted); }
+    .diff-card--removed { background: var(--color-red-10);   color: var(--color-red-00); }
+
+    .diff-table {
+      width: 100%; border-collapse: collapse;
+      background: #fff; border: 1px solid var(--color-grey-00);
+      border-radius: 4px; overflow: hidden;
+      font-size: 0.85rem;
+    }
+    .diff-table th, .diff-table td {
+      padding: var(--spacing-xs) var(--spacing-s);
+      text-align: left;
+      border-bottom: 1px solid var(--color-grey-00);
+      vertical-align: top;
+    }
+    .diff-table th {
+      background: #f6f7f9; color: var(--color-text-muted);
+      text-transform: uppercase; font-size: 0.7rem;
+      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+    }
+    .change-from {
+      text-decoration: line-through;
+      color: var(--color-red-00);
+      margin-right: 0.25rem;
+    }
+    .change-to { color: var(--color-green-00); font-weight: var(--font-weight-bold); }
+
+    .result-panel {
+      padding: var(--spacing-m);
+      border-radius: 4px;
+      background: var(--color-green-10);
+      border-left: 8px solid var(--color-green-00);
+    }
+
+    details.diff-section > summary {
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+      padding: var(--spacing-xs) 0;
+    }
+  </style>
+</head>
+<body class="govbb-page">
+
+  <main id="main-content" class="page-main">
+
+    <!-- Step 1: Upload -->
+    <div id="step-upload">
+      <h1 class="govbb-text-h1">Upload employee records</h1>
+      <p class="govbb-text-body">
+        Upload a CSV file containing the current employee roster. The system will compare it
+        against the database and show you what will change before anything is applied.
+      </p>
+
+      <div class="upload-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".csv,text/csv" />
+        <p class="govbb-text-h3" style="margin:0;">Drop a CSV file here</p>
+        <p class="govbb-text-body" style="margin:var(--spacing-xs) 0 0;color:var(--color-text-muted);">
+          or <a href="#" id="browse-link" class="govbb-link">choose a file</a>
+        </p>
+      </div>
+
+      <div id="upload-error" role="alert" style="margin-top:var(--spacing-s);"></div>
+
+      <div id="file-info" hidden style="margin-top:var(--spacing-s);">
+        <p class="govbb-text-body">
+          <strong id="file-name"></strong> — <span id="file-rows"></span> rows
+        </p>
+        <button class="govbb-btn" id="preview-btn">Preview changes</button>
+        <button class="govbb-btn govbb-btn--secondary" id="clear-btn" style="margin-left:var(--spacing-xs);">Clear</button>
+      </div>
+
+      <details class="govbb-show-hide" style="margin-top:var(--spacing-m);">
+        <summary class="govbb-show-hide__summary">CSV format guide</summary>
+        <div class="govbb-show-hide__content">
+          <p>The CSV must have a header row. Required columns:</p>
+          <table class="diff-table" style="max-width:40rem;">
+            <thead><tr><th>Column</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>employee_id</td><td>Unique ID, e.g. 123456-0001</td></tr>
+              <tr><td>email</td><td>Government email address</td></tr>
+              <tr><td>title</td><td>Mr., Ms., Mrs., etc.</td></tr>
+              <tr><td>first_name</td><td></td></tr>
+              <tr><td>last_name</td><td></td></tr>
+              <tr><td>pronoun</td><td>he, she (or male, female)</td></tr>
+              <tr><td>letter_type</td><td>teacher_appointed, teacher_special, teacher_temporary, ministry_permanent, ministry_temporary</td></tr>
+              <tr><td>post</td><td>Job title</td></tr>
+              <tr><td>employer</td><td>Defaults to "Ministry of Education Transformation"</td></tr>
+              <tr><td>appointment_date</td><td>YYYY-MM-DD</td></tr>
+              <tr><td>monthly_salary</td><td>Numeric, e.g. 5965.60</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:var(--spacing-xs);">Optional: <code>address</code>, <code>school</code>, <code>monthly_allowance</code>, <code>pay_frequency</code>, <code>is_acting</code></p>
+          <p><a class="govbb-link" href="/api/admin/employees/template.csv" download>Download template CSV</a></p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Step 2: Preview diff -->
+    <div id="step-preview" hidden>
+      <h1 class="govbb-text-h1">Review changes</h1>
+      <p class="govbb-text-body" id="preview-lede"></p>
+
+      <div class="diff-summary" id="summary-cards"></div>
+
+      <div id="diff-details" class="stack-lg" style="margin-top:var(--spacing-m);"></div>
+
+      <div style="margin-top:var(--spacing-m);display:flex;gap:var(--spacing-s);">
+        <button class="govbb-btn" id="apply-btn">Apply changes</button>
+        <button class="govbb-btn govbb-btn--secondary" id="back-btn">Back</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Result -->
+    <div id="step-result" hidden>
+      <h1 class="govbb-text-h1">Upload complete</h1>
+      <div class="result-panel" id="result-body"></div>
+      <div style="margin-top:var(--spacing-m);">
+        <a class="govbb-btn" href="/admin/employees.html">View employees</a>
+        <a class="govbb-btn govbb-btn--secondary" href="/admin/upload.html" style="margin-left:var(--spacing-xs);">Upload another</a>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/admin/admin-chrome.js"></script>
+  <script>
+    function esc(s) {
+      if (s == null) return "";
+      return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+    }
+
+    const FIELD_LABELS = {
+      email: "Email", title: "Title", firstName: "First name", lastName: "Last name",
+      pronoun: "Pronoun", address: "Address", letterType: "Letter type",
+      post: "Post", school: "School", employer: "Employer",
+      appointmentDate: "Appointment date", monthlySalary: "Monthly salary",
+      monthlyAllowance: "Monthly allowance", payFrequency: "Pay frequency",
+      isActing: "Acting",
+    };
+
+    let csvText = null;
+    let previewData = null;
+
+    // ── File selection ──────────────────────────────────────────────────────
+
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    const browseLink = document.getElementById("browse-link");
+    const errorEl = document.getElementById("upload-error");
+
+    browseLink.addEventListener("click", (e) => { e.preventDefault(); fileInput.click(); });
+    dropZone.addEventListener("click", () => fileInput.click());
+
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      errorEl.innerHTML = "";
+      if (!file.name.endsWith(".csv")) {
+        errorEl.innerHTML = `<p class="govbb-error-message">Please upload a .csv file.</p>`;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        csvText = reader.result;
+        const lines = csvText.trim().split(/\r?\n/).filter(l => l.trim());
+        const rowCount = Math.max(0, lines.length - 1);
+        document.getElementById("file-name").textContent = file.name;
+        document.getElementById("file-rows").textContent = rowCount;
+        document.getElementById("file-info").hidden = false;
+        dropZone.style.display = "none";
+      };
+      reader.readAsText(file);
+    }
+
+    document.getElementById("clear-btn").addEventListener("click", () => {
+      csvText = null;
+      fileInput.value = "";
+      document.getElementById("file-info").hidden = true;
+      dropZone.style.display = "";
+      errorEl.innerHTML = "";
+    });
+
+    // ── Preview ─────────────────────────────────────────────────────────────
+
+    document.getElementById("preview-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("preview-btn");
+      btn.disabled = true;
+      btn.textContent = "Analysing…";
+      errorEl.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/admin/employees/upload-preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ csv: csvText }),
+        });
+        const data = await res.json();
+
+        if (res.status === 401) { location.href = "/admin/login.html"; return; }
+
+        if (res.status === 422 && data.validationErrors) {
+          errorEl.innerHTML = `
+            <div class="panel-error">
+              <h2 class="govbb-text-h3">${data.validationErrors.length} row${data.validationErrors.length === 1 ? " has" : "s have"} errors</h2>
+              <p class="govbb-text-body">Fix these in the CSV and re-upload.</p>
+              <ul class="govbb-list govbb-list--bullet" style="margin-top:var(--spacing-xs);">
+                ${data.validationErrors.slice(0, 20).map(e =>
+                  `<li><strong>Row ${e.line || "?"}${e.name ? " — " + esc(e.name) : ""}</strong>: ${esc(e.errors.join("; "))}</li>`
+                ).join("")}
+                ${data.validationErrors.length > 20 ? `<li>…and ${data.validationErrors.length - 20} more</li>` : ""}
+              </ul>
+            </div>`;
+          btn.disabled = false;
+          btn.textContent = "Preview changes";
+          return;
+        }
+
+        if (!res.ok) {
+          errorEl.innerHTML = `<p class="govbb-error-message">${esc(data.error || "Something went wrong.")}</p>`;
+          btn.disabled = false;
+          btn.textContent = "Preview changes";
+          return;
+        }
+
+        previewData = data;
+        renderPreview(data);
+      } catch {
+        errorEl.innerHTML = `<p class="govbb-error-message">Could not reach the server. Check your connection.</p>`;
+        btn.disabled = false;
+        btn.textContent = "Preview changes";
+      }
+    });
+
+    function renderPreview(data) {
+      document.getElementById("step-upload").hidden = true;
+      document.getElementById("step-preview").hidden = false;
+
+      const s = data.summary;
+      document.getElementById("preview-lede").textContent =
+        `${s.total} employees in the CSV. Here's what will change if you apply this upload.`;
+
+      document.getElementById("summary-cards").innerHTML = `
+        <div class="diff-card diff-card--added">
+          <div class="diff-card__count">${s.added}</div>
+          <div class="diff-card__label">New</div>
+        </div>
+        <div class="diff-card diff-card--updated">
+          <div class="diff-card__count">${s.updated}</div>
+          <div class="diff-card__label">Updated</div>
+        </div>
+        <div class="diff-card diff-card--same">
+          <div class="diff-card__count">${s.unchanged}</div>
+          <div class="diff-card__label">Unchanged</div>
+        </div>
+        <div class="diff-card diff-card--removed">
+          <div class="diff-card__count">${s.removed}</div>
+          <div class="diff-card__label">Deactivated</div>
+        </div>`;
+
+      let details = "";
+
+      if (data.added.length) {
+        details += `
+          <details class="diff-section" open>
+            <summary>${s.added} new employee${s.added === 1 ? "" : "s"}</summary>
+            <table class="diff-table">
+              <thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Post</th></tr></thead>
+              <tbody>
+                ${data.added.map(a => `
+                  <tr>
+                    <td>${esc(a.employee.employeeId)}</td>
+                    <td>${esc(a.employee.title)} ${esc(a.employee.firstName)} ${esc(a.employee.lastName)}</td>
+                    <td>${esc(a.employee.email)}</td>
+                    <td>${esc(a.employee.post)}${a.employee.school ? "<br><small>" + esc(a.employee.school) + "</small>" : ""}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </details>`;
+      }
+
+      if (data.updated.length) {
+        details += `
+          <details class="diff-section" open>
+            <summary>${s.updated} updated record${s.updated === 1 ? "" : "s"}</summary>
+            <table class="diff-table">
+              <thead><tr><th>Employee</th><th>Changes</th></tr></thead>
+              <tbody>
+                ${data.updated.map(u => `
+                  <tr>
+                    <td>
+                      <strong>${esc(u.employee.firstName)} ${esc(u.employee.lastName)}</strong><br>
+                      <small>${esc(u.employee.employeeId)}</small>
+                    </td>
+                    <td>${u.changes.map(c =>
+                      `<div>${esc(FIELD_LABELS[c.field] || c.field)}: <span class="change-from">${esc(c.from)}</span> <span class="change-to">${esc(c.to)}</span></div>`
+                    ).join("")}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </details>`;
+      }
+
+      if (data.removed.length) {
+        details += `
+          <details class="diff-section" open>
+            <summary>${s.removed} employee${s.removed === 1 ? "" : "s"} no longer in file (will be deactivated)</summary>
+            <table class="diff-table">
+              <thead><tr><th>Employee ID</th><th>Name</th><th>Email</th><th>Post</th></tr></thead>
+              <tbody>
+                ${data.removed.map(r => `
+                  <tr>
+                    <td>${esc(r.employeeId)}</td>
+                    <td>${esc(r.name)}</td>
+                    <td>${esc(r.email)}</td>
+                    <td>${esc(r.post)}${r.school ? "<br><small>" + esc(r.school) + "</small>" : ""}</td>
+                  </tr>`).join("")}
+              </tbody>
+            </table>
+          </details>`;
+      }
+
+      if (s.unchanged > 0) {
+        details += `
+          <details class="diff-section">
+            <summary>${s.unchanged} unchanged record${s.unchanged === 1 ? "" : "s"}</summary>
+            <p class="govbb-text-body" style="color:var(--color-text-muted);">These employees are already up to date.</p>
+          </details>`;
+      }
+
+      document.getElementById("diff-details").innerHTML = details;
+
+      // Disable apply if nothing to do
+      const applyBtn = document.getElementById("apply-btn");
+      if (s.added === 0 && s.updated === 0 && s.removed === 0) {
+        applyBtn.disabled = true;
+        applyBtn.textContent = "Nothing to apply";
+      }
+    }
+
+    // ── Apply ───────────────────────────────────────────────────────────────
+
+    document.getElementById("apply-btn").addEventListener("click", async () => {
+      const btn = document.getElementById("apply-btn");
+      const s = previewData.summary;
+
+      if (s.removed > 0) {
+        const ok = confirm(
+          `This will deactivate ${s.removed} employee${s.removed === 1 ? "" : "s"} who are not in the CSV. Continue?`
+        );
+        if (!ok) return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Applying…";
+
+      try {
+        const res = await fetch("/api/admin/employees/upload-apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ csv: csvText }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          alert("Error: " + (data.error || "Something went wrong."));
+          btn.disabled = false;
+          btn.textContent = "Apply changes";
+          return;
+        }
+
+        document.getElementById("step-preview").hidden = true;
+        document.getElementById("step-result").hidden = false;
+
+        const parts = [];
+        if (data.inserted) parts.push(`<strong>${data.inserted}</strong> added`);
+        if (data.updated) parts.push(`<strong>${data.updated}</strong> updated`);
+        if (data.deactivated) parts.push(`<strong>${data.deactivated}</strong> deactivated`);
+        if (data.unchanged) parts.push(`<strong>${data.unchanged}</strong> unchanged`);
+
+        document.getElementById("result-body").innerHTML = `
+          <h2 class="govbb-text-h3" style="margin:0 0 var(--spacing-xs);">Changes applied</h2>
+          <p class="govbb-text-body" style="margin:0;">${parts.join(" · ")}</p>
+          <p class="govbb-text-body" style="margin:var(--spacing-xs) 0 0;color:var(--color-text-muted);">
+            All changes have been logged to the audit trail.
+          </p>`;
+      } catch {
+        alert("Could not reach the server.");
+        btn.disabled = false;
+        btn.textContent = "Apply changes";
+      }
+    });
+
+    // ── Back button ─────────────────────────────────────────────────────────
+
+    document.getElementById("back-btn").addEventListener("click", () => {
+      document.getElementById("step-preview").hidden = true;
+      document.getElementById("step-upload").hidden = false;
+      document.getElementById("preview-btn").disabled = false;
+      document.getElementById("preview-btn").textContent = "Preview changes";
+    });
+  </script>
+</body>
+</html>

@@ -43,7 +43,7 @@
 
       <div class="govbb-form-group" id="employeeId-group">
         <label class="govbb-label" for="employeeId">Employee ID</label>
-        <span class="govbb-hint" id="employeeId-hint">For example, 123456-0001</span>
+        <span class="govbb-hint" id="employeeId-hint">This is your National Registration number, for example 090472-0497</span>
         <span class="govbb-error-message" id="employeeId-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="employeeId" name="employeeId" type="text"
@@ -53,7 +53,7 @@
 
       <div class="govbb-form-group" id="email-group">
         <label class="govbb-label" for="email">Government email address</label>
-        <span class="govbb-hint" id="email-hint">Must be a .gov.bb address, for example jane.doe@moe.gov.bb</span>
+        <span class="govbb-hint" id="email-hint">Must be from an allowed domain, for example juniper.boyce@moe.gov.bb</span>
         <span class="govbb-error-message" id="email-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="email" name="email" type="email"
@@ -71,7 +71,7 @@
       <summary class="govbb-show-hide__summary">Why we ask for these details</summary>
       <div class="govbb-show-hide__content">
         <p>Your name and employee ID let us match you to the Ministry's records. The email address is where we send your letter.</p>
-        <p>We only accept government email addresses (.gov.bb) to make sure the letter reaches a mailbox you control at work.</p>
+        <p>We only accept email addresses from approved domains to make sure the letter reaches a mailbox you control at work.</p>
         <p>If your details have changed recently, contact your school's personnel officer to update the Ministry's record before requesting a letter.</p>
       </div>
     </details>
@@ -130,8 +130,14 @@
       errorSummary.hidden = false;
     }
 
-    const GOV_BB_RX = /^[^\s@]+@[^\s@]+\.gov\.bb$/i;
     const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let allowedDomains = [];
+    fetch("/api/allowed-domains")
+      .then(r => r.ok ? r.json() : { domains: [] })
+      .then(data => {
+        allowedDomains = (data.domains || []).map(d => d.domain.toLowerCase());
+      })
+      .catch(() => {});
 
     function emailPlausiblyMatchesName(email, firstName, lastName) {
       const local = email.split("@")[0].toLowerCase();
@@ -162,8 +168,8 @@
         errors.push({ field: "email", message: "Enter your government email address" });
       } else if (!EMAIL_RX.test(email)) {
         errors.push({ field: "email", message: "Enter an email address in the correct format, for example jane.doe@moe.gov.bb" });
-      } else if (!GOV_BB_RX.test(email)) {
-        errors.push({ field: "email", message: "Enter a Government of Barbados email address (ending in .gov.bb)" });
+      } else if (allowedDomains.length && !allowedDomains.includes(email.split("@")[1].toLowerCase())) {
+        errors.push({ field: "email", message: "The email address you entered is not from an allowed domain. Contact the Ministry if you think this is an error." });
       } else if (firstName && lastName && !emailPlausiblyMatchesName(email, firstName, lastName)) {
         errors.push({ field: "email", message: "Your email address does not appear to match the name you entered" });
       }
@@ -181,14 +187,16 @@
         const result = await JobLetters.apiRequestLetter({ firstName, lastName, employeeId, email });
 
         if (result.status === 200 && result.ok) {
-          const params = new URLSearchParams({ email, id: result.letterId, t: result.letterToken || "" });
-          location.href = "sent.html?" + params.toString();
+          sessionStorage.setItem("letterSent", JSON.stringify({
+            email, letterId: result.letterId, letterToken: result.letterToken || "",
+          }));
+          location.href = "sent.html";
           return;
         }
 
         if (result.status === 404 && result.error === "not_found") {
-          const params = new URLSearchParams({ firstName, lastName, employeeId });
-          location.href = "not-found.html?" + params.toString();
+          sessionStorage.setItem("notFound", JSON.stringify({ firstName, lastName, employeeId }));
+          location.href = "not-found.html";
           return;
         }
 

@@ -97,7 +97,7 @@
     }
 
     // Insert chrome before/after main.
-    body.insertAdjacentHTML("afterbegin", skipLink + officialBanner + header + alphaBanner);
+    body.insertAdjacentHTML("afterbegin", `<div>` + skipLink + officialBanner + header + alphaBanner + `</div>`);
     body.insertAdjacentHTML("beforeend", footer);
   }
 

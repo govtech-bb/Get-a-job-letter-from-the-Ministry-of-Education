@@ -40,7 +40,7 @@
 </head>
 <body class="govbb-page">
 
-  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your email","href":"request.html"},{"label":"Letter sent"}]'>
+  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your details","href":"request.html"},{"label":"Letter sent"}]'>
 
     <div class="confirm-panel">
       <h1 class="confirm-panel__title">Letter sent</h1>
@@ -93,10 +93,11 @@
 
   <script src="chrome.js"></script>
   <script>
-    const params = new URLSearchParams(location.search);
-    const email = params.get("email") || "";
-    const letterId = params.get("id") || "";
-    const letterToken = params.get("t") || "";
+    const data = JSON.parse(sessionStorage.getItem("letterSent") || "{}");
+    sessionStorage.removeItem("letterSent");
+    const email = data.email || "";
+    const letterId = data.letterId || "";
+    const letterToken = data.letterToken || "";
 
     document.getElementById("recipient-email").textContent = email;
     if (letterId) {

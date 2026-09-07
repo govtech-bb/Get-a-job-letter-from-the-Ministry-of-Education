@@ -74,6 +74,25 @@ function copyAssets(kind, { overwrite }) {
   return { copied, skipped };
 }
 
+// The progressive-enhancement runtime is plain ESM with no build step, so the
+// browser can load it directly. Copy it with its directory layout intact —
+// index.js imports './src/components/…' and those import back up to it.
+function copyRuntime() {
+  const files = ["index.js"];
+  const componentsFrom = path.join(PKG, "src", "components");
+  for (const dir of fs.readdirSync(componentsFrom)) {
+    const js = path.join("src", "components", dir, `${dir}.js`);
+    if (fs.existsSync(path.join(PKG, js))) files.push(js);
+  }
+
+  for (const rel of files) {
+    const target = path.join(ROOT, "assets", "govbb", rel);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(path.join(PKG, rel), target);
+  }
+  return files;
+}
+
 const check = process.argv.includes("--check");
 const css = buildStylesheet();
 const cssPath = path.join(ROOT, "styles.css");
@@ -108,3 +127,6 @@ if (images.copied.length) {
 if (images.skipped.length) {
   console.log(`assets/images  left alone (already present): ${images.skipped.join(", ")}`);
 }
+
+const runtime = copyRuntime();
+console.log(`assets/govbb  ${runtime.length} module(s): ${runtime.join(", ")}`);

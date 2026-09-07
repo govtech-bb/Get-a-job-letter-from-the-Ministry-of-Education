@@ -1,8 +1,8 @@
 /* Page-level conveniences shared by all pages. Component styles live in
    the govbb design system (styles.css). */
 
-.page-main { padding-block: var(--spacing-m); }
-.content-column { max-width: 44rem; }
+/* .page-main and .content-column are gone: govbb-main-wrapper owns the vertical
+   rhythm and govbb-grid-column-two-thirds owns the measure. */
 .stack > * + * { margin-top: var(--spacing-s); }
 .stack-lg > * + * { margin-top: var(--spacing-m); }
 

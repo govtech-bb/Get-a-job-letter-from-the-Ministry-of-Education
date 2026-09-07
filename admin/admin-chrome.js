@@ -76,6 +76,10 @@
     if (!main) return;
     // Without this the skip link scrolls but leaves focus on the link itself.
     if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+    // govbb-main-wrapper owns the vertical padding the old .page-main used to
+    // supply. The public pages get it in their markup; admin's <main> is here.
+    main.classList.add("govbb-main-wrapper");
+    main.classList.remove("page-main");
 
     // Wrap children, preserving identity
     // The admin console is a wide data view, so it uses the width container

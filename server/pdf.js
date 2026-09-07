@@ -17,7 +17,7 @@ const MARGIN = 60;
 
 // Letterhead logos. Loaded once at module init so PDF generation in each
 // serverless invocation doesn't re-read the files.
-const CREST_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "govbb-creast.png"));
+const CREST_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "govbb-crest.png"));
 const MOE_LOGO_PNG = fs.readFileSync(path.join(ROOT, "assets", "images", "moe-logo.png"));
 
 export async function generateLetterPdf(letter) {

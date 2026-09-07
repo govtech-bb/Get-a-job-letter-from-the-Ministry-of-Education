@@ -14,20 +14,23 @@ following the [Barbados Digital Service Standards](https://github.com/govtech-bb
 ## What's in this repo
 
 ```
-data/employees.json          Synthetic dataset (mirrors service-record + SmartStream fields)
+data/employees-2000.json     Synthetic dataset (mirrors service-record + SmartStream fields)
 styles.css                   GENERATED — the design system stylesheet, built from
                              @govtech-bb/frontend by `npm run build:ds`. Do not edit.
 assets/                      Fonts and images, the design system's copied in by the
                              same script alongside the service's own artwork
 scripts/build-design-system.js  Regenerates both from the installed package
+*.html                       The user-facing pages. The chrome between the
+                             `govbb:` comment markers is generated — edit
+                             scripts/chrome.js and run `npm run build:pages`.
+scripts/chrome.js            Page chrome, from the design system's component pages
+scripts/build-pages.js       Renders it into each page
 server/
-  index.js                   Express app and routes
+  index.js                   Local dev server: static files plus the /api/* routes
   letterStore.js             Issued letters, HMAC-signed verification tokens
   letterTemplates.js         The four letter body templates (teacher / ministry × permanent / temporary)
   pdf.js                     pdf-lib PDF generation with embedded QR code
-  views/
-    layout.js                Shared page chrome (header, footer, official banner, alpha banner)
-    pages.js                 Start, request, sent, not-found, letter-ready, verify pages
+  lib/handlers/              The handlers Vercel wraps as functions in api/
 ```
 
 ## Run locally
@@ -48,9 +51,9 @@ A database is optional: without `DATABASE_URL` the server reads
 sending it. To use Postgres instead, set `DATABASE_URL` and run
 `node server/db/migrate.js` first.
 
-Open <http://localhost:3000>. The Express dev server hosts both the legacy
-server-rendered demo and the new JSON API at `/api/*` (same endpoints Vercel
-serves in production).
+Open <http://localhost:3000>. The dev server serves the same static files
+GitHub Pages ships, plus the JSON API at `/api/*` — the same endpoints Vercel
+serves in production, so local dev exercises the deployed shape.
 
 ## Production deploy (staging branch)
 
@@ -119,7 +122,7 @@ Try the flow with any of the synthetic employees:
 - **Cryptographic PDF signing.** The token shown on the QR code is an HMAC over
   the letter reference, which proves authenticity to this service. A production
   build would add a PKI signature embedded in the PDF itself.
-- **The SharePoint / SmartStream data pipeline.** The `data/employees.json`
+- **The SharePoint / SmartStream data pipeline.** The `data/employees-2000.json`
   file plays the role the production data push will play.
 
 ## Service standards we are following

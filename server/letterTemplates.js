@@ -98,42 +98,6 @@ export function buildLetterBody(employee) {
 }
 
 // HTML preview of the letter body (used on the letter-ready page).
-export function buildLetterPreviewHtml(letter) {
-  const paragraphs = buildLetterBody(letter.employee).map(p => `<p>${escapeHtml(p)}</p>`).join("");
-  const issuedLong = new Date(letter.issuedAt).toLocaleDateString("en-GB", {
-    day: "numeric", month: "long", year: "numeric"
-  });
-  return `
-    <div style="background:#fff;border:1px solid var(--govbb-grey-20);padding:2rem;font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.45;color:#111;">
-      <div style="display:flex;gap:1rem;margin-bottom:1rem;">
-        <img src="/assets/images/govbb-creast.svg" alt="" style="width:48px;height:auto;" />
-        <div>
-          <div style="font-weight:bold;text-transform:uppercase;">MINISTRY OF EDUCATION TRANSFORMATION</div>
-          <div>'Elsie Payne Complex'</div>
-          <div>Constitution Road</div>
-          <div>St. Michael BB 11124</div>
-          <div>BARBADOS, W.I.</div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin:1rem 0 .25rem;">
-        <span><strong>Our Ref:</strong> P2954 Vol. I</span>
-        <span><strong>Tel. No.:</strong> (246) 535-0600</span>
-      </div>
-      <div style="margin-top:1rem;"><strong>Date:</strong> ${escapeHtml(issuedLong)}</div>
-      <h3 style="text-align:center;font-weight:bold;text-decoration:underline;margin:1.5rem 0;font-size:12pt;">TO WHOM IT MAY CONCERN</h3>
-      <div style="text-align:justify;">${paragraphs}</div>
-      <div style="margin-top:2rem;">
-        <div style="border-bottom:1px dotted #555;width:230px;margin-bottom:.25rem;">&nbsp;</div>
-        <div style="font-weight:bold;">H. HOLLIGAN (Ms.)</div>
-        <div style="font-style:italic;">for Permanent Secretary</div>
-      </div>
-      <div style="margin-top:1.5rem;font-size:9pt;color:#666;border-top:1px solid #ddd;padding-top:.75rem;">
-        Verify this letter at <strong>${escapeHtml(letter.verifyUrl)}</strong><br />
-        Reference: <code>${escapeHtml(letter.id)}</code>
-      </div>
-    </div>`;
-}
-
 function escapeHtml(s) {
   if (s == null) return "";
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")

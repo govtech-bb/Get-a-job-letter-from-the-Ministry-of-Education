@@ -179,7 +179,7 @@ function renderLetterHtml(letter, opts = {}) {
            Both side marks are square and sized identically so the header is
            visually balanced. -->
       <div style="display:grid;grid-template-columns:110px 1fr 110px;gap:20pt;align-items:center;margin-bottom:14pt;">
-        <img src="assets/images/govbb-creast.svg" alt="Coat of Arms of Barbados"
+        <img src="assets/images/govbb-crest.svg" alt="Coat of Arms of Barbados"
              style="width:110px;height:110px;object-fit:contain;display:block;" />
         <div style="text-align:center;line-height:1.3;">
           <div style="font-weight:bold;text-transform:uppercase;font-size:11pt;letter-spacing:.02em;">MINISTRY OF EDUCATION TRANSFORMATION</div>

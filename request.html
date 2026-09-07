@@ -80,7 +80,7 @@
     <form id="request-form" novalidate>
       <div class="govbb-form-group" id="firstName-group">
         <label class="govbb-label" for="firstName">First name</label>
-        <span class="govbb-error-message" id="firstName-error" role="alert" hidden></span>
+        <span class="govbb-error-message" id="firstName-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="firstName" name="firstName" type="text"
             autocomplete="given-name" spellcheck="false" />
@@ -89,7 +89,7 @@
 
       <div class="govbb-form-group" id="lastName-group">
         <label class="govbb-label" for="lastName">Last name</label>
-        <span class="govbb-error-message" id="lastName-error" role="alert" hidden></span>
+        <span class="govbb-error-message" id="lastName-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="lastName" name="lastName" type="text"
             autocomplete="family-name" spellcheck="false" />
@@ -99,7 +99,7 @@
       <div class="govbb-form-group" id="employeeId-group">
         <label class="govbb-label" for="employeeId">Employee ID</label>
         <span class="govbb-hint" id="employeeId-hint">This is your National Registration number, for example 090472-0497</span>
-        <span class="govbb-error-message" id="employeeId-error" role="alert" hidden></span>
+        <span class="govbb-error-message" id="employeeId-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="employeeId" name="employeeId" type="text"
             spellcheck="false" aria-describedby="employeeId-hint" />
@@ -109,7 +109,7 @@
       <div class="govbb-form-group" id="email-group">
         <label class="govbb-label" for="email">Government email address</label>
         <span class="govbb-hint" id="email-hint">Must be from an allowed domain, for example juniper.boyce@moe.gov.bb</span>
-        <span class="govbb-error-message" id="email-error" role="alert" hidden></span>
+        <span class="govbb-error-message" id="email-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="email" name="email" type="email"
             autocomplete="email" spellcheck="false" aria-describedby="email-hint" />
@@ -181,11 +181,14 @@
         `<li><a class="govbb-link govbb-error-summary__link" href="#${e.field}">${e.message}</a></li>`
       ).join("");
       errorSummary.innerHTML = `
-        <div class="govbb-error-summary" role="alert" aria-labelledby="error-summary-title">
+        <div class="govbb-error-summary" role="alert" tabindex="-1" aria-labelledby="error-summary-title">
           <h2 class="govbb-error-summary__title" id="error-summary-title">There is a problem</h2>
           <ul class="govbb-error-summary__list">${items}</ul>
         </div>`;
       errorSummary.hidden = false;
+      // Move focus to the summary so it is announced and the first error link
+      // is one Tab away, rather than leaving focus wherever submit left it.
+      errorSummary.firstElementChild.focus();
     }
 
     const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

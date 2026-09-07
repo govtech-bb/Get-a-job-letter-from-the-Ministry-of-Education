@@ -77,14 +77,24 @@ function copyAssets(kind, { overwrite }) {
 // The progressive-enhancement runtime is plain ESM with no build step, so the
 // browser can load it directly. Copy it with its directory layout intact —
 // index.js imports './src/components/…' and those import back up to it.
-function copyRuntime() {
-  const files = ["index.js"];
-  const componentsFrom = path.join(PKG, "src", "components");
-  for (const dir of fs.readdirSync(componentsFrom)) {
-    const js = path.join("src", "components", dir, `${dir}.js`);
-    if (fs.existsSync(path.join(PKG, js))) files.push(js);
-  }
+function runtimeFiles() {
+  // Every .js under src/, not just <dir>/<dir>.js — a component that grows a
+  // sibling helper would otherwise be copied incomplete, and the browser's
+  // import would 404 and take initAll() down with it for the whole page.
+  const out = ["index.js"];
+  const walk = (rel) => {
+    for (const entry of fs.readdirSync(path.join(PKG, rel), { withFileTypes: true })) {
+      const child = path.join(rel, entry.name);
+      if (entry.isDirectory()) walk(child);
+      else if (entry.name.endsWith(".js")) out.push(child);
+    }
+  };
+  walk("src");
+  return out;
+}
 
+function copyRuntime() {
+  const files = runtimeFiles();
   for (const rel of files) {
     const target = path.join(ROOT, "assets", "govbb", rel);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -93,20 +103,48 @@ function copyRuntime() {
   return files;
 }
 
+// --check has to cover everything build:ds writes, not just the stylesheet: a
+// package bump that only touches the runtime JS or a font would otherwise pass
+// with a stale committed copy.
+function staleCopies() {
+  const stale = [];
+  const compare = (from, to, label) => {
+    if (!fs.existsSync(to) || !fs.readFileSync(from).equals(fs.readFileSync(to))) {
+      stale.push(label);
+    }
+  };
+  for (const rel of runtimeFiles()) {
+    compare(path.join(PKG, rel), path.join(ROOT, "assets", "govbb", rel), `assets/govbb/${rel}`);
+  }
+  for (const name of fs.readdirSync(path.join(PKG, "assets", "fonts"))) {
+    compare(
+      path.join(PKG, "assets", "fonts", name),
+      path.join(ROOT, "assets", "fonts", name),
+      `assets/fonts/${name}`
+    );
+  }
+  return stale;
+}
+
 const check = process.argv.includes("--check");
 const css = buildStylesheet();
 const cssPath = path.join(ROOT, "styles.css");
 
 if (check) {
   const current = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf-8") : "";
-  if (current !== css) {
+  const stale = staleCopies();
+  if (current !== css) stale.unshift("styles.css");
+  if (stale.length) {
     console.error(
-      `styles.css does not match @govtech-bb/frontend@${VERSION}.\n` +
-        `Run \`npm run build:ds\` and commit the result.`
+      `${stale.length} file(s) do not match @govtech-bb/frontend@${VERSION}:\n  ` +
+        stale.join("\n  ") +
+        `\nRun \`npm run build:ds\` and commit the result.`
     );
     process.exit(1);
   }
-  console.log(`styles.css is up to date with @govtech-bb/frontend@${VERSION}`);
+  console.log(
+    `styles.css, fonts and the runtime are up to date with @govtech-bb/frontend@${VERSION}`
+  );
   process.exit(0);
 }
 

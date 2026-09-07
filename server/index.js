@@ -9,7 +9,6 @@ import dotenv from "dotenv";
 
 import { issueLetter } from "./letterStore.js";
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
-import { findIssuedLetter } from "./lib/db.js";
 import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
   issueCode as adminIssueCode,
@@ -31,12 +30,6 @@ const ROOT = path.resolve(__dirname, "..");
 const employeesPath = path.join(ROOT, "data", "employees-2000.json");
 const employeesFile = JSON.parse(fs.readFileSync(employeesPath, "utf-8"));
 const employees = employeesFile.employees;
-
-function findEmployeeByEmail(email) {
-  const needle = String(email || "").trim().toLowerCase();
-  if (!needle) return null;
-  return employees.find(e => e.email.toLowerCase() === needle) || null;
-}
 
 function findEmployeeByEmployeeId(employeeId) {
   const needle = String(employeeId || "").trim();

@@ -321,7 +321,7 @@
         });
 
         function showCodeError(msg) {
-          errorEl.innerHTML = `<p class="govbb-error-message" id="code-error-message" role="alert" style="margin-top: var(--govbb-space-s);">${esc(msg)}</p>`;
+          errorEl.innerHTML = `<p class="govbb-error-message" id="code-error-message" style="margin-top: var(--govbb-space-s);">${esc(msg)}</p>`;
           for (const input of [input1, input2]) {
             input.setAttribute("aria-invalid", "true");
             input.setAttribute("aria-describedby", "code-error-message");

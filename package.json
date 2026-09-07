@@ -11,7 +11,9 @@
     "check:ds": "node scripts/build-design-system.js --check",
     "build:pages": "node scripts/build-pages.js",
     "check:pages": "node scripts/build-pages.js --check",
-    "build": "npm run build:ds && npm run build:pages"
+    "build": "npm run build:ds && npm run build:pages",
+    "test": "node --test test/*.test.js",
+    "check": "npm run check:ds && npm run check:pages && npm test"
   },
   "dependencies": {
     "@govtech-bb/frontend": "1.0.0-alpha.29",

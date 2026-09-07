@@ -105,3 +105,27 @@ export const runtime = `
   import { initAll } from "./{{base}}assets/govbb/index.js";
   initAll();
 </script>`;
+
+// Shown where a feature genuinely cannot work server-side. The design system
+// is explicit that this is not a blanket gate: "most pages should still
+// function", and on this service they do — only the record lookup and the
+// verification check need script, because GitHub Pages has no server to post
+// to. Copy follows /templates/javascript-disabled/.
+export function noScript(what) {
+  return `
+      <noscript>
+        <div class="govbb-status-banner govbb-status-banner--alpha">
+          <h2 class="govbb-text-h3">${what} needs JavaScript to work</h2>
+          <p>JavaScript is turned off in your browser, or your browser does not support it.</p>
+          <ul class="govbb-list govbb-list--bullet">
+            <li>Turn on JavaScript in your browser settings, then refresh this page.</li>
+            <li>Try an up-to-date browser — Chrome, Safari, Firefox and Edge all support it by default.</li>
+          </ul>
+          <p>
+            If you cannot use JavaScript,
+            <a class="govbb-link" href="{{base}}contact.html">contact us</a>
+            and we will help you another way.
+          </p>
+        </div>
+      </noscript>`;
+}

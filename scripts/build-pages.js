@@ -21,6 +21,7 @@ import {
   footer,
   breadcrumbs,
   runtime,
+  noScript,
 } from "./chrome.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -113,6 +114,20 @@ function buildPage(file) {
       html.replace(
         /(<main\b[^>]*>)/,
         `$1\n    ${region("breadcrumbs", crumbs)}`
+      );
+  }
+
+  // Pages that declare data-needs-js get the JavaScript-disabled notice, so a
+  // visitor without script is told what to do rather than left on a shell.
+  const needs = html.match(/data-needs-js="([^"]*)"/);
+  if (needs) {
+    const block = toPagePath(noScript(needs[1]));
+    const withNs = replaceRegion(html, "noscript", block);
+    html =
+      withNs ??
+      html.replace(
+        /(<div class="govbb-grid-column-two-thirds">)/,
+        `$1\n    ${region("noscript", block)}`
       );
   }
 

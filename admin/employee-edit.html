@@ -11,64 +11,64 @@
     .form-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--spacing-s) var(--spacing-m);
+      gap: var(--govbb-space-s) var(--govbb-space-m);
     }
     .form-grid .full { grid-column: 1 / -1; }
     .form-card {
-      background: #fff; border: 1px solid var(--color-grey-00);
-      border-radius: 4px; padding: var(--spacing-m);
+      background: #fff; border: 1px solid var(--govbb-grey-20);
+      border-radius: 4px; padding: var(--govbb-space-m);
     }
     /* Section grouping for the form. <fieldset> resets all browser
        chrome and lets the <legend> read as an h2 inside each card. */
     .form-section {
       border: 0;
       padding: 0;
-      margin: 0 0 var(--spacing-l);
+      margin: 0 0 var(--govbb-space-l);
       min-width: 0; /* fieldset default min-width: min-content breaks grids */
     }
     .form-section:last-of-type { margin-bottom: 0; }
     .form-section__legend {
       font-size: 1.1rem;
-      font-weight: var(--font-weight-bold);
-      padding: 0 0 var(--spacing-xs);
-      margin: 0 0 var(--spacing-s);
-      border-bottom: 1px solid var(--color-grey-00);
+      font-weight: 700;
+      padding: 0 0 var(--govbb-space-xs);
+      margin: 0 0 var(--govbb-space-s);
+      border-bottom: 1px solid var(--govbb-grey-20);
       width: 100%;
-      color: var(--color-text);
+      color: var(--govbb-color-ink);
     }
-    .field label { font-weight: var(--font-weight-bold); font-size: 0.9rem; display: block; margin-bottom: 4px; }
+    .field label { font-weight: 700; font-size: 0.9rem; display: block; margin-bottom: 4px; }
     .field input, .field select, .field textarea {
-      width: 100%; padding: var(--spacing-xs) var(--spacing-s);
-      border: 2px solid var(--color-text); border-radius: var(--radius-sm);
+      width: 100%; padding: var(--govbb-space-xs) var(--govbb-space-s);
+      border: 2px solid var(--govbb-color-ink); border-radius: var(--govbb-radius);
       font: inherit; background: #fff;
     }
     .field input[aria-invalid="true"], .field select[aria-invalid="true"] {
-      border-color: var(--color-red-00);
+      border-color: var(--govbb-red-80);
     }
-    .field .hint { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px; }
-    .field .err  { font-size: 0.8rem; color: var(--color-red-00); margin-top: 4px; min-height: 1.1em; }
+    .field .hint { font-size: 0.8rem; color: var(--govbb-color-muted); margin-top: 4px; }
+    .field .err  { font-size: 0.8rem; color: var(--govbb-red-80); margin-top: 4px; min-height: 1.1em; }
     .audit-row {
-      padding: var(--spacing-xs) 0;
-      border-bottom: 1px dashed var(--color-grey-00);
+      padding: var(--govbb-space-xs) 0;
+      border-bottom: 1px dashed var(--govbb-grey-20);
       font-size: 0.85rem;
     }
-    .audit-row__head { color: var(--color-text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .audit-row__head { color: var(--govbb-color-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
   </style>
 </head>
 <body class="govbb-page">
 
   <main id="main-content" class="page-main">
-    <p style="margin-bottom: var(--spacing-s);">
+    <p style="margin-bottom: var(--govbb-space-s);">
       <a class="govbb-link" href="/admin/employees.html">← All employees</a>
     </p>
 
-    <div class="stack" style="display:flex;justify-content:space-between;align-items:end;gap:var(--spacing-m);flex-wrap:wrap;">
+    <div class="stack" style="display:flex;justify-content:space-between;align-items:end;gap:var(--govbb-space-m);flex-wrap:wrap;">
       <h1 class="govbb-text-h1" id="page-title">Employee</h1>
       <div id="status-actions"></div>
     </div>
 
     <form id="employee-form" class="form-card">
-      <div id="form-error" class="panel-error" style="display:none; margin-bottom: var(--spacing-s);"></div>
+      <div id="form-error" class="panel-error" style="display:none; margin-bottom: var(--govbb-space-s);"></div>
 
       <fieldset class="form-section">
         <legend class="form-section__legend">Personal details</legend>
@@ -183,7 +183,7 @@
 
       <fieldset class="form-section">
         <legend class="form-section__legend">Status</legend>
-        <div class="govbb-checkbox-item" style="margin-bottom: var(--spacing-s);">
+        <div class="govbb-checkbox-item" style="margin-bottom: var(--govbb-space-s);">
           <input class="govbb-checkbox" id="isActive" name="isActive" type="checkbox" checked />
           <label class="govbb-checkbox-item__label" for="isActive">
             <span style="display:block;">Active — can request letters</span>
@@ -203,13 +203,13 @@
         </div>
       </fieldset>
 
-      <div class="govbb-btn-group" style="margin-top: var(--spacing-m);">
-        <button class="govbb-btn" type="submit" id="submit-btn">Save</button>
-        <a class="govbb-btn--link" href="/admin/employees.html">Cancel</a>
+      <div class="govbb-button-group" style="margin-top: var(--govbb-space-m);">
+        <button class="govbb-button" type="submit" id="submit-btn">Save</button>
+        <a class="govbb-button govbb-button--text" href="/admin/employees.html">Cancel</a>
       </div>
     </form>
 
-    <section id="audit-section" style="margin-top: var(--spacing-m); display:none;">
+    <section id="audit-section" style="margin-top: var(--govbb-space-m); display:none;">
       <h2 class="govbb-text-h3">Change history</h2>
       <div id="audit-list" class="form-card"></div>
     </section>
@@ -294,7 +294,7 @@
       const confirmHref = employee.isActive
         ? `/admin/confirm.html?action=employee-deactivate&email=${encodeURIComponent(editEmail)}`
         : `/admin/confirm.html?action=employee-reactivate&email=${encodeURIComponent(editEmail)}`;
-      actions.innerHTML = `<a class="govbb-btn--secondary" href="${confirmHref}">${employee.isActive ? "Deactivate" : "Reactivate"}</a>`;
+      actions.innerHTML = `<a class="govbb-button govbb-button--secondary" href="${confirmHref}">${employee.isActive ? "Deactivate" : "Reactivate"}</a>`;
 
       loadAudit();
     }
@@ -365,8 +365,8 @@
             for (const f of FIELDS) setValue(f, body.employee[f]);
             updateConditionalFields();
             const fe = document.getElementById("form-error");
-            fe.style.display = ""; fe.style.background = "var(--color-green-10)";
-            fe.style.borderLeft = "8px solid var(--color-green-00)";
+            fe.style.display = ""; fe.style.background = "var(--govbb-green-10)";
+            fe.style.borderLeft = "8px solid var(--govbb-green-80)";
             fe.textContent = "Saved.";
             loadAudit();
           } else {

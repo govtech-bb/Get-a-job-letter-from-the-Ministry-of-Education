@@ -9,75 +9,75 @@
   <link rel="stylesheet" href="/page.css" />
   <style>
     .upload-zone {
-      border: 2px dashed var(--color-grey-00);
+      border: 2px dashed var(--govbb-grey-20);
       border-radius: 8px;
-      padding: var(--spacing-l) var(--spacing-m);
+      padding: var(--govbb-space-l) var(--govbb-space-m);
       text-align: center;
       cursor: pointer;
       transition: border-color 0.15s, background 0.15s;
     }
     .upload-zone:hover, .upload-zone.drag-over {
-      border-color: var(--color-blue-100);
-      background: var(--color-blue-10);
+      border-color: var(--govbb-color-brand);
+      background: var(--govbb-blue-10);
     }
     .upload-zone input[type="file"] { display: none; }
 
     .diff-summary {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: var(--spacing-s);
+      gap: var(--govbb-space-s);
     }
     .diff-card {
-      padding: var(--spacing-s);
+      padding: var(--govbb-space-s);
       border-radius: 4px;
       text-align: center;
     }
     .diff-card__count {
       font-size: 2rem;
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       line-height: 1.2;
     }
     .diff-card__label { font-size: 0.85rem; }
-    .diff-card--added   { background: var(--color-green-10); color: var(--color-green-00); }
-    .diff-card--updated { background: var(--color-blue-10);  color: var(--color-blue-100); }
-    .diff-card--same    { background: #f6f7f9; color: var(--color-text-muted); }
-    .diff-card--removed { background: var(--color-red-10);   color: var(--color-red-00); }
+    .diff-card--added   { background: var(--govbb-green-10); color: var(--govbb-green-80); }
+    .diff-card--updated { background: var(--govbb-blue-10);  color: var(--govbb-color-brand); }
+    .diff-card--same    { background: #f6f7f9; color: var(--govbb-color-muted); }
+    .diff-card--removed { background: var(--govbb-red-10);   color: var(--govbb-red-80); }
 
     .diff-table {
       width: 100%; border-collapse: collapse;
-      background: #fff; border: 1px solid var(--color-grey-00);
+      background: #fff; border: 1px solid var(--govbb-grey-20);
       border-radius: 4px; overflow: hidden;
       font-size: 0.85rem;
     }
     .diff-table th, .diff-table td {
-      padding: var(--spacing-xs) var(--spacing-s);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
       text-align: left;
-      border-bottom: 1px solid var(--color-grey-00);
+      border-bottom: 1px solid var(--govbb-grey-20);
       vertical-align: top;
     }
     .diff-table th {
-      background: #f6f7f9; color: var(--color-text-muted);
+      background: #f6f7f9; color: var(--govbb-color-muted);
       text-transform: uppercase; font-size: 0.7rem;
-      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+      letter-spacing: 0.04em; font-weight: 700;
     }
     .change-from {
       text-decoration: line-through;
-      color: var(--color-red-00);
+      color: var(--govbb-red-80);
       margin-right: 0.25rem;
     }
-    .change-to { color: var(--color-green-00); font-weight: var(--font-weight-bold); }
+    .change-to { color: var(--govbb-green-80); font-weight: 700; }
 
     .result-panel {
-      padding: var(--spacing-m);
+      padding: var(--govbb-space-m);
       border-radius: 4px;
-      background: var(--color-green-10);
-      border-left: 8px solid var(--color-green-00);
+      background: var(--govbb-green-10);
+      border-left: 8px solid var(--govbb-green-80);
     }
 
     details.diff-section > summary {
       cursor: pointer;
-      font-weight: var(--font-weight-bold);
-      padding: var(--spacing-xs) 0;
+      font-weight: 700;
+      padding: var(--govbb-space-xs) 0;
     }
   </style>
 </head>
@@ -96,22 +96,22 @@
       <div class="upload-zone" id="drop-zone">
         <input type="file" id="file-input" accept=".csv,text/csv" />
         <p class="govbb-text-h3" style="margin:0;">Drop a CSV file here</p>
-        <p class="govbb-text-body" style="margin:var(--spacing-xs) 0 0;color:var(--color-text-muted);">
+        <p class="govbb-text-body" style="margin:var(--govbb-space-xs) 0 0;color:var(--govbb-color-muted);">
           or <a href="#" id="browse-link" class="govbb-link">choose a file</a>
         </p>
       </div>
 
-      <div id="upload-error" role="alert" style="margin-top:var(--spacing-s);"></div>
+      <div id="upload-error" role="alert" style="margin-top:var(--govbb-space-s);"></div>
 
-      <div id="file-info" hidden style="margin-top:var(--spacing-s);">
+      <div id="file-info" hidden style="margin-top:var(--govbb-space-s);">
         <p class="govbb-text-body">
           <strong id="file-name"></strong> — <span id="file-rows"></span> rows
         </p>
-        <button class="govbb-btn" id="preview-btn">Preview changes</button>
-        <button class="govbb-btn govbb-btn--secondary" id="clear-btn" style="margin-left:var(--spacing-xs);">Clear</button>
+        <button class="govbb-button" id="preview-btn">Preview changes</button>
+        <button class="govbb-button govbb-button--secondary" id="clear-btn" style="margin-left:var(--govbb-space-xs);">Clear</button>
       </div>
 
-      <details class="govbb-show-hide" style="margin-top:var(--spacing-m);">
+      <details class="govbb-show-hide" style="margin-top:var(--govbb-space-m);">
         <summary class="govbb-show-hide__summary">CSV format guide</summary>
         <div class="govbb-show-hide__content">
           <p>The CSV must have a header row. Required columns:</p>
@@ -131,7 +131,7 @@
               <tr><td>monthly_salary</td><td>Numeric, e.g. 5965.60</td></tr>
             </tbody>
           </table>
-          <p style="margin-top:var(--spacing-xs);">Optional: <code>address</code>, <code>school</code>, <code>monthly_allowance</code>, <code>pay_frequency</code>, <code>is_acting</code></p>
+          <p style="margin-top:var(--govbb-space-xs);">Optional: <code>address</code>, <code>school</code>, <code>monthly_allowance</code>, <code>pay_frequency</code>, <code>is_acting</code></p>
           <p><a class="govbb-link" href="/api/admin/employees/template.csv" download>Download template CSV</a></p>
         </div>
       </details>
@@ -144,11 +144,11 @@
 
       <div class="diff-summary" id="summary-cards"></div>
 
-      <div id="diff-details" class="stack-lg" style="margin-top:var(--spacing-m);"></div>
+      <div id="diff-details" class="stack-lg" style="margin-top:var(--govbb-space-m);"></div>
 
-      <div style="margin-top:var(--spacing-m);display:flex;gap:var(--spacing-s);">
-        <button class="govbb-btn" id="apply-btn">Apply changes</button>
-        <button class="govbb-btn govbb-btn--secondary" id="back-btn">Back</button>
+      <div style="margin-top:var(--govbb-space-m);display:flex;gap:var(--govbb-space-s);">
+        <button class="govbb-button" id="apply-btn">Apply changes</button>
+        <button class="govbb-button govbb-button--secondary" id="back-btn">Back</button>
       </div>
     </div>
 
@@ -156,9 +156,9 @@
     <div id="step-result" hidden>
       <h1 class="govbb-text-h1">Upload complete</h1>
       <div class="result-panel" id="result-body"></div>
-      <div style="margin-top:var(--spacing-m);">
-        <a class="govbb-btn" href="/admin/employees.html">View employees</a>
-        <a class="govbb-btn govbb-btn--secondary" href="/admin/upload.html" style="margin-left:var(--spacing-xs);">Upload another</a>
+      <div style="margin-top:var(--govbb-space-m);">
+        <a class="govbb-button" href="/admin/employees.html">View employees</a>
+        <a class="govbb-button govbb-button--secondary" href="/admin/upload.html" style="margin-left:var(--govbb-space-xs);">Upload another</a>
       </div>
     </div>
 
@@ -257,7 +257,7 @@
             <div class="panel-error">
               <h2 class="govbb-text-h3">${data.validationErrors.length} row${data.validationErrors.length === 1 ? " has" : "s have"} errors</h2>
               <p class="govbb-text-body">Fix these in the CSV and re-upload.</p>
-              <ul class="govbb-list govbb-list--bullet" style="margin-top:var(--spacing-xs);">
+              <ul class="govbb-list govbb-list--bullet" style="margin-top:var(--govbb-space-xs);">
                 ${data.validationErrors.slice(0, 20).map(e =>
                   `<li><strong>Row ${e.line || "?"}${e.name ? " — " + esc(e.name) : ""}</strong>: ${esc(e.errors.join("; "))}</li>`
                 ).join("")}
@@ -377,7 +377,7 @@
         details += `
           <details class="diff-section">
             <summary>${s.unchanged} unchanged record${s.unchanged === 1 ? "" : "s"}</summary>
-            <p class="govbb-text-body" style="color:var(--color-text-muted);">These employees are already up to date.</p>
+            <p class="govbb-text-body" style="color:var(--govbb-color-muted);">These employees are already up to date.</p>
           </details>`;
       }
 
@@ -433,9 +433,9 @@
         if (data.unchanged) parts.push(`<strong>${data.unchanged}</strong> unchanged`);
 
         document.getElementById("result-body").innerHTML = `
-          <h2 class="govbb-text-h3" style="margin:0 0 var(--spacing-xs);">Changes applied</h2>
+          <h2 class="govbb-text-h3" style="margin:0 0 var(--govbb-space-xs);">Changes applied</h2>
           <p class="govbb-text-body" style="margin:0;">${parts.join(" · ")}</p>
-          <p class="govbb-text-body" style="margin:var(--spacing-xs) 0 0;color:var(--color-text-muted);">
+          <p class="govbb-text-body" style="margin:var(--govbb-space-xs) 0 0;color:var(--govbb-color-muted);">
             All changes have been logged to the audit trail.
           </p>`;
       } catch {

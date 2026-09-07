@@ -6,22 +6,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 
-import { layout } from "./views/layout.js";
-import {
-  startPage,
-  requestPage,
-  sentPage,
-  notFoundPage,
-  letterReadyPage,
-  verifyPage,
-  genericInfoPage,
-} from "./views/pages.js";
-import { issueLetter, getLetter, verifyLetter } from "./letterStore.js";
-import { buildLetterPreviewHtml } from "./letterTemplates.js";
-import { generateLetterPdf } from "./pdf.js";
 
-import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
+import { issueLetter, getLetter } from "./letterStore.js";
+import { generateLetterPdf } from "./pdf.js";
 import { findIssuedLetter } from "./lib/db.js";
+import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
 import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
   issueCode as adminIssueCode,
@@ -43,12 +32,6 @@ const ROOT = path.resolve(__dirname, "..");
 const employeesPath = path.join(ROOT, "data", "employees-2000.json");
 const employeesFile = JSON.parse(fs.readFileSync(employeesPath, "utf-8"));
 const employees = employeesFile.employees;
-
-function findEmployeeByEmail(email) {
-  const needle = String(email || "").trim().toLowerCase();
-  if (!needle) return null;
-  return employees.find(e => e.email.toLowerCase() === needle) || null;
-}
 
 function findEmployeeByEmployeeId(employeeId) {
   const needle = String(employeeId || "").trim();
@@ -425,125 +408,19 @@ app.get("/api/admin/settings/domains", settingsHandler("GET"));
 app.post("/api/admin/settings/domains", settingsHandler("POST"));
 app.delete("/api/admin/settings/domains", settingsHandler("DELETE"));
 
-// Short verify URL — matches the vercel.json rewrite. The QR codes on the
-// generated PDFs point at /v?id=...&t=...
-app.get("/v", (req, res) => {
-  res.sendFile(path.join(ROOT, "verify.html"));
-});
-
-// Serve the govbb design system bundle (CSS, fonts, images). Mounted at the
-// URL root so that the CSS's relative font URLs (./assets/fonts/...) resolve.
-app.use(express.static(path.join(ROOT, "dist"), { fallthrough: true }));
-
-// Admin pages live under /admin/. Mount with directory index so /admin/
-// serves admin/index.html (the dashboard).
-app.use("/admin", express.static(path.join(ROOT, "admin"), {
-  fallthrough: true,
-  index: "index.html",
-  extensions: ["html"],
-}));
-
-// Serve the static client (the same files that ship to GitHub Pages) so we
-// can hit /request.html, /sent.html, /verify.html and have them call the
-// local /api/* endpoints. The dynamic SSR routes below still win for "/" and
-// the other Express-rendered URLs.
-app.use(express.static(ROOT, {
-  fallthrough: true,
-  index: false,           // don't shadow the SSR `app.get("/")`
-  extensions: ["html"],
-}));
-
-function send(res, title, main, opts = {}) {
-  res.set("Content-Type", "text/html; charset=utf-8");
-  res.send(layout({ title, main, ...opts }));
-}
-
-// Start page
-app.get("/", (req, res) => {
-  send(res, "Get a job letter", startPage(), { banner: "alpha" });
-});
-
-// Request flow — email entry
-app.get("/request", (req, res) => {
-  send(res, "What is your work email address?", requestPage(), {
-    breadcrumbs: [
-      { label: "Job letters", href: "/" },
-      { label: "Your email" },
-    ],
-  });
-});
-
-app.post("/request", (req, res) => {
-  const email = String(req.body.email || "").trim();
-  if (!email) {
-    return send(res, "What is your work email address?",
-      requestPage({ error: "Enter your work email address", email }), {
-        breadcrumbs: [{ label: "Job letters", href: "/" }, { label: "Your email" }],
-      });
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return send(res, "What is your work email address?",
-      requestPage({ error: "Enter an email address in the correct format, for example name@moe.gov.bb", email }), {
-        breadcrumbs: [{ label: "Job letters", href: "/" }, { label: "Your email" }],
-      });
-  }
-
-  const employee = findEmployeeByEmail(email);
-  if (!employee || !employee.isActive) {
-    return send(res, "We could not find a record", notFoundPage({ email }), {
-      breadcrumbs: [
-        { label: "Job letters", href: "/" },
-        { label: "Your email", href: "/request" },
-        { label: "No record found" },
-      ],
-    });
-  }
-
-  const letter = issueLetter(employee);
-  const letterUrl = `/letter/${letter.id}?t=${letter.token}`;
-  send(res, "Your letter is on its way", sentPage({ email, letterUrl }), {
-    breadcrumbs: [
-      { label: "Job letters", href: "/" },
-      { label: "Your email", href: "/request" },
-      { label: "Letter sent" },
-    ],
-  });
-});
-
-// Letter ready view (after request, link in the demo "email")
-app.get("/letter/:id", async (req, res) => {
-  const letter = getLetter(req.params.id);
-  const token = String(req.query.t || "");
-  if (!letter || letter.token !== token) {
-    return res.status(404).send(layout({
-      title: "Letter not found",
-      main: genericInfoPage({
-        title: "We could not find that letter",
-        body: "<p>The link may be wrong or the letter may have been removed.</p>",
-      }),
-    }));
-  }
-
-  const baseUrl = `${req.protocol}://${req.get("host")}`;
-  const verifyUrl = `${baseUrl}/verify/${letter.id}?t=${letter.token}`;
-  letter.verifyUrl = verifyUrl; // attach for templates that need it
-  const downloadUrl = `/letter/${letter.id}/download?t=${letter.token}`;
-  const previewHtml = buildLetterPreviewHtml(letter);
-
-  send(res, "Your letter", letterReadyPage({ letter, downloadUrl, verifyUrl, previewHtml }), {
-    breadcrumbs: [
-      { label: "Job letters", href: "/" },
-      { label: "Your letter" },
-    ],
-  });
-});
-
-// PDF download
+// DEV ONLY — this route exists on the local server and has no Vercel
+// counterpart, so it is not part of the deployed service. In production the
+// letter reaches the employee as a PDF attached to the email that
+// lib/handlers/requestLetter.js sends. This is here so you can look at a
+// generated PDF while working without going through a mailbox.
+//
+// sent.html only shows the download button when the API is same-origin
+// localhost, so this cannot turn into a link that 404s once deployed.
 app.get("/letter/:id/download", async (req, res) => {
   const token = String(req.query.t || "");
   const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-  // Try in-memory store first, then fall back to database.
+  // In-memory store first (no DATABASE_URL), then the database.
   let letter = getLetter(req.params.id);
   if (letter) {
     if (letter.token !== token) return res.status(404).send("Letter not found");
@@ -572,81 +449,33 @@ app.get("/letter/:id/download", async (req, res) => {
   res.send(Buffer.from(pdfBytes));
 });
 
-// Public verification page — redirect to client-side verify.html which
-// handles the document-code challenge flow.
-app.get("/verify/:id", (req, res) => {
-  const id = req.params.id;
-  const token = String(req.query.t || "");
-  return res.redirect(`/v?id=${encodeURIComponent(id)}&t=${encodeURIComponent(token)}`);
+// Short verify URL — the QR codes on the generated PDFs point at
+// /v?id=...&t=... In production this is a rewrite in vercel.json, so mirror
+// that here: rewrite the path and let the static middleware below serve it.
+// The URL the user sees stays /v, edits to verify.html are picked up without a
+// restart, and this handler touches the filesystem itself not at all.
+app.get("/v", (req, res, next) => {
+  const q = req.url.indexOf("?");
+  req.url = "/verify.html" + (q === -1 ? "" : req.url.slice(q));
+  next();
 });
 
-// Legacy SSR verification (kept for no-JS fallback)
-app.get("/verify-ssr/:id", async (req, res) => {
-  const id = req.params.id;
-  const token = String(req.query.t || "");
+// Admin pages live under /admin/. Mount with directory index so /admin/
+// serves admin/index.html (the dashboard).
+app.use("/admin", express.static(path.join(ROOT, "admin"), {
+  fallthrough: true,
+  index: "index.html",
+  extensions: ["html"],
+}));
 
-  let result;
-  if (process.env.DATABASE_URL) {
-    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress;
-    const apiResult = await apiVerifyLetter({ id, signature: token, sourceIp });
-    result = apiResult.body;
-  } else {
-    result = verifyLetter(id, token);
-  }
-
-  send(res, result.valid ? "Letter verified" : "Verification failed", verifyPage(result), {
-    breadcrumbs: [
-      { label: "Job letters", href: "/" },
-      { label: "Verify a letter" },
-    ],
-  });
-});
-
-// Static info pages
-app.get("/privacy", (req, res) => {
-  send(res, "Privacy notice", genericInfoPage({
-    title: "Privacy notice",
-    body: `
-      <p class="govbb-text-body">
-        This alpha runs on synthetic data only — no real employee information is held.
-        For production, the Ministry will publish a full privacy notice covering the
-        legal basis for processing, retention, and rights under the Barbados Data
-        Protection Act.
-      </p>
-      <h2 class="govbb-text-h3">What we collect</h2>
-      <ul class="govbb-list govbb-list--bullet">
-        <li>The work email you submit, to match against the Ministry record.</li>
-        <li>The letter reference and verification token, so a recipient can check the letter is genuine.</li>
-      </ul>
-      <h2 class="govbb-text-h3">Where the data is held</h2>
-      <p class="govbb-text-body">
-        Hosting is on Public Digital's AWS Canada infrastructure. Data does not leave
-        the hosting region. We only display salary in the letter itself, never on the
-        public verification page.
-      </p>
-    `,
-  }), { breadcrumbs: [{ label: "Job letters", href: "/" }, { label: "Privacy notice" }] });
-});
-
-app.get("/accessibility", (req, res) => {
-  send(res, "Accessibility", genericInfoPage({
-    title: "Accessibility statement",
-    body: `
-      <p class="govbb-text-body">
-        This service uses the GovBB design system and aims to meet WCAG 2.2 level AA.
-      </p>
-      <h2 class="govbb-text-h3">How the service is built</h2>
-      <ul class="govbb-list govbb-list--bullet">
-        <li>Pages are plain HTML and work without JavaScript.</li>
-        <li>Forms have visible labels, hint text and error messages associated by ID.</li>
-        <li>Colour contrast follows the design system tokens.</li>
-        <li>The service can be used with a keyboard alone.</li>
-      </ul>
-      <h2 class="govbb-text-h3">Get in touch</h2>
-      <p class="govbb-text-body">If you have feedback, contact the Ministry's Personnel Department.</p>
-    `,
-  }), { breadcrumbs: [{ label: "Job letters", href: "/" }, { label: "Accessibility" }] });
-});
+// Serve the static client — the same files GitHub Pages ships — so local dev
+// exercises exactly what production serves, calling the local /api/* endpoints
+// instead of the deployed ones.
+app.use(express.static(ROOT, {
+  fallthrough: true,
+  index: "index.html",
+  extensions: ["html"],
+}));
 
 const port = process.env.PORT || 3000;
 app.listen(port, "0.0.0.0", () => {

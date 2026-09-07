@@ -15,7 +15,11 @@ following the [Barbados Digital Service Standards](https://github.com/govtech-bb
 
 ```
 data/employees.json          Synthetic dataset (mirrors service-record + SmartStream fields)
-dist/                        govbb design system bundle (CSS, fonts, images, logo, crest)
+styles.css                   GENERATED — the design system stylesheet, built from
+                             @govtech-bb/frontend by `npm run build:ds`. Do not edit.
+assets/                      Fonts and images, the design system's copied in by the
+                             same script alongside the service's own artwork
+scripts/build-design-system.js  Regenerates both from the installed package
 server/
   index.js                   Express app and routes
   letterStore.js             Issued letters, HMAC-signed verification tokens
@@ -31,10 +35,19 @@ job-letter-request.html      Earlier single-file staff-input prototype (kept for
 
 ```sh
 npm install
+npm run build:ds                # regenerate styles.css from @govtech-bb/frontend
 cp .env.example .env.local      # then fill in the values
-node server/db/migrate.js       # creates the schema and seeds 6 employees in Neon
 npm run dev
 ```
+
+`styles.css` is committed, so `build:ds` is only needed after changing the
+`@govtech-bb/frontend` version. `npm run check:ds` fails if the committed copy
+has drifted from the installed package — worth running in CI.
+
+A database is optional: without `DATABASE_URL` the server reads
+`data/employees-2000.json`, and without `RESEND_API_KEY` it logs mail instead of
+sending it. To use Postgres instead, set `DATABASE_URL` and run
+`node server/db/migrate.js` first.
 
 Open <http://localhost:3000>. The Express dev server hosts both the legacy
 server-rendered demo and the new JSON API at `/api/*` (same endpoints Vercel

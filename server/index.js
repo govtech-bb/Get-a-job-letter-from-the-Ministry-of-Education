@@ -431,10 +431,6 @@ app.get("/v", (req, res) => {
   res.sendFile(path.join(ROOT, "verify.html"));
 });
 
-// Serve the govbb design system bundle (CSS, fonts, images). Mounted at the
-// URL root so that the CSS's relative font URLs (./assets/fonts/...) resolve.
-app.use(express.static(path.join(ROOT, "dist"), { fallthrough: true }));
-
 // Admin pages live under /admin/. Mount with directory index so /admin/
 // serves admin/index.html (the dashboard).
 app.use("/admin", express.static(path.join(ROOT, "admin"), {

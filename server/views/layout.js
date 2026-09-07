@@ -1,5 +1,6 @@
-// Shared page layout. Uses the govbb design system classes already compiled
-// into dist/styles.css. Pages built so they work without JavaScript.
+// Shared page layout. Uses the govbb design system classes from styles.css,
+// generated from @govtech-bb/frontend by `npm run build:ds`.
+// Pages built so they work without JavaScript.
 
 export function layout({ title, main, breadcrumbs = null, banner = "alpha" }) {
   const breadcrumbsHtml = breadcrumbs

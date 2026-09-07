@@ -6,7 +6,8 @@
   "framework": null,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/v", "destination": "/verify.html" }
+    { "source": "/v", "destination": "/verify.html" },
+    { "source": "/api/admin/settings/domains", "destination": "/api/admin/settings-domains.js" }
   ],
   "functions": {
     "api/*.js": {

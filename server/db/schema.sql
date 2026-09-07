@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS employees (
   pronoun           TEXT NOT NULL CHECK (pronoun IN ('he', 'she')),
   address           TEXT,
   letter_type       TEXT NOT NULL CHECK (letter_type IN (
-                      'teacher_appointed', 'teacher_special',
+                      'teacher_appointed', 'teacher_special', 'teacher_temporary',
                       'ministry_permanent', 'ministry_temporary'
                     )),
   post              TEXT NOT NULL,
@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS employees (
 CREATE TABLE IF NOT EXISTS issued_letters (
   id                 TEXT PRIMARY KEY,
   signature          TEXT NOT NULL,
+  document_code      TEXT,
   recipient_email    TEXT NOT NULL,
   employee_snapshot  JSONB NOT NULL,
   issued_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -101,6 +102,12 @@ CREATE TABLE IF NOT EXISTS employee_audit (
 CREATE INDEX IF NOT EXISTS idx_employee_audit_email ON employee_audit (employee_email);
 CREATE INDEX IF NOT EXISTS idx_employee_audit_at    ON employee_audit (changed_at DESC);
 
+CREATE TABLE IF NOT EXISTS allowed_domains (
+  domain      TEXT PRIMARY KEY,
+  added_by    TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS admin_audit (
   id           BIGSERIAL PRIMARY KEY,
   admin_email  TEXT NOT NULL,
@@ -112,3 +119,23 @@ CREATE TABLE IF NOT EXISTS admin_audit (
 );
 CREATE INDEX IF NOT EXISTS idx_admin_audit_email ON admin_audit (admin_email);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_at    ON admin_audit (changed_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Verification audit trail
+--
+-- Logs every attempt to verify a letter via the public verify endpoint.
+-- No PII is stored — the source IP is hashed so repeat-offenders can be
+-- rate-limited without storing the raw address.
+
+CREATE TABLE IF NOT EXISTS verification_attempts (
+  id              BIGSERIAL PRIMARY KEY,
+  letter_id       TEXT NOT NULL,
+  source_hash     TEXT NOT NULL,
+  attempted_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  code_submitted  TEXT,
+  result          TEXT NOT NULL CHECK (result IN ('pass', 'fail', 'rate_limited', 'not_found'))
+);
+CREATE INDEX IF NOT EXISTS idx_verification_attempts_letter
+  ON verification_attempts (letter_id, attempted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_verification_attempts_source
+  ON verification_attempts (source_hash, attempted_at DESC);

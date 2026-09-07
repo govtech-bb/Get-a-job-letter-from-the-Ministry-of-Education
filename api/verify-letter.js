@@ -29,7 +29,8 @@ export default async function handler(req, res) {
 
   try {
     const { id, t: signature } = req.query;
-    const result = await verifyLetter({ id, signature });
+    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress;
+    const result = await verifyLetter({ id, signature, sourceIp });
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("verify-letter failed:", err);

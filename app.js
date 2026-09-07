@@ -74,6 +74,7 @@ function escapeHtml(s) {
 function buildLetterBody(employee) {
   const fullName = [employee.title, employee.firstName, employee.lastName].filter(Boolean).join(" ");
   const titleLast = [employee.title, employee.lastName].filter(Boolean).join(" ");
+  const nameAndAddress = employee.address ? `${fullName} of ${employee.address}` : fullName;
   const pronounSubj = employee.pronoun === "he" ? "He" : "She";
   const pronounObj = employee.pronoun === "he" ? "him" : "her";
   const salaryWords = moneyToWords(employee.monthlySalary);
@@ -98,14 +99,14 @@ function buildLetterBody(employee) {
     }
     case "ministry_permanent":
       return [
-        `This is to certify that ${fullName} of ${employee.address} has been continuously employed in the Public Service with effect from ${startDate}.`,
+        `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} holds the permanent and pensionable post of ${employee.post}, Ministry of Education Transformation.`,
         `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
       ];
     case "ministry_temporary":
       return [
-        `This is to certify that ${fullName} of ${employee.address} has been continuously employed in the Public Service with effect from ${startDate}.`,
+        `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} is temporarily employed in the post of ${employee.post}, Ministry of Education Transformation.`,
         `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
@@ -306,7 +307,7 @@ async function downloadPdf(letter, verifyUrl) {
 let _employeesPromise = null;
 function loadEmployees() {
   if (!_employeesPromise) {
-    _employeesPromise = fetch("employees.json").then(r => r.json()).then(d => d.employees);
+    _employeesPromise = fetch("data/employees-2000.json").then(r => r.json()).then(d => d.employees);
   }
   return _employeesPromise;
 }
@@ -318,11 +319,19 @@ async function findEmployeeByEmail(email) {
   return list.find(e => e.email.toLowerCase() === needle) || null;
 }
 
+async function findEmployeeByEmployeeId(employeeId) {
+  const list = await loadEmployees();
+  const needle = String(employeeId || "").trim();
+  if (!needle) return null;
+  return list.find(e => e.employeeId === needle) || null;
+}
+
 function employmentLabel(letterType) {
   switch (letterType) {
     case "teacher_appointed": return "Permanent and pensionable (teacher)";
     case "teacher_special": return "Permanent and pensionable (teacher with special responsibility)";
     case "ministry_permanent": return "Permanent and pensionable";
+    case "teacher_temporary": return "Temporary employment (teacher)";
     case "ministry_temporary": return "Temporary employment";
     default: return "Employed";
   }
@@ -332,11 +341,14 @@ function employmentLabel(letterType) {
 // Talks to the backend at API_BASE_URL. Each method returns the parsed JSON
 // body and a `status` code so callers can render the right outcome.
 
-async function apiRequestLetter(email) {
+async function apiRequestLetter({ firstName, lastName, employeeId, email }) {
   const res = await fetch(`${API_BASE_URL}/api/request-letter`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, publicBaseUrl: location.origin + location.pathname.replace(/[^/]*$/, "") }),
+    body: JSON.stringify({
+      firstName, lastName, employeeId, email,
+      publicBaseUrl: location.origin + location.pathname.replace(/[^/]*$/, ""),
+    }),
   });
   const body = await res.json().catch(() => ({}));
   return { status: res.status, ...body };
@@ -351,7 +363,9 @@ async function apiVerifyLetter(id, signature) {
 
 window.JobLetters = {
   API_BASE_URL,
+  apiBase: () => API_BASE_URL,
   findEmployeeByEmail,
+  findEmployeeByEmployeeId,
   issueLetter,
   decodeAndVerify,
   renderLetterHtml,

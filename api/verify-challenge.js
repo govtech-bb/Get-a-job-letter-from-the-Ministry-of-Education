@@ -1,13 +1,11 @@
-// Vercel serverless wrapper around the requestLetter handler.
+// Vercel serverless wrapper: document fingerprint challenge verification.
 
-import { requestLetter } from "../server/lib/handlers/requestLetter.js";
+import { challengeLetter } from "../server/lib/handlers/verifyLetter.js";
 
 export const config = { runtime: "nodejs" };
 
 const ALLOWED_ORIGINS = new Set([
-  // GitHub Pages
   "https://govtech-bb.github.io",
-  // Local dev
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);
@@ -30,13 +28,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { firstName, lastName, employeeId, email, publicBaseUrl } = req.body || {};
-    const baseUrl = publicBaseUrl ||
-      `${req.headers["x-forwarded-proto"] || "https"}://${req.headers.host}`;
-    const result = await requestLetter({ firstName, lastName, employeeId, email, publicBaseUrl: baseUrl });
+    const { id, t: signature, code } = req.body || {};
+    const sourceIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress;
+    const result = await challengeLetter({ id, signature, code, sourceIp });
     return res.status(result.status).json(result.body);
   } catch (err) {
-    console.error("request-letter failed:", err);
-    return res.status(500).json({ error: "internal_error", message: err.message });
+    console.error("verify-challenge failed:", err);
+    return res.status(500).json({ valid: false, reason: "internal_error" });
   }
 }

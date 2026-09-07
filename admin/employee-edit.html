@@ -79,6 +79,12 @@
             <div class="hint">The employee's work email. This is the address the letter will be sent to.</div>
             <div class="err" data-err="email"></div>
           </div>
+          <div class="field full">
+            <label for="employeeId">Employee ID</label>
+            <input id="employeeId" name="employeeId" />
+            <div class="hint">National Registration number, for example 090472-0497. Used to verify identity when requesting a letter.</div>
+            <div class="err" data-err="employeeId"></div>
+          </div>
           <div class="field">
             <label for="title">Title</label>
             <select id="title" name="title">
@@ -215,7 +221,7 @@
     const params = new URLSearchParams(location.search);
     const editEmail = params.get("email");
     const isEdit = !!editEmail;
-    const FIELDS = ["email","title","firstName","lastName","pronoun","address","letterType","post","school","employer","appointmentDate","monthlySalary","monthlyAllowance","payFrequency","isActing","isActive"];
+    const FIELDS = ["email","employeeId","title","firstName","lastName","pronoun","address","letterType","post","school","employer","appointmentDate","monthlySalary","monthlyAllowance","payFrequency","isActing","isActive"];
 
     function setValue(name, val) {
       const el = form.elements[name];

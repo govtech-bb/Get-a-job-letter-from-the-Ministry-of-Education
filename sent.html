@@ -40,7 +40,7 @@
 </head>
 <body class="govbb-page">
 
-  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your email","href":"request.html"},{"label":"Letter sent"}]'>
+  <main id="main-content" class="page-main" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Your details","href":"request.html"},{"label":"Letter sent"}]'>
 
     <div class="confirm-panel">
       <h1 class="confirm-panel__title">Letter sent</h1>
@@ -49,6 +49,16 @@
       </p>
       <p class="confirm-panel__ref" id="ref-line" hidden>
         Reference: <code id="ref-id"></code>
+      </p>
+    </div>
+
+    <div id="download-section" class="stack" hidden>
+      <h2 class="govbb-text-h3">Download your letter</h2>
+      <p class="govbb-text-body">
+        <a class="govbb-btn" id="download-link" href="#" download>Download PDF</a>
+      </p>
+      <p class="govbb-text-body" style="font-size:0.9rem;color:var(--color-text-muted);">
+        This link will only work while the server is running. Save the PDF to keep a copy.
       </p>
     </div>
 
@@ -83,14 +93,21 @@
 
   <script src="chrome.js"></script>
   <script>
-    const params = new URLSearchParams(location.search);
-    const email = params.get("email") || "";
-    const letterId = params.get("id") || "";
+    const data = JSON.parse(sessionStorage.getItem("letterSent") || "{}");
+    sessionStorage.removeItem("letterSent");
+    const email = data.email || "";
+    const letterId = data.letterId || "";
+    const letterToken = data.letterToken || "";
 
     document.getElementById("recipient-email").textContent = email;
     if (letterId) {
       document.getElementById("ref-id").textContent = letterId;
       document.getElementById("ref-line").hidden = false;
+    }
+    if (letterId && letterToken) {
+      const downloadUrl = `/letter/${encodeURIComponent(letterId)}/download?t=${encodeURIComponent(letterToken)}`;
+      document.getElementById("download-link").href = downloadUrl;
+      document.getElementById("download-section").hidden = false;
     }
   </script>
 </body>

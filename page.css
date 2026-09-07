@@ -7,8 +7,37 @@
    nothing once the real package landed, which is silent: an undefined custom
    property produces no error, just no style. */
 
-.stack > * + * { margin-top: var(--govbb-space-s); }
-.stack-lg > * + * { margin-top: var(--govbb-space-m); }
+/* Vertical rhythm.
+   Established from the package source, not assumed: the base resets
+   h1-h6, p and ul to margin-block:0, govbb-main-wrapper contributes
+   padding-block but no flow, the grid columns contribute no vertical gap, and
+   the govbb-text-* utilities carry no margin. The only flow rule the design
+   system ships is inside .govbb-prose, which is documented for rendered
+   markdown and long-form copy rather than short service pages like these.
+   So the rhythm between blocks is ours to write, from --govbb-space-*.
+
+   A scoped `> * + *` is safe here precisely because nothing carries a margin
+   of its own to duplicate — and it mirrors how .govbb-prose does it. Direct
+   children only, so nested groups keep their own tighter spacing. */
+.page-flow > * + * { margin-block-start: var(--govbb-space-m); }
+.stack > * + * { margin-block-start: var(--govbb-space-s); }
+
+/* Reading measure.
+   govbb-main-wrapper caps text at --govbb-measure, but its rule is
+   `> :where(p,ul,ol,dl)` — direct children only. These pages group content in
+   wrappers, so the cap never reached the text and lines ran the full 1070px of
+   the container. Restated here at the depth the text actually sits. Bare
+   elements only, never a govbb- class, so no component is being restyled.
+   Components opt out, matching how .govbb-prose exempts them, so buttons,
+   banners and the letter preview still use the full width. */
+.page-flow :where(p, ul, ol, dl) { max-inline-size: var(--govbb-measure); }
+.page-flow :where([class*="govbb-"]) :where(p, ul, ol, dl),
+.page-flow > :where([class*="govbb-"]) { max-inline-size: none; }
+
+/* Headings need more space above them than below, or a section reads as
+   belonging to the text before it. Values mirror .govbb-prose. */
+.page-flow :is(h2, h3) { margin-block-start: var(--govbb-space-m); }
+.page-flow :is(h2, h3) + * { margin-block-start: var(--govbb-space-s); }
 
 /* Coloured panels. The design system has no panel or callout component, so
    these are bespoke — but built from the token ramps rather than literals.

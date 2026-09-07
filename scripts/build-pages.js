@@ -69,23 +69,40 @@ function dropRegion(html, name) {
 // admin pages, one level down, can reuse the same templates with "../".
 const toPagePath = (s) => s.replace(/\{\{base\}\}/g, "");
 
+// Every published template — landing, single question, multiple questions,
+// confirmation — puts content directly inside
+// <main class="govbb-width-container govbb-main-wrapper">, with no grid row
+// and no column. /styles/layout.md says body content belongs in
+// govbb-grid-column-two-thirds instead. The two disagree, and the templates win
+// for the page type you are building; the disagreement is in the PR for the
+// design team. govbb-main-wrapper already caps p/ul/ol/dl at --govbb-measure,
+// so the reading width is handled without the grid.
+//
+// page-flow supplies the rhythm between blocks. The design system resets
+// h1-h6, p and ul to margin-block:0 and ships no flow rule outside
+// .govbb-prose, so with content directly in main every block would otherwise
+// sit flush against the next.
 function buildMain(html) {
-  // One-time scaffold conversion: the old shell was
-  //   <main id="main-content" class="page-main" data-breadcrumbs='…'>
-  // with the content directly inside, sized by a bespoke .content-column.
-  const openTag = html.match(/<main\b[^>]*class="page-main"[^>]*>/);
-  if (!openTag) return html; // already converted
+  const openTag = html.match(/<main\b[^>]*>/);
+  if (!openTag) return html;
 
   const crumbAttr = openTag[0].match(/data-breadcrumbs='([^']*)'/);
-  const attr = crumbAttr ? ` data-breadcrumbs='${crumbAttr[1]}'` : "";
+  const needsAttr = openTag[0].match(/data-needs-js="([^"]*)"/);
+  const attrs =
+    (crumbAttr ? ` data-breadcrumbs='${crumbAttr[1]}'` : "") +
+    (needsAttr ? ` data-needs-js="${needsAttr[1]}"` : "");
 
-  const replacement =
-    `<main class="govbb-width-container govbb-main-wrapper" id="main-content" tabindex="-1"${attr}>\n` +
-    `    <div class="govbb-grid-row">\n` +
-    `      <div class="govbb-grid-column-two-thirds">`;
+  html = html.replace(
+    openTag[0],
+    `<main class="govbb-width-container govbb-main-wrapper page-flow" id="main-content" tabindex="-1"${attrs}>`
+  );
 
-  html = html.replace(openTag[0], replacement);
-  return html.replace(/<\/main>/, `      </div>\n    </div>\n  </main>`);
+  // Unwrap the grid row and column this used to emit.
+  html = html
+    .replace(/\s*<div class="govbb-grid-row">\s*\n\s*<div class="govbb-grid-column-two-thirds">/, "")
+    .replace(/\s*<\/div>\s*\n\s*<\/div>\s*\n(\s*)<\/main>/, "\n$1</main>");
+
+  return html;
 }
 
 function buildPage(file) {

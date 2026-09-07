@@ -98,3 +98,14 @@
   line-height: 1.45;
   color: #111;
 }
+
+/* Make the hidden attribute stick.
+   The design system's stylesheet declares [hidden] display:none early, then
+   gives the button component a display value later at the same specificity, so
+   the later rule wins and the hidden attribute stops working on anything
+   carrying a button class. That bites the Header's Menu toggle, which the
+   component ships hidden for its module to reveal — with JavaScript off, a
+   dead Menu button was visible on every page.
+   Raised with the design team. This targets the attribute, not any component
+   class, so it fixes the whole class of bug without overriding a component. */
+[hidden] { display: none !important; }

@@ -28,15 +28,39 @@ export const officialBanner = `
   </div>
 </div>`;
 
-// data-govbb-module="header" is what initAll() looks for. Without it the
-// header renders but never enhances, which is invisible in review.
+// The platform header, matching what alpha.gov.bb serves, so someone landing
+// in this service can get back out to the rest of gov.bb.
+//
+// data-govbb-module="header" is what initAll() looks for, but the module bails
+// out unless it finds BOTH .govbb-header__toggle and .govbb-header__nav:
+//
+//     if (!this.toggle || !this.nav) return;
+//
+// so the previous logo-only header was enhanced by nothing at all while still
+// reporting "1 of 1 processed". The toggle ships `hidden` on purpose — the
+// module removes it, and with no JavaScript the toggle stays hidden and the
+// nav stays open at every width, which is the no-JS baseline the component
+// documents. aria-expanded and aria-controls are set by the module, not here.
+//
+// The logo points at the platform homepage, as it does on alpha.gov.bb; this
+// service's own home stays reachable through the breadcrumbs. No aria-current
+// on it, because unlike the live site this is never the current page.
 export const header = `
 <header class="govbb-header" data-govbb-module="header">
   <div class="govbb-width-container govbb-header__inner">
-    <a class="govbb-header__home" href="{{base}}index.html">
-      <img class="govbb-header__logo" src="{{base}}assets/images/govbb-logo.svg" alt="Government of Barbados" />
+    <a class="govbb-header__home" href="https://alpha.gov.bb/">
+      <img class="govbb-header__logo" src="{{base}}assets/images/govbb-logo.svg" alt="Go to the alpha.gov.bb homepage" />
     </a>
-    <span class="govbb-text-h4">Job letters</span>
+    <div class="govbb-header__controls">
+      <button class="govbb-button govbb-button--ghost govbb-header__toggle" type="button" hidden>Menu</button>
+    </div>
+    <nav id="govbb-header-nav" class="govbb-header__nav" aria-label="Primary navigation">
+      <div class="govbb-header__nav-inner">
+        <a class="govbb-link govbb-link--no-visited" href="https://alpha.gov.bb/services">Services</a>
+        <a class="govbb-link govbb-link--no-visited" href="https://tracking.alpha.gov.bb">Track my application</a>
+        <a class="govbb-button" href="https://chat.alpha.gov.bb">Ask Assistant</a>
+      </div>
+    </nav>
   </div>
 </header>`;
 

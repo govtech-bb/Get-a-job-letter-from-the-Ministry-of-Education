@@ -449,10 +449,15 @@ app.get("/letter/:id/download", async (req, res) => {
   res.send(Buffer.from(pdfBytes));
 });
 
-// Short verify URL — matches the vercel.json rewrite. The QR codes on the
-// generated PDFs point at /v?id=...&t=...
-app.get("/v", (req, res) => {
-  res.sendFile(path.join(ROOT, "verify.html"));
+// Short verify URL — the QR codes on the generated PDFs point at
+// /v?id=...&t=... In production this is a rewrite in vercel.json, so mirror
+// that here: rewrite the path and let the static middleware below serve it.
+// The URL the user sees stays /v, edits to verify.html are picked up without a
+// restart, and this handler touches the filesystem itself not at all.
+app.get("/v", (req, res, next) => {
+  const q = req.url.indexOf("?");
+  req.url = "/verify.html" + (q === -1 ? "" : req.url.slice(q));
+  next();
 });
 
 // Admin pages live under /admin/. Mount with directory index so /admin/

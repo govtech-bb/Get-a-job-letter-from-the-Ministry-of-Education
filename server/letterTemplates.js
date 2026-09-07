@@ -104,7 +104,7 @@ export function buildLetterPreviewHtml(letter) {
     day: "numeric", month: "long", year: "numeric"
   });
   return `
-    <div style="background:#fff;border:1px solid var(--color-grey-00);padding:2rem;font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.45;color:#111;">
+    <div style="background:#fff;border:1px solid var(--govbb-grey-20);padding:2rem;font-family:'Times New Roman',Times,serif;font-size:11pt;line-height:1.45;color:#111;">
       <div style="display:flex;gap:1rem;margin-bottom:1rem;">
         <img src="/assets/images/govbb-creast.svg" alt="" style="width:48px;height:auto;" />
         <div>

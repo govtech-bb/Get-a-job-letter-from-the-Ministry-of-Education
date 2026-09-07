@@ -9,47 +9,47 @@
   <link rel="stylesheet" href="/page.css" />
   <style>
     .toolbar {
-      display: flex; gap: var(--spacing-s);
+      display: flex; gap: var(--govbb-space-s);
       align-items: end; flex-wrap: wrap;
-      margin-bottom: var(--spacing-s);
+      margin-bottom: var(--govbb-space-s);
     }
     .toolbar .field { flex: 1; min-width: 200px; }
     .toolbar input, .toolbar select {
-      width: 100%; padding: var(--spacing-xs) var(--spacing-s);
-      border: 2px solid var(--color-text);
-      border-radius: var(--radius-sm);
+      width: 100%; padding: var(--govbb-space-xs) var(--govbb-space-s);
+      border: 2px solid var(--govbb-color-ink);
+      border-radius: var(--govbb-radius);
       font: inherit; background: #fff;
     }
     table.records {
       width: 100%; border-collapse: collapse;
-      background: #fff; border: 1px solid var(--color-grey-00);
+      background: #fff; border: 1px solid var(--govbb-grey-20);
       border-radius: 4px; overflow: hidden;
     }
     table.records th, table.records td {
-      padding: var(--spacing-xs) var(--spacing-s);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
       text-align: left;
-      border-bottom: 1px solid var(--color-grey-00);
+      border-bottom: 1px solid var(--govbb-grey-20);
       font-size: 0.9rem; vertical-align: top;
     }
     table.records th {
-      background: #f6f7f9; color: var(--color-text-muted);
+      background: #f6f7f9; color: var(--govbb-color-muted);
       text-transform: uppercase; font-size: 0.75rem;
-      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+      letter-spacing: 0.04em; font-weight: 700;
     }
     table.records tr:last-child td { border-bottom: 0; }
     table.records tbody tr:hover td { background: #fafbfc; }
     .badge {
       display: inline-block; padding: 2px 8px;
-      border-radius: 3px; font-size: 0.75rem; font-weight: var(--font-weight-bold);
+      border-radius: 3px; font-size: 0.75rem; font-weight: 700;
     }
-    .badge--sent   { background: var(--color-green-10); color: var(--color-green-00); }
-    .badge--failed { background: var(--color-red-10);   color: var(--color-red-00); }
-    .badge--other  { background: #eef0f3;                color: var(--color-text-muted); }
+    .badge--sent   { background: var(--govbb-green-10); color: var(--govbb-green-80); }
+    .badge--failed { background: var(--govbb-red-10);   color: var(--govbb-red-80); }
+    .badge--other  { background: #eef0f3;                color: var(--govbb-color-muted); }
     .pager {
-      display: flex; gap: var(--spacing-s);
+      display: flex; gap: var(--govbb-space-s);
       justify-content: space-between; align-items: center;
-      margin-top: var(--spacing-s); font-size: 0.9rem;
-      color: var(--color-text-muted);
+      margin-top: var(--govbb-space-s); font-size: 0.9rem;
+      color: var(--govbb-color-muted);
     }
   </style>
 </head>
@@ -94,7 +94,7 @@
         </tr>
       </thead>
       <tbody id="rows-body">
-        <tr><td colspan="7" style="color:var(--color-text-muted);padding:var(--spacing-m);text-align:center;">Loading…</td></tr>
+        <tr><td colspan="7" style="color:var(--govbb-color-muted);padding:var(--govbb-space-m);text-align:center;">Loading…</td></tr>
       </tbody>
     </table>
 
@@ -157,7 +157,7 @@
       if (r.status === 401) { location.href = "/admin/login.html"; return; }
       if (!r.ok) {
         document.getElementById("rows-body").innerHTML =
-          `<tr><td colspan="7" style="padding:var(--spacing-m);">Failed to load letters.</td></tr>`;
+          `<tr><td colspan="7" style="padding:var(--govbb-space-m);">Failed to load letters.</td></tr>`;
         return;
       }
       const data = await r.json();
@@ -167,16 +167,16 @@
       if (!data.rows.length) {
         const isEmptyService = state.total === 0 && !state.q && !state.status;
         tbody.innerHTML = isEmptyService
-          ? `<tr><td colspan="7" style="padding:var(--spacing-l);text-align:center;color:var(--color-text-muted);">
-               <strong style="color: var(--color-text); display:block; margin-bottom: var(--spacing-xs);">No letters issued yet.</strong>
+          ? `<tr><td colspan="7" style="padding:var(--govbb-space-l);text-align:center;color:var(--govbb-color-muted);">
+               <strong style="color: var(--govbb-color-ink); display:block; margin-bottom: var(--govbb-space-xs);">No letters issued yet.</strong>
                Letters issued by the service will appear here, with full delivery status.
              </td></tr>`
-          : `<tr><td colspan="7" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No letters match those filters.</td></tr>`;
+          : `<tr><td colspan="7" style="padding:var(--govbb-space-m);text-align:center;color:var(--govbb-color-muted);">No letters match those filters.</td></tr>`;
       } else {
         tbody.innerHTML = data.rows.map(row => `
           <tr>
             <td><time datetime="${escapeHtml(row.issuedAt)}" title="${escapeHtml(fmtRelative(row.issuedAt))}">${escapeHtml(fmtAbsolute(row.issuedAt))}</time></td>
-            <td>${escapeHtml(row.firstName || "")} ${escapeHtml(row.lastName || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(row.post || "")}</span></td>
+            <td>${escapeHtml(row.firstName || "")} ${escapeHtml(row.lastName || "")}<br /><span style="font-size:0.8rem;color:var(--govbb-color-muted);">${escapeHtml(row.post || "")}</span></td>
             <td>${escapeHtml(LETTER_TYPE_LABELS[row.letterType] || row.letterType || "")}</td>
             <td>${escapeHtml(row.recipientEmail)}</td>
             <td>${emailBadge(row.emailStatus)}</td>

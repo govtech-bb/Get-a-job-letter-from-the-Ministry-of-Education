@@ -63,7 +63,7 @@
     <form id="request-form" novalidate>
       <div class="govbb-form-group" id="firstName-group">
         <label class="govbb-label" for="firstName">First name</label>
-        <span class="govbb-error-message" id="firstName-error" hidden></span>
+        <span class="govbb-error-message" id="firstName-error" role="alert" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="firstName" name="firstName" type="text"
             autocomplete="given-name" spellcheck="false" />
@@ -72,7 +72,7 @@
 
       <div class="govbb-form-group" id="lastName-group">
         <label class="govbb-label" for="lastName">Last name</label>
-        <span class="govbb-error-message" id="lastName-error" hidden></span>
+        <span class="govbb-error-message" id="lastName-error" role="alert" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="lastName" name="lastName" type="text"
             autocomplete="family-name" spellcheck="false" />
@@ -82,7 +82,7 @@
       <div class="govbb-form-group" id="employeeId-group">
         <label class="govbb-label" for="employeeId">Employee ID</label>
         <span class="govbb-hint" id="employeeId-hint">This is your National Registration number, for example 090472-0497</span>
-        <span class="govbb-error-message" id="employeeId-error" hidden></span>
+        <span class="govbb-error-message" id="employeeId-error" role="alert" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="employeeId" name="employeeId" type="text"
             spellcheck="false" aria-describedby="employeeId-hint" />
@@ -92,14 +92,14 @@
       <div class="govbb-form-group" id="email-group">
         <label class="govbb-label" for="email">Government email address</label>
         <span class="govbb-hint" id="email-hint">Must be from an allowed domain, for example juniper.boyce@moe.gov.bb</span>
-        <span class="govbb-error-message" id="email-error" hidden></span>
+        <span class="govbb-error-message" id="email-error" role="alert" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="email" name="email" type="email"
             autocomplete="email" spellcheck="false" aria-describedby="email-hint" />
         </div>
       </div>
 
-      <div class="govbb-button-group" style="margin-top: var(--spacing-m);">
+      <div class="govbb-button-group" style="margin-top: var(--govbb-space-m);">
         <button class="govbb-button" type="submit">Continue</button>
         <a class="govbb-button govbb-button--text" href="index.html">Cancel</a>
       </div>
@@ -115,7 +115,7 @@
     </details>
 
     <noscript>
-      <div class="panel-warning" style="margin-top: var(--spacing-m);">
+      <div class="panel-warning" style="margin-top: var(--govbb-space-m);">
         <p>This static demo needs JavaScript to look up records. The real service has a server-rendered version that works without JavaScript.</p>
       </div>
     </noscript>
@@ -137,17 +137,25 @@
     function setFieldError(name, msg) {
       const input = fields[name];
       const errorEl = document.getElementById(name + "-error");
-      const group = document.getElementById(name + "-group");
+      // The hint id, where the field has one. aria-describedby has to carry
+      // both, or following the error summary link announces the label and the
+      // hint but not the error that sent you there.
+      const hintId = document.getElementById(name + "-hint") ? name + "-hint" : null;
+
       if (msg) {
-        input.setAttribute("aria-invalid", "true");
         errorEl.textContent = msg;
         errorEl.hidden = false;
-        if (group) group.classList.add("govbb-form-group--error");
+        input.setAttribute("aria-invalid", "true");
+        input.setAttribute(
+          "aria-describedby",
+          [hintId, name + "-error"].filter(Boolean).join(" ")
+        );
       } else {
-        input.removeAttribute("aria-invalid");
         errorEl.hidden = true;
         errorEl.textContent = "";
-        if (group) group.classList.remove("govbb-form-group--error");
+        input.removeAttribute("aria-invalid");
+        if (hintId) input.setAttribute("aria-describedby", hintId);
+        else input.removeAttribute("aria-describedby");
       }
     }
 
@@ -159,7 +167,7 @@
 
     function showErrorSummary(errors) {
       const items = errors.map(e =>
-        `<li><a class="govbb-error-summary__link" href="#${e.field}">${e.message}</a></li>`
+        `<li><a class="govbb-link govbb-error-summary__link" href="#${e.field}">${e.message}</a></li>`
       ).join("");
       errorSummary.innerHTML = `
         <div class="govbb-error-summary" role="alert" aria-labelledby="error-summary-title">

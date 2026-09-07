@@ -9,54 +9,54 @@
   <link rel="stylesheet" href="/page.css" />
   <style>
     .toolbar {
-      display: flex; gap: var(--spacing-s);
+      display: flex; gap: var(--govbb-space-s);
       align-items: end; flex-wrap: wrap;
-      margin-bottom: var(--spacing-s);
+      margin-bottom: var(--govbb-space-s);
     }
     .toolbar .field { flex: 1; min-width: 200px; }
     .toolbar input, .toolbar select {
-      width: 100%; padding: var(--spacing-xs) var(--spacing-s);
-      border: 2px solid var(--color-text); border-radius: var(--radius-sm);
+      width: 100%; padding: var(--govbb-space-xs) var(--govbb-space-s);
+      border: 2px solid var(--govbb-color-ink); border-radius: var(--govbb-radius);
       font: inherit; background: #fff;
     }
     table.records {
       width: 100%; border-collapse: collapse;
-      background: #fff; border: 1px solid var(--color-grey-00);
+      background: #fff; border: 1px solid var(--govbb-grey-20);
       border-radius: 4px; overflow: hidden;
     }
     table.records th, table.records td {
-      padding: var(--spacing-xs) var(--spacing-s);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
       text-align: left;
-      border-bottom: 1px solid var(--color-grey-00);
+      border-bottom: 1px solid var(--govbb-grey-20);
       font-size: 0.9rem; vertical-align: top;
     }
     table.records th {
-      background: #f6f7f9; color: var(--color-text-muted);
+      background: #f6f7f9; color: var(--govbb-color-muted);
       text-transform: uppercase; font-size: 0.75rem;
-      letter-spacing: 0.04em; font-weight: var(--font-weight-bold);
+      letter-spacing: 0.04em; font-weight: 700;
     }
     table.records tr:last-child td { border-bottom: 0; }
     .badge {
       display: inline-block; padding: 2px 8px;
-      border-radius: 3px; font-size: 0.75rem; font-weight: var(--font-weight-bold);
+      border-radius: 3px; font-size: 0.75rem; font-weight: 700;
     }
-    .badge--ok { background: var(--color-green-10); color: var(--color-green-00); }
-    .badge--off { background: #eef0f3; color: var(--color-text-muted); }
-    .badge--acting { background: var(--color-yellow-40); color: #6c4e00; }
-    .actions a { margin-right: var(--spacing-xs); }
+    .badge--ok { background: var(--govbb-green-10); color: var(--govbb-green-80); }
+    .badge--off { background: #eef0f3; color: var(--govbb-color-muted); }
+    .badge--acting { background: var(--govbb-yellow-20); color: #6c4e00; }
+    .actions a { margin-right: var(--govbb-space-xs); }
   </style>
 </head>
 <body class="govbb-page">
 
   <main id="main-content" class="page-main">
-    <div class="stack" style="display:flex;justify-content:space-between;gap:var(--spacing-m);align-items:end;flex-wrap:wrap;">
+    <div class="stack" style="display:flex;justify-content:space-between;gap:var(--govbb-space-m);align-items:end;flex-wrap:wrap;">
       <div>
         <h1 class="govbb-text-h1">Employees</h1>
         <p class="govbb-text-body">
           The dataset that powers letter generation. Every edit is logged.
         </p>
       </div>
-      <div style="display:flex;gap:var(--spacing-xs);">
+      <div style="display:flex;gap:var(--govbb-space-xs);">
         <a class="govbb-button" href="/admin/upload.html">Upload CSV</a>
         <a class="govbb-button govbb-button--secondary" href="/admin/employee-edit.html">Add employee</a>
       </div>
@@ -88,11 +88,11 @@
         </tr>
       </thead>
       <tbody id="rows-body">
-        <tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">Loading…</td></tr>
+        <tr><td colspan="6" style="padding:var(--govbb-space-m);text-align:center;color:var(--govbb-color-muted);">Loading…</td></tr>
       </tbody>
     </table>
 
-    <div style="margin-top:var(--spacing-s);font-size:0.9rem;color:var(--color-text-muted);" id="pager-info">—</div>
+    <div style="margin-top:var(--govbb-space-s);font-size:0.9rem;color:var(--govbb-color-muted);" id="pager-info">—</div>
   </main>
 
   <script src="/admin/admin-chrome.js"></script>
@@ -125,7 +125,7 @@
       if (r.status === 401) { location.href = "/admin/login.html"; return; }
       if (!r.ok) {
         document.getElementById("rows-body").innerHTML =
-          `<tr><td colspan="6" style="padding:var(--spacing-m);">Failed to load employees.</td></tr>`;
+          `<tr><td colspan="6" style="padding:var(--govbb-space-m);">Failed to load employees.</td></tr>`;
         return;
       }
       const data = await r.json();
@@ -135,17 +135,17 @@
         // so the user knows whether to seed data or relax their search.
         const isEmptyService = data.total === 0 && !state.q && !state.activeOnly;
         tbody.innerHTML = isEmptyService
-          ? `<tr><td colspan="6" style="padding:var(--spacing-l);text-align:center;color:var(--color-text-muted);">
-               <strong style="color: var(--color-text); display:block; margin-bottom: var(--spacing-xs);">No employees on file yet.</strong>
+          ? `<tr><td colspan="6" style="padding:var(--govbb-space-l);text-align:center;color:var(--govbb-color-muted);">
+               <strong style="color: var(--govbb-color-ink); display:block; margin-bottom: var(--govbb-space-xs);">No employees on file yet.</strong>
                Add an employee using the button above. They will then be able to request a job letter.
              </td></tr>`
-          : `<tr><td colspan="6" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">No employees match those filters.</td></tr>`;
+          : `<tr><td colspan="6" style="padding:var(--govbb-space-m);text-align:center;color:var(--govbb-color-muted);">No employees match those filters.</td></tr>`;
       } else {
         tbody.innerHTML = data.rows.map(r => `
           <tr>
             <td><strong>${escapeHtml(r.title || "")} ${escapeHtml(r.firstName)} ${escapeHtml(r.lastName)}</strong></td>
             <td>${escapeHtml(r.email)}</td>
-            <td>${escapeHtml(r.post || "")}<br /><span style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(r.school || "")}</span></td>
+            <td>${escapeHtml(r.post || "")}<br /><span style="font-size:0.8rem;color:var(--govbb-color-muted);">${escapeHtml(r.school || "")}</span></td>
             <td>${escapeHtml(LETTER_TYPE_LABELS[r.letterType] || r.letterType || "")}</td>
             <td>${r.isActive
               ? `<span class="badge badge--ok">active</span>`

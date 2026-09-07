@@ -33,16 +33,16 @@
   // Distinctive blue admin bar so it's obvious you're not on the public side
   const adminBar = `
     <div style="background:#00267f;color:#fff;">
-      <div class="govbb-container" style="padding-block: var(--spacing-s); display:flex; align-items:center; gap:var(--spacing-m); flex-wrap:wrap;">
+      <div class="govbb-container" style="padding-block: var(--govbb-space-s); display:flex; align-items:center; gap:var(--govbb-space-m); flex-wrap:wrap;">
         <strong style="font-size:0.9rem;letter-spacing:0.04em;text-transform:uppercase;">Admin console</strong>
-        <nav style="display:flex;gap:var(--spacing-m);align-items:center;font-size:0.95rem;">
+        <nav style="display:flex;gap:var(--govbb-space-m);align-items:center;font-size:0.95rem;">
           <a href="/admin/" style="color:#fff;text-decoration:none;" data-nav="dashboard">Dashboard</a>
           <a href="/admin/letters.html" style="color:#fff;text-decoration:none;" data-nav="letters">Letters</a>
           <a href="/admin/employees.html" style="color:#fff;text-decoration:none;" data-nav="employees">Employees</a>
           <a href="/admin/admins.html" style="color:#fff;text-decoration:none;" data-nav="admins">Admins</a>
           <a href="/admin/settings.html" style="color:#fff;text-decoration:none;" data-nav="settings">Settings</a>
         </nav>
-        <div style="margin-left:auto; display:flex; align-items:center; gap:var(--spacing-s); font-size:0.85rem;">
+        <div style="margin-left:auto; display:flex; align-items:center; gap:var(--govbb-space-s); font-size:0.85rem;">
           <span id="admin-whoami" style="color:#cfd8e9;"></span>
           <button id="admin-signout" type="button"
             style="background:transparent;border:1px solid rgba(255,255,255,0.5);color:#fff;padding:4px 10px;border-radius:4px;font:inherit;font-size:0.85rem;cursor:pointer;">

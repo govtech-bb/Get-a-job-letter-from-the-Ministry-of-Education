@@ -9,17 +9,17 @@
   <link rel="stylesheet" href="page.css" />
   <style>
     .verify-strap {
-      background: var(--color-blue-100);
+      background: var(--govbb-color-brand);
       color: #fff;
-      padding: var(--spacing-m);
+      padding: var(--govbb-space-m);
       border-radius: 4px;
-      margin-bottom: var(--spacing-m);
+      margin-bottom: var(--govbb-space-m);
     }
     .verify-strap__title {
       font-size: 1.75rem;
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       line-height: 1.2;
-      margin: 0 0 var(--spacing-xs);
+      margin: 0 0 var(--govbb-space-xs);
       color: #fff;
     }
     .verify-strap__lede {
@@ -34,14 +34,14 @@
       display: flex;
       align-items: center;
       gap: 0.35rem;
-      margin-top: var(--spacing-xs);
+      margin-top: var(--govbb-space-xs);
     }
     .challenge-field__prefix,
     .challenge-field__sep {
       font-family: 'Courier New', Courier, monospace;
       font-size: 1.5rem;
-      font-weight: var(--font-weight-bold);
-      color: var(--color-text);
+      font-weight: 700;
+      color: var(--govbb-color-ink);
       user-select: none;
     }
     .challenge-field__input {
@@ -51,26 +51,26 @@
       text-transform: uppercase;
       width: 6.5ch;
       text-align: center;
-      padding: var(--spacing-xs);
-      border: 2px solid var(--color-grey-00);
+      padding: var(--govbb-space-xs);
+      border: 2px solid var(--govbb-grey-20);
       border-radius: 4px;
     }
     .challenge-field__input:focus {
-      outline: 3px solid var(--color-blue-100);
+      outline: 3px solid var(--govbb-color-brand);
       outline-offset: 0;
-      border-color: var(--color-blue-100);
+      border-color: var(--govbb-color-brand);
     }
-    .challenge-field__input.govbb-input--error {
-      border-color: var(--color-red-00);
+    .challenge-field__input[aria-invalid="true"] {
+      border-color: var(--govbb-color-error);
     }
-    .challenge-field__input.govbb-input--error:focus {
-      outline-color: var(--color-red-00);
-      border-color: var(--color-red-00);
+    .challenge-field__input[aria-invalid="true"]:focus {
+      outline-color: var(--govbb-color-error);
+      border-color: var(--govbb-color-error);
     }
     .challenge-hint {
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       font-size: 0.875rem;
-      margin-top: var(--spacing-xs);
+      margin-top: var(--govbb-space-xs);
     }
   </style>
 </head>
@@ -249,6 +249,10 @@
           btn.disabled = true;
           btn.textContent = "Checking…";
           errorEl.innerHTML = "";
+          for (const input of [input1, input2]) {
+            input.removeAttribute("aria-invalid");
+            input.removeAttribute("aria-describedby");
+          }
 
           try {
             const base = JobLetters.apiBase();
@@ -300,9 +304,11 @@
         });
 
         function showCodeError(msg) {
-          errorEl.innerHTML = `<p class="govbb-error-message" style="margin-top: var(--spacing-s);">${esc(msg)}</p>`;
-          input1.classList.add("govbb-input--error");
-          input2.classList.add("govbb-input--error");
+          errorEl.innerHTML = `<p class="govbb-error-message" id="code-error-message" role="alert" style="margin-top: var(--govbb-space-s);">${esc(msg)}</p>`;
+          for (const input of [input1, input2]) {
+            input.setAttribute("aria-invalid", "true");
+            input.setAttribute("aria-describedby", "code-error-message");
+          }
           input1.focus();
         }
       }
@@ -347,7 +353,7 @@
               <dt>Reference</dt>
               <dd><code>${esc(letter.id)}</code></dd>
             </dl>
-            <p class="govbb-text-caption" style="color: var(--color-text-muted);">
+            <p class="govbb-text-caption" style="color: var(--govbb-color-muted);">
               Salary information is on the letter itself and is not shown on this public page.
             </p>
           </div>

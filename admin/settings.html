@@ -12,68 +12,68 @@
       width: 100%;
       border-collapse: collapse;
       background: #fff;
-      border: 1px solid var(--color-grey-00);
+      border: 1px solid var(--govbb-grey-20);
       border-radius: 4px;
       overflow: hidden;
     }
     .domain-list th, .domain-list td {
-      padding: var(--spacing-xs) var(--spacing-s);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
       text-align: left;
-      border-bottom: 1px solid var(--color-grey-00);
+      border-bottom: 1px solid var(--govbb-grey-20);
       font-size: 0.9rem;
       vertical-align: middle;
     }
     .domain-list th {
       background: #f6f7f9;
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       text-transform: uppercase;
       font-size: 0.75rem;
       letter-spacing: 0.04em;
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
     }
     .domain-list tr:last-child td { border-bottom: 0; }
 
     .add-card {
       background: #fff;
-      border: 1px solid var(--color-grey-00);
+      border: 1px solid var(--govbb-grey-20);
       border-radius: 4px;
-      padding: var(--spacing-m);
-      margin-bottom: var(--spacing-m);
+      padding: var(--govbb-space-m);
+      margin-bottom: var(--govbb-space-m);
     }
     .add-card__grid {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: var(--spacing-s);
+      gap: var(--govbb-space-s);
       align-items: end;
     }
     @media (max-width: 600px) {
       .add-card__grid { grid-template-columns: 1fr; }
     }
     .add-card .field label {
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       font-size: 0.85rem;
       display: block;
       margin-bottom: 4px;
     }
     .add-card .field input {
       width: 100%;
-      padding: var(--spacing-xs) var(--spacing-s);
-      border: 2px solid var(--color-text);
-      border-radius: var(--radius-sm);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
+      border: 2px solid var(--govbb-color-ink);
+      border-radius: var(--govbb-radius);
       font: inherit;
       background: #fff;
     }
     .add-card .err {
       font-size: 0.8rem;
-      color: var(--color-red-00);
+      color: var(--govbb-red-80);
       margin-top: 4px;
       min-height: 1.1em;
     }
 
     .row-btn {
       background: transparent;
-      border: 1px solid var(--color-grey-00);
-      color: var(--color-text);
+      border: 1px solid var(--govbb-grey-20);
+      color: var(--govbb-color-ink);
       padding: 4px 10px;
       border-radius: 4px;
       font-size: 0.8rem;
@@ -81,20 +81,20 @@
       white-space: nowrap;
     }
     .row-btn:hover { background: #f3f4f6; }
-    .row-btn--danger { color: var(--color-red-00); border-color: var(--color-red-00); }
-    .row-btn--danger:hover { background: var(--color-red-10); }
+    .row-btn--danger { color: var(--govbb-red-80); border-color: var(--govbb-red-80); }
+    .row-btn--danger:hover { background: var(--govbb-red-10); }
 
     .info-panel {
-      background: var(--color-blue-10);
-      border-left: 4px solid var(--color-blue-100);
-      padding: var(--spacing-s);
+      background: var(--govbb-blue-10);
+      border-left: 4px solid var(--govbb-color-brand);
+      padding: var(--govbb-space-s);
       font-size: 0.9rem;
-      color: var(--color-text);
-      margin-bottom: var(--spacing-m);
+      color: var(--govbb-color-ink);
+      margin-bottom: var(--govbb-space-m);
     }
     .info-panel--read-only {
-      background: var(--color-yellow-40);
-      border-left-color: var(--color-yellow-00);
+      background: var(--govbb-yellow-20);
+      border-left-color: var(--govbb-yellow-80);
       color: #6c4e00;
     }
     .info-panel--warning {
@@ -144,7 +144,7 @@
           </tr>
         </thead>
         <tbody id="rows-body">
-          <tr><td colspan="4" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">Loading...</td></tr>
+          <tr><td colspan="4" style="padding:var(--govbb-space-m);text-align:center;color:var(--govbb-color-muted);">Loading...</td></tr>
         </tbody>
       </table>
 
@@ -178,7 +178,7 @@
       if (r.status === 401) { location.href = "/admin/login.html"; return; }
       if (!r.ok) {
         document.getElementById("rows-body").innerHTML =
-          `<tr><td colspan="4" style="padding:var(--spacing-m);">Could not load domains.</td></tr>`;
+          `<tr><td colspan="4" style="padding:var(--govbb-space-m);">Could not load domains.</td></tr>`;
         return;
       }
       const { domains } = await r.json();
@@ -191,7 +191,7 @@
 
       if (!domains.length) {
         tbody.innerHTML = `
-          <tr><td colspan="4" style="padding:var(--spacing-m);text-align:center;color:var(--color-text-muted);">
+          <tr><td colspan="4" style="padding:var(--govbb-space-m);text-align:center;color:var(--govbb-color-muted);">
             No domains configured yet.
           </td></tr>`;
         warning.hidden = false;
@@ -284,7 +284,7 @@
       } catch (err) {
         console.error(err);
         document.getElementById("rows-body").innerHTML =
-          `<tr><td colspan="4" style="padding:var(--spacing-m);">Could not load.</td></tr>`;
+          `<tr><td colspan="4" style="padding:var(--govbb-space-m);">Could not load.</td></tr>`;
       }
     })();
   </script>

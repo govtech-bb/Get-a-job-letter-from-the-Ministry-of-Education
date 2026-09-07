@@ -33,7 +33,7 @@
               autocomplete="email" spellcheck="false" required />
           </div>
         </div>
-        <div class="govbb-button-group" style="margin-top: var(--spacing-m);">
+        <div class="govbb-button-group" style="margin-top: var(--govbb-space-m);">
           <button class="govbb-button" type="submit" id="email-submit">Send code</button>
           <a class="govbb-button govbb-button--text" href="/">Cancel</a>
         </div>
@@ -60,7 +60,7 @@
               maxlength="6" style="letter-spacing:0.3em;font-size:1.4rem;text-align:center;" required />
           </div>
         </div>
-        <div class="govbb-button-group" style="margin-top: var(--spacing-m);">
+        <div class="govbb-button-group" style="margin-top: var(--govbb-space-m);">
           <button class="govbb-button" type="submit" id="code-submit">Sign in</button>
           <button class="govbb-button govbb-button--text" type="button" id="back-to-email">Use a different email</button>
         </div>
@@ -83,7 +83,7 @@
       el.textContent = msg || "";
       el.hidden = !msg;
       errSum.innerHTML = msg
-        ? `<div class="govbb-error-summary" role="alert"><h2 class="govbb-error-summary__title">There is a problem</h2><ul class="govbb-error-summary__list"><li><a class="govbb-error-summary__link" href="#${target === 'email' ? 'email' : 'code'}">${msg}</a></li></ul></div>`
+        ? `<div class="govbb-error-summary" role="alert"><h2 class="govbb-error-summary__title">There is a problem</h2><ul class="govbb-error-summary__list"><li><a class="govbb-link govbb-error-summary__link" href="#${target === 'email' ? 'email' : 'code'}">${msg}</a></li></ul></div>`
         : "";
       errSum.hidden = !msg;
     }

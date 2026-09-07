@@ -10,44 +10,44 @@
   <style>
     .confirm-card {
       background: #fff;
-      border: 1px solid var(--color-grey-00);
-      border-left: 8px solid var(--color-red-00);
-      padding: var(--spacing-m);
+      border: 1px solid var(--govbb-grey-20);
+      border-left: 8px solid var(--govbb-red-80);
+      padding: var(--govbb-space-m);
       border-radius: 4px;
       max-width: 36rem;
     }
     .confirm-card--reversible {
-      border-left-color: var(--color-blue-100);
+      border-left-color: var(--govbb-color-brand);
     }
     .confirm-card h1 {
       font-size: 1.4rem;
       margin-top: 0;
-      margin-bottom: var(--spacing-s);
+      margin-bottom: var(--govbb-space-s);
     }
     .confirm-card .consequence {
       font-size: 1rem;
-      color: var(--color-text);
-      margin-bottom: var(--spacing-m);
+      color: var(--govbb-color-ink);
+      margin-bottom: var(--govbb-space-m);
     }
     .actions {
       display: flex;
-      gap: var(--spacing-s);
+      gap: var(--govbb-space-s);
       flex-wrap: wrap;
     }
     .actions .govbb-button--negative {
-      background: var(--color-red-00);
+      background: var(--govbb-red-80);
       color: #fff;
       border: 0;
-      padding: var(--spacing-xs) var(--spacing-m);
+      padding: var(--govbb-space-xs) var(--govbb-space-m);
       border-radius: 4px;
       font: inherit;
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       cursor: pointer;
     }
     .actions .govbb-button--negative:hover { background: #841f1f; }
     .actions .cancel {
-      padding: var(--spacing-xs) var(--spacing-m);
-      color: var(--color-text);
+      padding: var(--govbb-space-xs) var(--govbb-space-m);
+      color: var(--govbb-color-ink);
       background: transparent;
       border: 0;
       font: inherit;
@@ -60,7 +60,7 @@
 <body class="govbb-page">
 
   <main id="main-content" class="page-main">
-    <p style="margin-bottom: var(--spacing-s);">
+    <p style="margin-bottom: var(--govbb-space-s);">
       <a class="govbb-link" id="back-link" href="#">← Back</a>
     </p>
 
@@ -212,7 +212,7 @@
             <button class="govbb-button govbb-button--negative" id="confirm-btn" type="button">${escapeHtml(spec.confirmLabel)}</button>
             <a class="cancel" href="${escapeHtml(backTo)}">Cancel</a>
           </div>
-          <p id="error" style="color:var(--color-red-00);margin-top:var(--spacing-s);" hidden></p>
+          <p id="error" style="color:var(--govbb-red-80);margin-top:var(--govbb-space-s);" hidden></p>
         </div>`;
 
       document.getElementById("confirm-btn").addEventListener("click", async () => {

@@ -12,24 +12,24 @@
     .stat-strip {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: var(--spacing-s);
-      margin-bottom: var(--spacing-m);
+      gap: var(--govbb-space-s);
+      margin-bottom: var(--govbb-space-m);
     }
     .stat-strip__item {
       background: #fff;
-      border: 1px solid var(--color-grey-00);
+      border: 1px solid var(--govbb-grey-20);
       border-radius: 4px;
-      padding: var(--spacing-xs) var(--spacing-s);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
     }
     .stat-strip__label {
       font-size: 0.72rem;
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
     .stat-strip__value {
       font-size: 1.4rem;
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       line-height: 1.2;
     }
 
@@ -39,9 +39,9 @@
       display: flex;
       justify-content: space-between;
       align-items: end;
-      gap: var(--spacing-m);
+      gap: var(--govbb-space-m);
       flex-wrap: wrap;
-      margin-bottom: var(--spacing-m);
+      margin-bottom: var(--govbb-space-m);
     }
     .page-header__intro { flex: 1 1 320px; min-width: 0; }
 
@@ -49,72 +49,72 @@
        to its own list page; no smart prefix routing. */
     .search-section {
       background: #fff;
-      border: 1px solid var(--color-grey-00);
+      border: 1px solid var(--govbb-grey-20);
       border-radius: 4px;
-      padding: var(--spacing-m);
-      margin-bottom: var(--spacing-l);
+      padding: var(--govbb-space-m);
+      margin-bottom: var(--govbb-space-l);
     }
     .search-section__grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--spacing-m);
+      gap: var(--govbb-space-m);
     }
     @media (max-width: 700px) {
       .search-section__grid { grid-template-columns: 1fr; }
     }
     .search-section label {
-      font-weight: var(--font-weight-bold);
+      font-weight: 700;
       font-size: 0.95rem;
       display: block;
       margin-bottom: 4px;
     }
     .search-section .hint {
       font-size: 0.8rem;
-      color: var(--color-text-muted);
-      margin-bottom: var(--spacing-xs);
+      color: var(--govbb-color-muted);
+      margin-bottom: var(--govbb-space-xs);
     }
     .search-section form {
       display: flex;
-      gap: var(--spacing-xs);
+      gap: var(--govbb-space-xs);
     }
     .search-section input {
       flex: 1;
       min-width: 0;
-      padding: var(--spacing-xs) var(--spacing-s);
-      border: 2px solid var(--color-text);
-      border-radius: var(--radius-sm);
+      padding: var(--govbb-space-xs) var(--govbb-space-s);
+      border: 2px solid var(--govbb-color-ink);
+      border-radius: var(--govbb-radius);
       font: inherit;
     }
 
     /* Attention section — failed emails. Loud when there's something there. */
     .attention {
-      background: var(--color-red-10);
-      border-left: 8px solid var(--color-red-00);
-      padding: var(--spacing-m);
+      background: var(--govbb-red-10);
+      border-left: 8px solid var(--govbb-red-80);
+      padding: var(--govbb-space-m);
       border-radius: 0 4px 4px 0;
-      margin-bottom: var(--spacing-l);
+      margin-bottom: var(--govbb-space-l);
     }
     .attention--quiet {
-      background: var(--color-green-10);
-      border-left-color: var(--color-green-00);
+      background: var(--govbb-green-10);
+      border-left-color: var(--govbb-green-80);
     }
     .attention__title {
       font-size: 1.1rem;
-      font-weight: var(--font-weight-bold);
-      margin-bottom: var(--spacing-xs);
+      font-weight: 700;
+      margin-bottom: var(--govbb-space-xs);
     }
     .attention__list {
       list-style: none;
-      margin: var(--spacing-s) 0 0;
+      margin: var(--govbb-space-s) 0 0;
       padding: 0;
       border-top: 1px solid rgba(0,0,0,0.08);
     }
     .attention__list li {
-      padding: var(--spacing-xs) 0;
+      padding: var(--govbb-space-xs) 0;
       border-bottom: 1px solid rgba(0,0,0,0.08);
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: var(--spacing-s);
+      gap: var(--govbb-space-s);
       font-size: 0.9rem;
       align-items: start;
     }
@@ -122,7 +122,7 @@
     .attention__list li:last-child { border-bottom: 0; }
     .attention__why {
       font-size: 0.78rem;
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       /* Wrap to at most two lines. Full message is in the title attribute. */
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -136,21 +136,21 @@
     .activity {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--spacing-m);
+      gap: var(--govbb-space-m);
     }
     @media (max-width: 800px) {
       .activity { grid-template-columns: 1fr; }
     }
     .activity__panel {
       background: #fff;
-      border: 1px solid var(--color-grey-00);
+      border: 1px solid var(--govbb-grey-20);
       border-radius: 4px;
-      padding: var(--spacing-m);
+      padding: var(--govbb-space-m);
     }
     .activity__title {
       font-size: 1rem;
-      font-weight: var(--font-weight-bold);
-      margin: 0 0 var(--spacing-s);
+      font-weight: 700;
+      margin: 0 0 var(--govbb-space-s);
     }
     .activity__list {
       list-style: none;
@@ -160,9 +160,9 @@
     .activity__list li {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: var(--spacing-s);
-      padding: var(--spacing-xs) 0;
-      border-bottom: 1px solid var(--color-grey-00);
+      gap: var(--govbb-space-s);
+      padding: var(--govbb-space-xs) 0;
+      border-bottom: 1px solid var(--govbb-grey-20);
       font-size: 0.9rem;
       align-items: start;
     }
@@ -170,27 +170,27 @@
     .activity__list li:last-child { border-bottom: 0; }
     .activity__meta {
       font-size: 0.78rem;
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       white-space: nowrap;
     }
-    .activity__name { font-weight: var(--font-weight-bold); }
+    .activity__name { font-weight: 700; }
     .activity__sub {
       font-size: 0.78rem;
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
     }
     .activity__empty {
-      color: var(--color-text-muted);
+      color: var(--govbb-color-muted);
       font-size: 0.9rem;
       text-align: center;
-      padding: var(--spacing-m) 0;
+      padding: var(--govbb-space-m) 0;
     }
 
     .badge {
       display: inline-block; padding: 2px 8px; border-radius: 3px;
-      font-size: 0.7rem; font-weight: var(--font-weight-bold);
+      font-size: 0.7rem; font-weight: 700;
     }
-    .badge--ok { background: var(--color-green-10); color: var(--color-green-00); }
-    .badge--off { background: #eef0f3; color: var(--color-text-muted); }
+    .badge--ok { background: var(--govbb-green-10); color: var(--govbb-green-80); }
+    .badge--off { background: #eef0f3; color: var(--govbb-color-muted); }
   </style>
 </head>
 <body class="govbb-page">
@@ -260,7 +260,7 @@
         <div class="activity__panel">
           <h2 class="activity__title">Recently edited employees</h2>
           <ul class="activity__list" id="recent-edits"></ul>
-          <p style="margin-top:var(--spacing-s);">
+          <p style="margin-top:var(--govbb-space-s);">
             <a class="govbb-link" href="/admin/employees.html">All employees →</a>
           </p>
         </div>
@@ -268,7 +268,7 @@
         <div class="activity__panel">
           <h2 class="activity__title">Most recent letters</h2>
           <ul class="activity__list" id="recent-letters"></ul>
-          <p style="margin-top:var(--spacing-s);">
+          <p style="margin-top:var(--govbb-space-s);">
             <a class="govbb-link" href="/admin/letters.html">All letters →</a>
           </p>
         </div>
@@ -366,7 +366,7 @@
         if (data.failed.length === 0) {
           pane.className = "attention attention--quiet";
           title.textContent = "All recent emails delivered";
-          body.innerHTML = `<p style="margin:0;font-size:0.9rem;color:var(--color-text-muted);">No failed emails in the recent log. Nothing to investigate right now.</p>`;
+          body.innerHTML = `<p style="margin:0;font-size:0.9rem;color:var(--govbb-color-muted);">No failed emails in the recent log. Nothing to investigate right now.</p>`;
         } else {
           pane.className = "attention";
           title.textContent = `${c.letters_failed} email${c.letters_failed === 1 ? "" : "s"} failed — investigate`;
@@ -377,7 +377,7 @@
                 <li>
                   <div>
                     <strong>${escapeHtml(f.firstName || "")} ${escapeHtml(f.lastName || "")}</strong>
-                    <span style="color:var(--color-text-muted);"> · ${escapeHtml(f.recipientEmail)}</span>
+                    <span style="color:var(--govbb-color-muted);"> · ${escapeHtml(f.recipientEmail)}</span>
                     <div class="attention__why" title="${escapeHtml(f.emailStatus)}">${escapeHtml((f.emailStatus || "").replace(/^failed:\s*/, ""))}</div>
                   </div>
                   <a class="govbb-link" href="/admin/letters.html?q=${encodeURIComponent(f.id)}">Open →</a>

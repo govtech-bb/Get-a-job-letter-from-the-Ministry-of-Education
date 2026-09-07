@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 
 
-import { issueLetter } from "./letterStore.js";
+import { issueLetter, getLetter } from "./letterStore.js";
+import { generateLetterPdf } from "./pdf.js";
+import { findIssuedLetter } from "./lib/db.js";
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
 import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
@@ -405,6 +407,47 @@ function settingsHandler(method) {
 app.get("/api/admin/settings/domains", settingsHandler("GET"));
 app.post("/api/admin/settings/domains", settingsHandler("POST"));
 app.delete("/api/admin/settings/domains", settingsHandler("DELETE"));
+
+// DEV ONLY — this route exists on the local server and has no Vercel
+// counterpart, so it is not part of the deployed service. In production the
+// letter reaches the employee as a PDF attached to the email that
+// lib/handlers/requestLetter.js sends. This is here so you can look at a
+// generated PDF while working without going through a mailbox.
+//
+// sent.html only shows the download button when the API is same-origin
+// localhost, so this cannot turn into a link that 404s once deployed.
+app.get("/letter/:id/download", async (req, res) => {
+  const token = String(req.query.t || "");
+  const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+  // In-memory store first (no DATABASE_URL), then the database.
+  let letter = getLetter(req.params.id);
+  if (letter) {
+    if (letter.token !== token) return res.status(404).send("Letter not found");
+    letter.verifyUrl = `${baseUrl}/v?id=${encodeURIComponent(letter.id)}&t=${encodeURIComponent(letter.token)}`;
+  } else if (process.env.DATABASE_URL) {
+    const row = await findIssuedLetter(req.params.id);
+    if (!row || row.signature !== token) return res.status(404).send("Letter not found");
+    const { formatDocumentCode } = await import("./lib/fingerprint.js");
+    letter = {
+      id: row.id,
+      employee: typeof row.employee === "string" ? JSON.parse(row.employee) : row.employee,
+      issuedAt: row.issuedAt,
+      validUntil: row.validUntil,
+      verifyUrl: `${baseUrl}/v?id=${encodeURIComponent(row.id)}&t=${encodeURIComponent(row.signature)}`,
+      documentCode: row.documentCode ? formatDocumentCode(row.documentCode) : null,
+    };
+  } else {
+    return res.status(404).send("Letter not found");
+  }
+
+  const pdfBytes = await generateLetterPdf(letter);
+  const filename = `Job-Letter-${letter.employee.firstName}-${letter.employee.lastName}-${letter.id}.pdf`
+    .replace(/[^A-Za-z0-9.\-]/g, "_");
+  res.set("Content-Type", "application/pdf");
+  res.set("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(Buffer.from(pdfBytes));
+});
 
 // Short verify URL — matches the vercel.json rewrite. The QR codes on the
 // generated PDFs point at /v?id=...&t=...

@@ -123,7 +123,9 @@
           <div class="add-card__grid">
             <div class="field">
               <label for="new-domain">Domain</label>
-              <input id="new-domain" name="domain" type="text" placeholder="moe.gov.bb" autocomplete="off" required />
+              <p class="hint" id="new-domain-hint">The part after the @, for example moe.gov.bb</p>
+              <input id="new-domain" name="domain" type="text" autocomplete="off" required
+                aria-describedby="new-domain-hint" />
               <div class="err" id="domain-err"></div>
             </div>
             <div class="field">

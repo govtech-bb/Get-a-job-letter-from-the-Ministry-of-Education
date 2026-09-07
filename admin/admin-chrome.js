@@ -5,35 +5,31 @@
 (function () {
   const officialBanner = `
     <div class="govbb-official-banner">
-      <div class="govbb-container">
-        <div class="govbb-official-banner__inner">
-          <span class="govbb-official-banner__crest">
-            <img class="govbb-official-banner__icon" src="/assets/images/govbb-creast.svg" alt="" aria-hidden="true" />
-          </span>
-          <div class="govbb-official-banner__text">
-            <span>An official service of the Government of Barbados</span>
-          </div>
+      <div class="govbb-width-container govbb-official-banner__inner">
+        <div class="govbb-official-banner__crest">
+          <img class="govbb-official-banner__icon" src="/assets/images/govbb-crest.svg" alt="" />
+        </div>
+        <div class="govbb-official-banner__text">
+          <span>Official government website</span>
         </div>
       </div>
     </div>`;
 
   // Yellow government bar + admin label
   const header = `
-    <header class="govbb-header">
-      <div class="govbb-container">
-        <div class="govbb-header__inner">
-          <a href="/admin/" aria-label="Job Letters admin — home">
-            <img class="govbb-header__logo" src="/assets/images/govbb-logo.svg" alt="Government of Barbados" />
-          </a>
-          <span class="govbb-text-h4">Job letters · Admin</span>
-        </div>
+    <header class="govbb-header" data-govbb-module="header">
+      <div class="govbb-width-container govbb-header__inner">
+        <a class="govbb-header__home" href="/admin/" aria-label="Job Letters admin — home">
+          <img class="govbb-header__logo" src="/assets/images/govbb-logo.svg" alt="Government of Barbados" />
+        </a>
+        <span class="govbb-text-h4">Job letters · Admin</span>
       </div>
     </header>`;
 
   // Distinctive blue admin bar so it's obvious you're not on the public side
   const adminBar = `
     <div style="background:#00267f;color:#fff;">
-      <div class="govbb-container" style="padding-block: var(--govbb-space-s); display:flex; align-items:center; gap:var(--govbb-space-m); flex-wrap:wrap;">
+      <div class="govbb-width-container" style="padding-block: var(--govbb-space-s); display:flex; align-items:center; gap:var(--govbb-space-m); flex-wrap:wrap;">
         <strong style="font-size:0.9rem;letter-spacing:0.04em;text-transform:uppercase;">Admin console</strong>
         <nav style="display:flex;gap:var(--govbb-space-m);align-items:center;font-size:0.95rem;">
           <a href="/admin/" style="color:#fff;text-decoration:none;" data-nav="dashboard">Dashboard</a>
@@ -54,38 +50,41 @@
 
   const footer = `
     <footer class="govbb-footer">
-      <div class="govbb-container">
-        <div class="govbb-footer__inner">
-          <nav class="govbb-footer__nav" aria-label="Footer">
-            <a class="govbb-footer__link" href="/admin/">Admin home</a>
-            <a class="govbb-footer__link" href="/">Public service</a>
-            <a class="govbb-footer__link" href="https://github.com/govtech-bb/Get-a-job-letter-from-the-Ministry-of-Education" rel="noopener">View source</a>
-          </nav>
-          <hr class="govbb-footer__divider" />
-          <div class="govbb-footer__end">
-            <img class="govbb-footer__coat" src="/assets/images/govbb-creast.svg" alt="" aria-hidden="true" />
-            <p class="govbb-footer__copy">
-              Built by GovTech Barbados with the Ministry of Education Transformation.
-            </p>
-          </div>
+      <div class="govbb-width-container govbb-footer__inner">
+        <nav class="govbb-footer__nav" aria-label="Footer navigation">
+          <ul class="govbb-footer__list">
+            <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="/admin/">Admin home</a></li>
+            <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="/">Public service</a></li>
+            <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="https://github.com/govtech-bb/Get-a-job-letter-from-the-Ministry-of-Education" rel="noopener">View source</a></li>
+          </ul>
+        </nav>
+        <hr class="govbb-footer__divider" aria-hidden="true" />
+        <div class="govbb-footer__end">
+          <img class="govbb-footer__coat" src="/assets/images/govbb-crest.svg" alt="" />
+          <p class="govbb-footer__copy">
+            Built by GovTech Barbados with the Ministry of Education Transformation.
+          </p>
         </div>
       </div>
     </footer>`;
 
-  const skipLink = `<a class="govbb-visually-hidden govbb-visually-hidden-focusable" href="#main-content">Skip to main content</a>`;
+  const skipLink = `<a class="govbb-skip-link" href="#main-content">Skip to main content</a>`;
 
   function render() {
     const body = document.body;
     const main = document.getElementById("main-content");
     if (!main) return;
+    // Without this the skip link scrolls but leaves focus on the link itself.
+    if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
 
     // Wrap children, preserving identity
-    if (!main.querySelector(":scope > .govbb-container")) {
+    // The admin console is a wide data view, so it uses the width container
+    // without the two-thirds column the public pages take.
+    if (!main.querySelector(":scope > .govbb-width-container")) {
       const container = document.createElement("div");
-      container.className = "govbb-container";
+      container.className = "govbb-width-container";
       const column = document.createElement("div");
-      column.className = "content-column stack-lg";
-      column.style.maxWidth = "64rem";
+      column.className = "stack-lg";
       while (main.firstChild) column.appendChild(main.firstChild);
       container.appendChild(column);
       main.appendChild(container);
@@ -142,9 +141,19 @@
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
+  // The header is a progressive-enhancement component (data-govbb-module),
+  // so initAll() has to run after this script has injected it. Dynamic import
+  // because this file is a classic script, not a module.
+  function enhance() {
     render();
+    import("/assets/govbb/index.js")
+      .then(({ initAll }) => initAll())
+      .catch((err) => console.error("govbb runtime failed to load", err));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", enhance);
+  } else {
+    enhance();
   }
 })();

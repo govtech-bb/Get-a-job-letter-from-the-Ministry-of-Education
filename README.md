@@ -28,7 +28,6 @@ server/
   views/
     layout.js                Shared page chrome (header, footer, official banner, alpha banner)
     pages.js                 Start, request, sent, not-found, letter-ready, verify pages
-job-letter-request.html      Earlier single-file staff-input prototype (kept for reference)
 ```
 
 ## Run locally

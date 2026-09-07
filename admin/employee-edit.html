@@ -203,9 +203,9 @@
         </div>
       </fieldset>
 
-      <div class="govbb-btn-group" style="margin-top: var(--spacing-m);">
-        <button class="govbb-btn" type="submit" id="submit-btn">Save</button>
-        <a class="govbb-btn--link" href="/admin/employees.html">Cancel</a>
+      <div class="govbb-button-group" style="margin-top: var(--spacing-m);">
+        <button class="govbb-button" type="submit" id="submit-btn">Save</button>
+        <a class="govbb-button govbb-button--text" href="/admin/employees.html">Cancel</a>
       </div>
     </form>
 
@@ -294,7 +294,7 @@
       const confirmHref = employee.isActive
         ? `/admin/confirm.html?action=employee-deactivate&email=${encodeURIComponent(editEmail)}`
         : `/admin/confirm.html?action=employee-reactivate&email=${encodeURIComponent(editEmail)}`;
-      actions.innerHTML = `<a class="govbb-btn--secondary" href="${confirmHref}">${employee.isActive ? "Deactivate" : "Reactivate"}</a>`;
+      actions.innerHTML = `<a class="govbb-button govbb-button--secondary" href="${confirmHref}">${employee.isActive ? "Deactivate" : "Reactivate"}</a>`;
 
       loadAudit();
     }

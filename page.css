@@ -1,61 +1,68 @@
-/* Page-level conveniences shared by all pages. Component styles live in
-   the govbb design system (styles.css). */
+/* Service-specific styles. Everything the design system provides — the page
+   scaffold, the grid, type, components — comes from styles.css; this file is
+   only for the few things it has no component for.
 
-/* .page-main and .content-column are gone: govbb-main-wrapper owns the vertical
-   rhythm and govbb-grid-column-two-thirds owns the measure. */
-.stack > * + * { margin-top: var(--spacing-s); }
-.stack-lg > * + * { margin-top: var(--spacing-m); }
+   Every value is a --govbb-* token. The previous names (--spacing-m,
+   --color-green-10, …) belonged to the superseded bundle and resolved to
+   nothing once the real package landed, which is silent: an undefined custom
+   property produces no error, just no style. */
 
-.panel-success {
-  background: var(--color-green-10);
-  border-left: 8px solid var(--color-green-00);
-  padding: var(--spacing-m);
-}
-.panel-warning {
-  background: var(--color-yellow-40);
-  border-left: 8px solid var(--color-yellow-00);
-  padding: var(--spacing-m);
-}
-.panel-error {
-  background: var(--color-red-10);
-  border-left: 8px solid var(--color-red-00);
-  padding: var(--spacing-m);
-}
+.stack > * + * { margin-top: var(--govbb-space-s); }
+.stack-lg > * + * { margin-top: var(--govbb-space-m); }
+
+/* Coloured panels. The design system has no panel or callout component, so
+   these are bespoke — but built from the token ramps rather than literals.
+   Raised with the design team rather than dressed up as a govbb- class. */
+.panel-success,
+.panel-warning,
+.panel-error,
 .panel-info {
-  background: var(--color-blue-10);
-  border-left: 8px solid var(--color-blue-100);
-  padding: var(--spacing-m);
+  padding: var(--govbb-space-m);
+  border-left: 8px solid;
 }
+.panel-success { background: var(--govbb-green-10);  border-left-color: var(--govbb-green-80); }
+.panel-warning { background: var(--govbb-yellow-20); border-left-color: var(--govbb-yellow-80); }
+.panel-error   { background: var(--govbb-red-10);    border-left-color: var(--govbb-red-80); }
+.panel-info    { background: var(--govbb-blue-10);   border-left-color: var(--govbb-color-brand); }
 
-.key-value { display: grid; gap: var(--spacing-xs); }
-.key-value dt { color: var(--color-text-muted); font-size: var(--font-size-caption); }
-.key-value dd { margin: 0; font-weight: var(--font-weight-bold); }
+/* Key/value pairs on the letter and verification screens. Summary list is the
+   design system's component for this shape; see the note in the PR — these are
+   dense two-column readouts rather than a check-answers list. */
+.key-value { display: grid; gap: var(--govbb-space-xs); }
+.key-value dt {
+  color: var(--govbb-color-muted);
+  font-size: var(--govbb-font-size-body-sm);
+}
+.key-value dd { margin: 0; font-weight: 700; }
 
 .verify-stamp {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-xs) var(--spacing-s);
-  background: var(--color-green-10);
-  border: 2px solid var(--color-green-00);
-  border-radius: var(--radius-sm);
-  color: var(--color-green-00);
-  font-weight: var(--font-weight-bold);
+  gap: var(--govbb-space-xs);
+  padding: var(--govbb-space-xs) var(--govbb-space-s);
+  background: var(--govbb-green-10);
+  border: 2px solid var(--govbb-green-80);
+  border-radius: var(--govbb-radius);
+  color: var(--govbb-green-80);
+  font-weight: 700;
 }
 .verify-stamp--invalid {
-  background: var(--color-red-10);
-  border-color: var(--color-red-00);
-  color: var(--color-red-00);
+  background: var(--govbb-red-10);
+  border-color: var(--govbb-red-80);
+  color: var(--govbb-red-80);
 }
 .verify-stamp--pending {
-  background: var(--color-blue-10);
-  border-color: var(--color-blue-100);
-  color: var(--color-blue-100);
+  background: var(--govbb-blue-10);
+  border-color: var(--govbb-color-brand);
+  color: var(--govbb-color-brand);
 }
 
+/* The letter itself is a printed artefact, not a web page: it deliberately
+   uses a serif face and fixed point sizes so the on-screen preview matches the
+   PDF. Not a design-system deviation to fix. */
 .letter-paper {
   background: #fff;
-  border: 1px solid var(--color-grey-00);
+  border: 1px solid var(--govbb-grey-20);
   padding: 2rem;
   font-family: "Times New Roman", Times, serif;
   font-size: 11pt;

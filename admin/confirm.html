@@ -34,7 +34,7 @@
       gap: var(--spacing-s);
       flex-wrap: wrap;
     }
-    .actions .govbb-btn--destructive {
+    .actions .govbb-button--negative {
       background: var(--color-red-00);
       color: #fff;
       border: 0;
@@ -44,7 +44,7 @@
       font-weight: var(--font-weight-bold);
       cursor: pointer;
     }
-    .actions .govbb-btn--destructive:hover { background: #841f1f; }
+    .actions .govbb-button--negative:hover { background: #841f1f; }
     .actions .cancel {
       padding: var(--spacing-xs) var(--spacing-m);
       color: var(--color-text);
@@ -209,7 +209,7 @@
           <h1>${escapeHtml(spec.heading(name))}</h1>
           <p class="consequence">${escapeHtml(spec.consequence())}</p>
           <div class="actions">
-            <button class="govbb-btn--destructive" id="confirm-btn" type="button">${escapeHtml(spec.confirmLabel)}</button>
+            <button class="govbb-button govbb-button--negative" id="confirm-btn" type="button">${escapeHtml(spec.confirmLabel)}</button>
             <a class="cancel" href="${escapeHtml(backTo)}">Cancel</a>
           </div>
           <p id="error" style="color:var(--color-red-00);margin-top:var(--spacing-s);" hidden></p>

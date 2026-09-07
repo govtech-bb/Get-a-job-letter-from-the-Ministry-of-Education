@@ -265,7 +265,7 @@ flowchart TB
   end
 
   subgraph ghpages[GitHub Pages]
-    pageprod[govtech-bb.github.io/.../ <br/>read-only static demo<br/>built from /docs on main]
+    pageprod[govtech-bb.github.io/.../ <br/>read-only static demo<br/>built from the repo root on main]
     pagestaging[govtech-bb.github.io/.../staging/<br/>read-only static demo<br/>auto-synced from staging]
   end
 
@@ -276,7 +276,7 @@ flowchart TB
 
   main -.on push.-> prod
   staging -.on push.-> preview
-  main -.docs/ folder.-> pageprod
+  main -.root of the repo.-> pageprod
   staging -.sync workflow.-> pagestaging
   prod --> neon
   prod --> resend
@@ -315,8 +315,6 @@ moe-letters/
 │     └─ handlers/{adminEmployees,adminLetters,adminDashboard,adminAdmins}.js
 ├─ decisions/               ← ADRs (you are here, future-maintainer)
 │  └─ 0001…0006-*.md
-├─ docs/                    ← GitHub Pages source (static mirror)
-│  └─ static copies of the user-side HTML/assets
 ├─ staging/                 ← /staging/ folder on GitHub Pages
 │  └─ auto-synced from the staging branch via Actions
 ├─ assets/                  ← logos, favicon, fonts

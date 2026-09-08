@@ -84,38 +84,59 @@ function buildForm(html) {
   );
 }
 
-// Every published template — landing, single question, multiple questions,
-// confirmation — puts content directly inside
-// <main class="govbb-width-container govbb-main-wrapper">, with no grid row
-// and no column. /styles/layout.md says body content belongs in
-// govbb-grid-column-two-thirds instead. The two disagree, and the templates win
-// for the page type you are building; the disagreement is in the PR for the
-// design team. govbb-main-wrapper already caps p/ul/ol/dl at --govbb-measure,
-// so the reading width is handled without the grid.
+// Page shape follows the platform. gov-bb's apps/landing renders every service
+// page as
 //
-// page-flow supplies the rhythm between blocks. The design system resets
-// h1-h6, p and ul to margin-block:0 and ships no flow rule outside
-// .govbb-prose, so with content directly in main every block would otherwise
-// sit flush against the next.
+//     <div class="govbb-width-container govbb-main-wrapper">
+//       <div class="govbb-prose">…</div>
+//     </div>
+//
+// (routes/$.tsx and components/markdown/MarkdownContent.tsx), with the body
+// authored as markdown, so headings, paragraphs and lists arrive as bare
+// elements and govbb-prose sizes them and owns the rhythm between them.
+//
+// This service hand-writes its HTML rather than living in the monorepo, but it
+// uses the same containers so the CSS behaves identically. That replaced a
+// bespoke .page-flow, which had re-implemented prose's rhythm and its reading
+// measure by hand.
 function buildMain(html) {
   const openTag = html.match(/<main\b[^>]*>/);
   if (!openTag) return html;
 
-  const crumbAttr = openTag[0].match(/data-breadcrumbs='([^']*)'/);
-  const needsAttr = openTag[0].match(/data-needs-js="([^"]*)"/);
-  const attrs =
-    (crumbAttr ? ` data-breadcrumbs='${crumbAttr[1]}'` : "") +
-    (needsAttr ? ` data-needs-js="${needsAttr[1]}"` : "");
+  const keep = (name, quote = "'") => {
+    const m = openTag[0].match(new RegExp(`${name}=${quote}([^${quote}]*)${quote}`));
+    return m ? ` ${name}=${quote}${m[1]}${quote}` : "";
+  };
+  const attrs = keep("data-breadcrumbs") + keep("data-needs-js", '"');
 
   html = html.replace(
     openTag[0],
-    `<main class="govbb-width-container govbb-main-wrapper page-flow" id="main-content" tabindex="-1"${attrs}>`
+    `<main class="govbb-width-container govbb-main-wrapper" id="main-content" tabindex="-1"${attrs}>`
   );
 
-  // Unwrap the grid row and column this used to emit.
-  html = html
-    .replace(/\s*<div class="govbb-grid-row">\s*\n\s*<div class="govbb-grid-column-two-thirds">/, "")
-    .replace(/\s*<\/div>\s*\n\s*<\/div>\s*\n(\s*)<\/main>/, "\n$1</main>");
+  // Column, then prose — matching the chain alpha.gov.bb actually renders:
+  //
+  //   govbb-width-container govbb-main-wrapper   1070px
+  //     lg:grid lg:grid-cols-3                   1070px
+  //       lg:col-span-2                           692px
+  //         govbb-prose                           692px
+  //
+  // The platform builds that column with Tailwind, which is why the published
+  // templates show a flat shape and /styles/layout.md does not — measured on a
+  // live service page rather than inferred. govbb-grid-column-two-thirds is
+  // span 8 of 12, which lands within a couple of pixels of the same width, so
+  // this is the same layout expressed in design-system classes.
+  // Insert the column and prose. Insert-only — never replace an existing
+  // </div>, or a page that closes another container just before </main>
+  // (verify.html's #verify-root) loses its own closing tag.
+  if (!/govbb-grid-row/.test(html)) {
+    html = html
+      .replace(
+        /(<main\b[^>]*>)\n/,
+        '$1\n    <div class="govbb-grid-row">\n      <div class="govbb-grid-column-two-thirds">\n        <div class="govbb-prose">\n'
+      )
+      .replace(/\n(\s*)<\/main>/, "\n        </div>\n      </div>\n    </div>\n$1</main>");
+  }
 
   return html;
 }

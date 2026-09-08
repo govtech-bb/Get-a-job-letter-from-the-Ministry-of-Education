@@ -130,17 +130,41 @@ export const runtime = `
   initAll();
 </script>`;
 
-// Shown where a feature genuinely cannot work server-side. The design system
-// is explicit that this is not a blanket gate: "most pages should still
-// function", and on this service they do — only the record lookup and the
-// verification check need script, because GitHub Pages has no server to post
-// to. Copy follows /templates/javascript-disabled/.
+// Shown where a feature may not work without script. The design system is
+// explicit that this is not a blanket gate: "most pages should still
+// function", and on this service they do. Copy follows
+// /templates/javascript-disabled/.
+//
+// Two shapes, because the two pages differ. verify.html genuinely cannot check
+// a letter without script anywhere. request.html submits fine without script
+// wherever the API is served — but the GitHub Pages demo has no server to
+// process the POST, and the same HTML is served to both, so the wording has to
+// be true either way: it says what to do if it does not work, rather than
+// asserting that it will not.
+const NOSCRIPT_COPY = {
+  "Checking a letter": {
+    heading: "Checking a letter needs JavaScript to work",
+    lead: "JavaScript is turned off in your browser, or your browser does not support it.",
+  },
+  "Requesting a letter": {
+    heading: "You may not be able to request a letter without JavaScript",
+    lead:
+      "This form works without JavaScript on the main service, but not on every copy of it. " +
+      "If selecting Continue does not take you to a confirmation page, use one of the options below.",
+  },
+};
+
 export function noScript(what) {
+  const copy = NOSCRIPT_COPY[what] || {
+    heading: `${what} needs JavaScript to work`,
+    lead: "JavaScript is turned off in your browser, or your browser does not support it.",
+  };
+
   return `
       <noscript>
         <div class="govbb-status-banner govbb-status-banner--alpha">
-          <h2 class="govbb-text-h3">${what} needs JavaScript to work</h2>
-          <p>JavaScript is turned off in your browser, or your browser does not support it.</p>
+          <h2 class="govbb-text-h3">${copy.heading}</h2>
+          <p>${copy.lead}</p>
           <ul class="govbb-list govbb-list--bullet">
             <li>Turn on JavaScript in your browser settings, then refresh this page.</li>
             <li>Try an up-to-date browser — Chrome, Safari, Firefox and Edge all support it by default.</li>

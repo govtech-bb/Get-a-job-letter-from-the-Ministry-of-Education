@@ -69,6 +69,21 @@ function dropRegion(html, name) {
 // admin pages, one level down, can reuse the same templates with "../".
 const toPagePath = (s) => s.replace(/\{\{base\}\}/g, "");
 
+// Give the request form a real action and method so it works without script.
+// app.js calls preventDefault() and uses the JSON endpoint when script runs,
+// so this is the fallback rather than the normal path.
+//
+// Same-origin on purpose. An absolute URL to the deploy would also let the
+// GitHub Pages demo submit, but it would mean a local no-JS submit posting to
+// production and issuing a real letter, which is not a trade worth making to
+// paper over a static host that structurally cannot process a POST.
+function buildForm(html) {
+  return html.replace(
+    /<form id="request-form"[^>]*novalidate>/,
+    `<form id="request-form" method="post" action="/api/request-letter-form" novalidate>`
+  );
+}
+
 // Every published template — landing, single question, multiple questions,
 // confirmation — puts content directly inside
 // <main class="govbb-width-container govbb-main-wrapper">, with no grid row
@@ -110,6 +125,7 @@ function buildPage(file) {
   let html = fs.readFileSync(p, "utf-8");
 
   html = buildMain(html);
+  html = buildForm(html);
 
   // The runtime injector is gone; its markup is now in the file.
   html = html.replace(/\s*<script src="chrome\.js"><\/script>/g, "");
@@ -151,12 +167,12 @@ function buildPage(file) {
   if (needs) {
     const block = toPagePath(noScript(needs[1]));
     const withNs = replaceRegion(html, "noscript", block);
+    // Anchor on <main>, not on a grid column — the columns went when the page
+    // shape was flattened to match the templates, and this insertion silently
+    // did nothing for a while because its anchor no longer existed.
     html =
       withNs ??
-      html.replace(
-        /(<div class="govbb-grid-column-two-thirds">)/,
-        `$1\n    ${region("noscript", block)}`
-      );
+      html.replace(/(<main\b[^>]*>)/, `$1\n    ${region("noscript", block)}`);
   } else {
     html = dropRegion(html, "noscript");
   }

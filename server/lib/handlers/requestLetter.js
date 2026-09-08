@@ -6,8 +6,7 @@ import { newLetterId, signLetterId, validUntil } from "../sign.js";
 import { generateDocumentCode, formatDocumentCode } from "../fingerprint.js";
 import { generateLetterPdf } from "../../pdf.js";
 import { sendLetterEmail } from "../email.js";
-
-const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isEmailFormat } from "../emailFormat.js";
 
 function normalise(s) {
   return String(s || "").trim().toLowerCase();
@@ -37,7 +36,7 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
   if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
   if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
 
-  if (!email || !EMAIL_RX.test(email)) {
+  if (!isEmailFormat(email)) {
     errors.push({ field: "email", message: "Enter a valid email address" });
   } else {
     const allowedDomains = (await listAllowedDomains()).map(r => r.domain.toLowerCase());

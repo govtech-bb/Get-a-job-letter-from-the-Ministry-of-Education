@@ -3,6 +3,7 @@
 // would change before committing.
 
 import { sql } from "../db.js";
+import { isEmailFormat } from "../emailFormat.js";
 
 // ── CSV parsing ────────────────────────────────────────────────────────────
 
@@ -135,7 +136,7 @@ function normaliseDate(raw) {
 function validateRow(row, lineNum) {
   const errors = [];
   if (!row.employeeId) errors.push("Employee ID is required");
-  if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push("Valid email is required");
+  if (!row.email || !isEmailFormat(row.email)) errors.push("Valid email is required");
   if (!row.firstName) errors.push("First name is required");
   if (!row.lastName) errors.push("Last name is required");
   if (!row.title) errors.push("Title is required");

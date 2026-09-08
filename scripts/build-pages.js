@@ -167,12 +167,12 @@ function buildPage(file) {
   if (needs) {
     const block = toPagePath(noScript(needs[1]));
     const withNs = replaceRegion(html, "noscript", block);
+    // Anchor on <main>, not on a grid column — the columns went when the page
+    // shape was flattened to match the templates, and this insertion silently
+    // did nothing for a while because its anchor no longer existed.
     html =
       withNs ??
-      html.replace(
-        /(<div class="govbb-grid-column-two-thirds">)/,
-        `$1\n    ${region("noscript", block)}`
-      );
+      html.replace(/(<main\b[^>]*>)/, `$1\n    ${region("noscript", block)}`);
   } else {
     html = dropRegion(html, "noscript");
   }

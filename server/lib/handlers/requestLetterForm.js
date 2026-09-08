@@ -11,35 +11,55 @@
 import { requestLetter } from "./requestLetter.js";
 import { renderPage, escapeHtml } from "../renderPage.js";
 
-// The rendered page is returned by the API, which may sit on a different
-// origin from the site. Links and assets have to point back at wherever the
-// form was submitted from, and that value comes from the request — so it is
-// checked against this list rather than trusted, or it would be an open
-// redirect.
-const ALLOWED_ORIGINS = new Set([
-  "https://govtech-bb.github.io",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-]);
+// Every origin this service is served from. The rendered page and the redirect
+// both point back at wherever the form was submitted from, and that value
+// arrives in request headers — which are attacker-controlled, so nothing here
+// is derived from them without being matched against this list first.
+//
+// req.headers.host in particular is NOT trustworthy: a request can carry any
+// Host it likes, and using it raw produced both an open redirect and, once
+// interpolated into the page, reflected XSS.
+const KNOWN_SITES = [
+  { origin: "https://govtech-bb.github.io", path: "/Get-a-job-letter-from-the-Ministry-of-Education/" },
+  { origin: "https://moe-letters.vercel.app", path: "/" },
+  { origin: "https://get-a-job-letter.netlify.app", path: "/" },
+  { origin: "http://localhost:3000", path: "/" },
+  { origin: "http://127.0.0.1:3000", path: "/" },
+];
 
-// GitHub Pages serves this project from a subpath; everywhere else is root.
-function basePathFor(origin) {
-  return origin === "https://govtech-bb.github.io"
-    ? "/Get-a-job-letter-from-the-Ministry-of-Education/"
-    : "/";
+// Where a letter's verification link points. It is embedded in the emailed PDF
+// and its QR code, so it has to outlive the request that created it and must
+// never come from a header — a forged Host would mint letters whose permanent
+// verify URL points somewhere else.
+const CANONICAL_ORIGIN =
+  process.env.PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://moe-letters.vercel.app";
+
+function siteFor(origin) {
+  return KNOWN_SITES.find((s) => s.origin === origin) || null;
 }
 
-export function resolveBase({ origin, referer, fallbackOrigin }) {
-  let candidate = origin;
-  if (!candidate && referer) {
+/**
+ * The absolute origin + path to render links and redirect against. Falls back
+ * to the canonical site rather than to anything derived from the request.
+ */
+export function resolveBase({ origin, referer } = {}) {
+  let site = siteFor(origin);
+
+  if (!site && referer) {
     try {
-      candidate = new URL(referer).origin;
+      site = siteFor(new URL(referer).origin);
     } catch {
-      candidate = null;
+      site = null;
     }
   }
-  if (!candidate || !ALLOWED_ORIGINS.has(candidate)) candidate = fallbackOrigin;
-  return candidate.replace(/\/$/, "") + basePathFor(candidate);
+
+  if (!site) site = siteFor(CANONICAL_ORIGIN) || KNOWN_SITES[0];
+  return site.origin + site.path;
+}
+
+/** The origin baked into the letter. Never request-derived. */
+export function verificationBase() {
+  return CANONICAL_ORIGIN;
 }
 
 const FIELDS = ["firstName", "lastName", "employeeId", "email"];
@@ -71,10 +91,12 @@ function field(name, value, error, base) {
         <label class="govbb-label" for="${name}">${escapeHtml(LABELS[name])}</label>
         ${hint}
         ${err}
-        <input class="govbb-input" id="${name}" name="${name}" type="${name === "email" ? "email" : "text"}"
-          value="${escapeHtml(value)}"${error ? ' aria-invalid="true"' : ""}${
+        <div class="govbb-input-wrapper">
+          <input class="govbb-input" id="${name}" name="${name}" type="${name === "email" ? "email" : "text"}"
+            value="${escapeHtml(value)}"${error ? ' aria-invalid="true"' : ""}${
     describedBy ? ` aria-describedby="${describedBy}"` : ""
   } />
+        </div>
       </div>`;
 }
 
@@ -125,25 +147,59 @@ ${FIELDS.map((f) => field(f, values[f] || "", byField[f], base)).join("\n\n")}
  * Runs the whole no-JS submit. Returns either a redirect or a page to render,
  * so the Vercel function and the dev server share one implementation.
  */
-export async function handleFormSubmit({ body, base, action, publicBaseUrl, submit = requestLetter }) {
+export async function handleFormSubmit({ body, base, action, submit = requestLetter }) {
   const values = Object.fromEntries(
     FIELDS.map((f) => [f, String(body?.[f] ?? "").trim()])
   );
 
-  const result = await submit({ ...values, publicBaseUrl });
+  // publicBaseUrl is baked into the letter's PDF and QR code, so it comes from
+  // the canonical origin, never from where this particular request came from.
+  const result = await submit({ ...values, publicBaseUrl: verificationBase() });
 
   if (result.status === 200 && result.body?.ok) {
     return { redirect: `${base}sent.html` };
   }
 
-  // requestLetter reports field-level problems as { field, message }. Anything
-  // else — a rejected domain, no matching record — comes back as a single
-  // message with no field, so it is shown against the email input, which is
-  // the answer it is about.
-  const errors =
-    result.body?.errors?.length
-      ? result.body.errors
-      : [{ field: "email", message: result.body?.message || "We could not find a matching record." }];
+  // Match how app.js routes each outcome, so the two paths tell the user the
+  // same thing. Only genuine field-level problems re-render the form.
+  if (result.body?.errors?.length) {
+    return {
+      html: renderFormPage({ values, errors: result.body.errors, base, action }),
+      status: result.status || 400,
+    };
+  }
 
-  return { html: renderFormPage({ values, errors, base, action }), status: result.status || 400 };
+  if (result.body?.error === "not_found") {
+    return { redirect: `${base}not-found.html` };
+  }
+
+  // The letter exists but the email failed. Re-rendering the form would invite
+  // a resubmit, and a resubmit issues a second letter — so say what happened
+  // and do not offer the form again.
+  if (result.body?.error === "email_send_failed") {
+    return {
+      status: result.status || 502,
+      html: renderPage({
+        title: "We could not send your letter",
+        base,
+        main: `    <h1 class="govbb-text-h1">We could not send your letter</h1>
+    <p class="govbb-text-body">
+      Your letter was generated, but the email did not go out. Do not request
+      another one — try again in a few minutes, or contact your school's
+      personnel officer if it still does not arrive.
+    </p>
+    <p class="govbb-text-body"><a class="govbb-link" href="${base}index.html">Return to the start</a></p>`,
+      }),
+    };
+  }
+
+  return {
+    status: result.status || 400,
+    html: renderFormPage({
+      values,
+      errors: [{ field: "email", message: result.body?.message || "We could not process your request." }],
+      base,
+      action,
+    }),
+  };
 }

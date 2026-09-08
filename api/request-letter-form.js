@@ -16,10 +16,18 @@ export const config = { runtime: "nodejs" };
 // The runtime usually parses urlencoded bodies, but not on every path, so
 // handle a raw string too rather than depending on it.
 function parseBody(req) {
-  if (req.body && typeof req.body === "object") return req.body;
-  if (typeof req.body === "string") {
-    return Object.fromEntries(new URLSearchParams(req.body));
+  const body = req.body;
+  if (!body) return {};
+  // Order matters: a Buffer is typeof "object", so it has to be handled before
+  // the plain-object branch or every field silently reads as empty and the user
+  // is told to fill in a form they already filled in.
+  if (Buffer.isBuffer(body)) {
+    return Object.fromEntries(new URLSearchParams(body.toString("utf8")));
   }
+  if (typeof body === "string") {
+    return Object.fromEntries(new URLSearchParams(body));
+  }
+  if (typeof body === "object") return body;
   return {};
 }
 
@@ -36,14 +44,12 @@ export default async function handler(req, res) {
     const base = resolveBase({
       origin: req.headers.origin,
       referer: req.headers.referer,
-      fallbackOrigin: ownOrigin,
     });
 
     const result = await handleFormSubmit({
       body: parseBody(req),
       base,
       action: `${ownOrigin}/api/request-letter-form`,
-      publicBaseUrl: base.replace(/\/$/, ""),
     });
 
     if (result.redirect) {

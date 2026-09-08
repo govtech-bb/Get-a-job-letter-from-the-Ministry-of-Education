@@ -89,13 +89,11 @@ app.post("/api/request-letter-form", async (req, res) => {
     const base = resolveBase({
       origin: req.headers.origin,
       referer: req.headers.referer,
-      fallbackOrigin: ownOrigin,
     });
     const result = await handleFormSubmit({
       body: req.body,
       base,
       action: `${ownOrigin}/api/request-letter-form`,
-      publicBaseUrl: base.replace(/\/$/, ""),
       submit: submitRequest,
     });
     if (result.redirect) return res.redirect(303, result.redirect);

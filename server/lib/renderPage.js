@@ -33,7 +33,12 @@ export function escapeHtml(s) {
  *                              the site, so every asset and link is absolute.
  */
 export function renderPage({ title, main, base }) {
-  const chrome = (t) => t.replace(/\{\{base\}\}/g, base);
+  // base is matched against a known-sites list before it reaches here, but it
+  // still ends up inside href attributes, so escape it rather than relying on
+  // that alone. The function form of replace() is deliberate: a string
+  // replacement would treat $& and $' in the value as substitution patterns.
+  const safeBase = escapeHtml(base);
+  const chrome = (t) => t.replace(/\{\{base\}\}/g, () => safeBase);
 
   return `<!doctype html>
 <html lang="en">
@@ -42,9 +47,9 @@ export function renderPage({ title, main, base }) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(title)} — Job letters — Ministry of Education</title>
   <meta name="robots" content="noindex" />
-  <link rel="icon" href="${base}assets/images/favicon.ico" />
-  <link rel="stylesheet" href="${base}styles.css" />
-  <link rel="stylesheet" href="${base}page.css" />
+  <link rel="icon" href="${safeBase}assets/images/favicon.ico" />
+  <link rel="stylesheet" href="${safeBase}styles.css" />
+  <link rel="stylesheet" href="${safeBase}page.css" />
 </head>
 <body class="govbb-page">
 ${chrome(skipLink + officialBanner + header + alphaBanner)}

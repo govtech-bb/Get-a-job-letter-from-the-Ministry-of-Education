@@ -56,9 +56,11 @@
 .route-list > li + li { margin-block-start: var(--govbb-space-m); }
 .route-list > li > * + * { margin-block-start: var(--govbb-space-s); }
 
-/* The title is the only thing on its line, so it needs to be a block for the
-   rule above to space what follows it. */
-.route-list__title { display: block; }
+/* The route titles are h3 — the level below the section's h2 — sized with
+   govbb-text-h4 so they keep the 20px they had as bold text. The design system
+   is explicit that the element is for structure and the class is for size, and
+   that a heading which "looks too small for its place" should have its class
+   changed, not its level. Headings are already block, so no display rule. */
 
 /* Coloured panels. The design system has no panel or callout component, so
    these are bespoke — but built from the token ramps rather than literals.

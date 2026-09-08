@@ -114,13 +114,18 @@ For real production mail, verify a subdomain of `moe.gov.bb` and set
 
 ## How it works
 
-1. Employee opens the service and enters their work email address.
-2. The server matches the address against the synthetic record set. Receipt of
-   the resulting email (stubbed in alpha) is the proof of identity.
+1. Employee opens the service and enters their first name, last name,
+   employee ID and work email address.
+2. The server looks the employee up by employee ID, checks the name matches
+   that record, and checks the email is on an allowed domain and plausibly
+   matches the name. Receipt of the resulting email (stubbed in alpha) is the
+   proof of identity.
 3. On a match, an HMAC-signed letter token is issued and a PDF is generated
    from the current record using the right template.
 4. The PDF carries a QR code and a verification URL. A bank or retailer can
-   scan or visit it to confirm the letter is genuine and current.
+   scan or visit it to confirm the Ministry issued the letter and that it has
+   not been altered. Verification reports the record as it stood when the
+   letter was issued, not a live employment check.
 5. Tampering with the reference or the token will fail verification with a
    clear message.
 

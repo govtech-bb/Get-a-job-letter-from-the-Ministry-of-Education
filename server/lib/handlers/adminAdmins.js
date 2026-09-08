@@ -3,6 +3,7 @@
 import { sql } from "../db.js";
 import { Resend } from "resend";
 import { recipientsForAdminEmail } from "../recipients.js";
+import { isEmailFormat } from "../emailFormat.js";
 
 let _resend = null;
 function resendClient() {
@@ -56,7 +57,7 @@ export async function getAdminAudit(email, { limit = 30 } = {}) {
 
 function validate(input) {
   const errors = [];
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) errors.push({ field: "email", message: "Enter a valid email address." });
+  if (!isEmailFormat(input.email)) errors.push({ field: "email", message: "Enter a valid email address." });
   if (!input.name) errors.push({ field: "name", message: "Name is required." });
   if (!VALID_ROLES.has(input.role)) errors.push({ field: "role", message: "Role must be admin or super_admin." });
   return errors;

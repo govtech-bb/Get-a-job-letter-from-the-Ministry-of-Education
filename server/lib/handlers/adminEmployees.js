@@ -2,6 +2,7 @@
 // employee_audit (who, when, what action, before/after).
 
 import { sql } from "../db.js";
+import { isEmailFormat } from "../emailFormat.js";
 
 const PAGE_SIZE = 50;
 
@@ -156,7 +157,7 @@ function normaliseInput(b) {
 
 function validate(input) {
   const errors = [];
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) errors.push({ field: "email", message: "Valid email required." });
+  if (!isEmailFormat(input.email)) errors.push({ field: "email", message: "Valid email required." });
   if (!input.firstName) errors.push({ field: "firstName", message: "First name is required." });
   if (!input.lastName)  errors.push({ field: "lastName",  message: "Last name is required." });
   if (!input.title)     errors.push({ field: "title",     message: "Title is required." });

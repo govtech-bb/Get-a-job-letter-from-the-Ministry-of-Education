@@ -8,12 +8,12 @@
 // Same return shape as requestLetter — { status, body } — so callers do not
 // care which one they got.
 
-const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 // What server/db/migrate.js seeds into allowed_domains, so local dev enforces
 // the same rule the database would. The previous inlined fallback skipped this
 // check entirely, which let the no-JavaScript path accept addresses the
 // enhanced path rejected.
+import { isEmailFormat } from "../emailFormat.js";
+
 export const LOCAL_ALLOWED_DOMAINS = ["moe.gov.bb"];
 
 export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }) {
@@ -22,10 +22,10 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
     if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
     if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
     if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
-    if (!email || !EMAIL_RX.test(email)) {
+    if (!isEmailFormat(email)) {
       errors.push({ field: "email", message: "Enter a valid email address" });
     }
-    if (email && EMAIL_RX.test(email)) {
+    if (isEmailFormat(email)) {
       const domain = email.split("@")[1].toLowerCase();
       if (!LOCAL_ALLOWED_DOMAINS.includes(domain)) {
         errors.push({

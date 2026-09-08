@@ -48,13 +48,13 @@ function moneyToWords(value) {
   if (value == null || isNaN(value)) return "";
   const v = Math.round(Number(value) * 100);
   const dollars = Math.floor(v / 100), cents = v % 100;
-  let s = intToWords(dollars) + " dollar" + (dollars === 1 ? "" : "s");
+  let s = intToWords(dollars) + " Barbados dollar" + (dollars === 1 ? "" : "s");
   if (cents > 0) s += " and " + intToWords(cents) + " cent" + (cents === 1 ? "" : "s");
   return s;
 }
 function moneyFormatted(value) {
   const v = Number(value || 0);
-  return "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return "BDS $" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function formatLongDate(d) {
   return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -75,8 +75,6 @@ function buildLetterBody(employee) {
   const fullName = [employee.title, employee.firstName, employee.lastName].filter(Boolean).join(" ");
   const titleLast = [employee.title, employee.lastName].filter(Boolean).join(" ");
   const nameAndAddress = employee.address ? `${fullName} of ${employee.address}` : fullName;
-  const pronounSubj = employee.pronoun === "he" ? "He" : "She";
-  const pronounObj = employee.pronoun === "he" ? "him" : "her";
   const salaryWords = moneyToWords(employee.monthlySalary);
   const salaryFig = moneyFormatted(employee.monthlySalary);
   const startDate = formatLongDate(employee.appointmentDate);
@@ -86,7 +84,7 @@ function buildLetterBody(employee) {
       return [
         `This is to certify that ${fullName}, ${employee.post}, ${employee.school}, has been employed with the Ministry of Education Transformation with effect from ${startDate} to the present date and holds a permanent and pensionable post.`,
         `${titleLast} is currently receiving a monthly salary of ${salaryWords} (${salaryFig}).`,
-        `Grateful if the usual courtesies are extended to ${pronounObj}.`,
+        `Grateful if the usual courtesies are extended to ${titleLast}.`,
       ];
     case "teacher_special": {
       const allowWords = moneyToWords(employee.monthlyAllowance);
@@ -94,21 +92,21 @@ function buildLetterBody(employee) {
       return [
         `This is to certify that ${fullName}, ${employee.post}, ${employee.school}, has been employed with the Ministry of Education Transformation with effect from ${startDate} to the present date and holds a permanent and pensionable post.`,
         `${titleLast} is currently receiving a monthly salary of ${salaryWords} (${salaryFig}) and a monthly allowance of ${allowWords} (${allowFig}).`,
-        `Grateful if the usual courtesies are extended to ${pronounObj}.`,
+        `Grateful if the usual courtesies are extended to ${titleLast}.`,
       ];
     }
     case "ministry_permanent":
       return [
         `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} holds the permanent and pensionable post of ${employee.post}, Ministry of Education Transformation.`,
-        `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
+        `${titleLast} receives a monthly salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
       ];
     case "ministry_temporary":
       return [
         `This is to certify that ${nameAndAddress} has been continuously employed in the Public Service with effect from ${startDate}.`,
         `${fullName} is temporarily employed in the post of ${employee.post}, Ministry of Education Transformation.`,
-        `${pronounSubj} receives a ${employee.payFrequency} salary at the rate of ${salaryWords} (${salaryFig}).`,
+        `${titleLast} receives a monthly salary at the rate of ${salaryWords} (${salaryFig}).`,
         `Any courtesies extended to ${fullName} would be appreciated.`,
       ];
     default:

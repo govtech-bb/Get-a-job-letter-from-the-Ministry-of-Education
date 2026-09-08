@@ -168,7 +168,7 @@ export function noScript(what) {
           <p>${copy.lead}</p>
           <ul class="govbb-list govbb-list--bullet">
             <li>Turn on JavaScript in your browser settings, then refresh this page.</li>
-            <li>Try an up-to-date browser — Chrome, Safari, Firefox and Edge all support it by default.</li>
+            <li>Try an up-to-date browser. Chrome, Safari, Firefox and Edge all support it by default.</li>
           </ul>
           <p>
             If you cannot use JavaScript,

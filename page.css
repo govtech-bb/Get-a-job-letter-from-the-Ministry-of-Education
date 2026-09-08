@@ -7,60 +7,16 @@
    nothing once the real package landed, which is silent: an undefined custom
    property produces no error, just no style. */
 
-/* Vertical rhythm.
-   Established from the package source, not assumed: the base resets
-   h1-h6, p and ul to margin-block:0, govbb-main-wrapper contributes
-   padding-block but no flow, the grid columns contribute no vertical gap, and
-   the govbb-text-* utilities carry no margin. The only flow rule the design
-   system ships is inside .govbb-prose, which is documented for rendered
-   markdown and long-form copy rather than short service pages like these.
-   So the rhythm between blocks is ours to write, from --govbb-space-*.
+/* Rhythm, reading measure and list spacing all come from govbb-prose now —
+   the same container gov-bb's apps/landing wraps every service page in. This
+   file previously re-implemented all three by hand (.page-flow, a restated
+   max-inline-size, and .route-list spacing), which is why the error summary and
+   the "Last updated" rule both needed correcting.
 
-   A scoped `> * + *` is safe here precisely because nothing carries a margin
-   of its own to duplicate — and it mirrors how .govbb-prose does it. Direct
-   children only, so nested groups keep their own tighter spacing. */
-.page-flow > * + * { margin-block-start: var(--govbb-space-m); }
+   .stack survives for the two blocks that are not direct children of prose —
+   #download-section and #challenge-section — whose contents prose does not
+   reach. */
 .stack > * + * { margin-block-start: var(--govbb-space-s); }
-
-/* Reading measure.
-   govbb-main-wrapper caps text at --govbb-measure, but its rule is
-   `> :where(p,ul,ol,dl)` — direct children only. These pages group content in
-   wrappers, so the cap never reached the text and lines ran the full 1070px of
-   the container. Restated here at the depth the text actually sits. Bare
-   elements only, never a govbb- class, so no component is being restyled.
-   Components opt out, matching how .govbb-prose exempts them, so buttons,
-   banners and the letter preview still use the full width. */
-.page-flow :where(p, ul, ol, dl) { max-inline-size: var(--govbb-measure); }
-.page-flow :where([class*="govbb-"]) :where(p, ul, ol, dl),
-.page-flow > :where([class*="govbb-"]) { max-inline-size: none; }
-
-/* Headings need more space above them than below, or a section reads as
-   belonging to the text before it. Values mirror .govbb-prose.
-
-   Direct children of our own flow containers only. As a descendant selector
-   this reached inside design-system components and beat their own margins —
-   .govbb-error-summary__title sets margin:0 deliberately, and our rule
-   overrode it, pushing "There is a problem" 2rem down inside a box that
-   already has padding. Components space their own internals. */
-:is(.page-flow, .stack) > :is(h2, h3) { margin-block-start: var(--govbb-space-m); }
-:is(.page-flow, .stack) > :is(h2, h3) + * { margin-block-start: var(--govbb-space-s); }
-
-/* Route list under "Complete the form".
-   Each item carries block content — the route title, how long the form takes,
-   and on the online route the start button. The design system's list component
-   spaces single-line items, and the flow rules above are direct-child only, so
-   nothing spaced the blocks inside an item or the two routes from each other:
-   the button butted straight against the next route. Scoped to this list so the
-   other numbered lists in the service keep their own tighter spacing.
-   Item gap matches .page-flow, gap within an item matches .stack. */
-.route-list > li + li { margin-block-start: var(--govbb-space-m); }
-.route-list > li > * + * { margin-block-start: var(--govbb-space-s); }
-
-/* The route titles are h3 — the level below the section's h2 — sized with
-   govbb-text-h4 so they keep the 20px they had as bold text. The design system
-   is explicit that the element is for structure and the class is for size, and
-   that a heading which "looks too small for its place" should have its class
-   changed, not its level. Headings are already block, so no display rule. */
 
 /* Coloured panels. The design system has no panel or callout component, so
    these are bespoke — but built from the token ramps rather than literals.
@@ -133,12 +89,17 @@
    class, so it fixes the whole class of bug without overriding a component. */
 [hidden] { display: none !important; }
 
-/* "Last updated on ..." under the H1, matching the landing site's markdown
-   pages: small grey text sitting on a thick pale-blue rule. There the block is
-   rendered from the page's publish_date frontmatter by MarkdownContent; these
-   pages are hand-built, so the date is in the markup. */
+/* "Last updated on ..." — a rule above the page content, matching the block
+   MarkdownContent renders from the publish_date frontmatter. The border sits on
+   a wrapping div rather than the paragraph, as it does there: inside prose a
+   bare <p> is capped at the reading measure, so a border on it would stop short
+   of the content width. */
 .last-updated {
-  color: var(--govbb-color-muted);
   padding-bottom: var(--govbb-space-s);
   border-bottom: 4px solid var(--govbb-blue-10);
+}
+.last-updated > p {
+  color: var(--govbb-color-muted);
+  font-size: var(--govbb-font-size-body-sm);
+  margin: 0;
 }

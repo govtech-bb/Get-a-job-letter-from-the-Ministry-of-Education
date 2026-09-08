@@ -90,8 +90,11 @@
 
     <div class="confirm-panel">
       <h1 class="confirm-panel__title">Letter sent</h1>
+      <!-- Reads correctly on its own: arriving here from the no-JavaScript
+           form is a plain redirect, so nothing populates the address. Script
+           swaps in the exact one when it can. -->
       <p class="confirm-panel__detail">
-        We've emailed your job letter to <strong id="recipient-email"></strong>.
+        We've emailed your job letter to <strong id="recipient-email">the address you gave</strong>.
       </p>
       <p class="confirm-panel__ref" id="ref-line" hidden>
         Reference: <code id="ref-id"></code>
@@ -148,7 +151,10 @@
     const letterId = data.letterId || "";
     const letterToken = data.letterToken || "";
 
-    document.getElementById("recipient-email").textContent = email;
+    // Only replace the fallback when we actually have an address — arriving
+    // here from the no-JS redirect, or on a reload after sessionStorage has
+    // been cleared, would otherwise blank the sentence out.
+    if (email) document.getElementById("recipient-email").textContent = email;
     if (letterId) {
       document.getElementById("ref-id").textContent = letterId;
       document.getElementById("ref-line").hidden = false;

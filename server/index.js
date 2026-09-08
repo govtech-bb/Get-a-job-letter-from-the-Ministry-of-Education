@@ -11,6 +11,8 @@ import { issueLetter, getLetter } from "./letterStore.js";
 import { generateLetterPdf } from "./pdf.js";
 import { findIssuedLetter } from "./lib/db.js";
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
+import { handleFormSubmit, resolveBase } from "./lib/handlers/requestLetterForm.js";
+import { makeRequestLetterLocal, LOCAL_ALLOWED_DOMAINS } from "./lib/handlers/requestLetterLocal.js";
 import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
   issueCode as adminIssueCode,
@@ -39,6 +41,19 @@ function findEmployeeByEmployeeId(employeeId) {
   return employees.find(e => e.employeeId === needle) || null;
 }
 
+const requestLetterLocal = makeRequestLetterLocal({
+  findEmployeeByEmployeeId,
+  issueLetter,
+});
+
+// Both the JSON endpoint and the no-JavaScript form path go through here, so
+// they cannot drift apart on validation or lookup behaviour.
+function submitRequest(input) {
+  return process.env.DATABASE_URL
+    ? apiRequestLetter(input)
+    : requestLetterLocal(input);
+}
+
 const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "2mb" }));
@@ -56,51 +71,39 @@ app.use("/api", (req, res, next) => {
 
 app.post("/api/request-letter", async (req, res) => {
   try {
-    const baseUrl = req.body?.publicBaseUrl ||
-      `${req.protocol}://${req.get("host")}`;
+    const baseUrl = req.body?.publicBaseUrl || `${req.protocol}://${req.get("host")}`;
     const { firstName, lastName, employeeId, email } = req.body || {};
-
-    if (process.env.DATABASE_URL) {
-      const result = await apiRequestLetter({ firstName, lastName, employeeId, email, publicBaseUrl: baseUrl });
-      return res.status(result.status).json(result.body);
-    }
-
-    // Local dev fallback: use in-memory JSON data instead of the database.
-    const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const errors = [];
-    if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
-    if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
-    if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
-    if (!email || !EMAIL_RX.test(email)) {
-      errors.push({ field: "email", message: "Enter a valid email address" });
-    }
-    if (errors.length) return res.status(400).json({ error: "validation", errors });
-
-    const local = email.split("@")[0].toLowerCase();
-    const fNorm = firstName.trim().toLowerCase();
-    const lNorm = lastName.trim().toLowerCase();
-    const lastParts = lNorm.split(/[-']/).filter(Boolean);
-    const nameParts = [fNorm, ...lastParts];
-    if (!nameParts.some(p => p.length >= 2 && local.includes(p))) {
-      return res.status(400).json({
-        error: "validation",
-        errors: [{ field: "email", message: "Your email address does not appear to match the name you entered" }],
-      });
-    }
-
-    const employee = findEmployeeByEmployeeId(employeeId.trim());
-    if (!employee || !employee.isActive) {
-      return res.status(404).json({ error: "not_found", message: "We could not find a record for that employee ID." });
-    }
-    if (fNorm !== employee.firstName.toLowerCase() || lNorm !== employee.lastName.toLowerCase()) {
-      return res.status(404).json({ error: "not_found", message: "The name you entered does not match the record for that employee ID." });
-    }
-
-    const letter = issueLetter(employee);
-    return res.status(200).json({ ok: true, letterId: letter.id, letterToken: letter.token });
+    const result = await submitRequest({ firstName, lastName, employeeId, email, publicBaseUrl: baseUrl });
+    return res.status(result.status).json(result.body);
   } catch (err) {
     console.error("request-letter:", err);
     res.status(500).json({ error: "internal_error", message: err.message });
+  }
+});
+
+// The no-JavaScript form path. Mirrors api/request-letter-form.js so local dev
+// exercises the same flow the deploy serves.
+app.post("/api/request-letter-form", async (req, res) => {
+  const ownOrigin = `${req.protocol}://${req.get("host")}`;
+  try {
+    const base = resolveBase({
+      origin: req.headers.origin,
+      referer: req.headers.referer,
+      fallbackOrigin: ownOrigin,
+    });
+    const result = await handleFormSubmit({
+      body: req.body,
+      base,
+      action: `${ownOrigin}/api/request-letter-form`,
+      publicBaseUrl: base.replace(/\/$/, ""),
+      submit: submitRequest,
+    });
+    if (result.redirect) return res.redirect(303, result.redirect);
+    return res.status(result.status).type("html").send(result.html);
+  } catch (err) {
+    console.error("request-letter-form failed:", err);
+    return res.status(500).type("html")
+      .send("<h1>Sorry, there is a problem with the service</h1>");
   }
 });
 
@@ -364,7 +367,10 @@ app.put("/api/admin/admins",  adminsHandler("PUT"));
 app.get("/api/allowed-domains", async (req, res) => {
   try {
     if (!process.env.DATABASE_URL) {
-      return res.status(200).json({ domains: [{ domain: "gov.bb" }] });
+      // "gov.bb" was hardcoded here, but migrate.js seeds "moe.gov.bb" and the
+      // synthetic records are all @moe.gov.bb — so the client-side check
+      // rejected every valid address in local dev.
+      return res.status(200).json({ domains: LOCAL_ALLOWED_DOMAINS.map(domain => ({ domain })) });
     }
     const { getDomains } = await import("./lib/handlers/adminSettings.js");
     const result = await getDomains();

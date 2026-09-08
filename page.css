@@ -35,9 +35,15 @@
 .page-flow > :where([class*="govbb-"]) { max-inline-size: none; }
 
 /* Headings need more space above them than below, or a section reads as
-   belonging to the text before it. Values mirror .govbb-prose. */
-.page-flow :is(h2, h3) { margin-block-start: var(--govbb-space-m); }
-.page-flow :is(h2, h3) + * { margin-block-start: var(--govbb-space-s); }
+   belonging to the text before it. Values mirror .govbb-prose.
+
+   Direct children of our own flow containers only. As a descendant selector
+   this reached inside design-system components and beat their own margins —
+   .govbb-error-summary__title sets margin:0 deliberately, and our rule
+   overrode it, pushing "There is a problem" 2rem down inside a box that
+   already has padding. Components space their own internals. */
+:is(.page-flow, .stack) > :is(h2, h3) { margin-block-start: var(--govbb-space-m); }
+:is(.page-flow, .stack) > :is(h2, h3) + * { margin-block-start: var(--govbb-space-s); }
 
 /* Route list under "Complete the form".
    Each item carries block content — the route title, how long the form takes,

@@ -64,13 +64,14 @@ export const header = `
   </div>
 </header>`;
 
+// Copy matches what alpha.gov.bb serves, so a service on the platform says the
+// same thing about its phase as the platform does. The link is absolute because
+// this service is not hosted on that domain, so the relative /what-we-mean-by-alpha
+// the live site uses would 404 here.
 export const alphaBanner = `
 <div class="govbb-status-banner govbb-status-banner--alpha govbb-status-banner--full-width">
   <div class="govbb-width-container govbb-status-banner__inner">
-    <p>
-      <strong>Alpha</strong> — this is a new service. Help us improve it by
-      <a class="govbb-link" href="{{base}}contact.html">letting us know what you think</a>.
-    </p>
+    <p>This page is in <a class="govbb-link" href="https://alpha.gov.bb/what-we-mean-by-alpha">Alpha</a>.</p>
   </div>
 </div>`;
 

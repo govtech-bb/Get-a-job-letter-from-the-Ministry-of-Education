@@ -55,6 +55,26 @@ Open <http://localhost:3000>. The dev server serves the same static files
 GitHub Pages ships, plus the JSON API at `/api/*` — the same endpoints Vercel
 serves in production, so local dev exercises the deployed shape.
 
+### Demo employees
+
+`data/employees-2000.json` holds 2,000 synthetic records. The request form asks
+for a first name, a last name, an employee ID and an email address on an allowed
+domain, and the email's local part has to contain part of the name. One active
+record per letter type:
+
+| Name | Employee ID | Email | Letter type |
+| --- | --- | --- | --- |
+| Judith Drakes | `123456-0001` | `judith.drakes@moe.gov.bb` | Appointed teacher |
+| Elizabeth Leacock | `123456-0920` | `elizabeth.leacock@moe.gov.bb` | Teacher with special responsibility |
+| Priya Jones | `123456-0003` | `priya.jones@moe.gov.bb` | Temporary teacher |
+| Ellen Harding | `123456-1865` | `ellen.harding2@moe.gov.bb` | Ministry permanent staff |
+| Kenneth Welch | `123456-1869` | `kenneth.welch@moe.gov.bb` | Ministry temporary staff |
+
+This table used to sit on the start page behind a "Try the demo with synthetic
+data" section. It is developer-facing, and on the start page it also demonstrated
+to any visitor that a name and an ID are all it takes to have someone's salary
+letter emailed — so it lives here now. See #26.
+
 ## Production deploy (staging branch)
 
 The static frontend lives on GitHub Pages. The API is a tiny Vercel project
@@ -92,26 +112,20 @@ For real production mail, verify a subdomain of `moe.gov.bb` and set
 - Update `API_BASE_URL` in `app.js` (the `endsWith("github.io")` branch) to
   point at your Vercel URL.
 
-Try the flow with any of the synthetic employees:
-
-| Email | Letter type |
-| --- | --- |
-| `marcus.bynoe@moe.gov.bb` | Teacher with special responsibility (with allowance) |
-| `alexcia.taitt-hope@moe.gov.bb` | Appointed teacher (permanent) |
-| `priya.holder@moe.gov.bb` | Appointed teacher (permanent) |
-| `denise.greaves@moe.gov.bb` | Ministry permanent staff |
-| `andre.skinner@moe.gov.bb` | Ministry permanent staff |
-| `jovan.clarke@moe.gov.bb` | Ministry temporary staff |
-
 ## How it works
 
-1. Employee opens the service and enters their work email address.
-2. The server matches the address against the synthetic record set. Receipt of
-   the resulting email (stubbed in alpha) is the proof of identity.
+1. Employee opens the service and enters their first name, last name,
+   employee ID and work email address.
+2. The server looks the employee up by employee ID, checks the name matches
+   that record, and checks the email is on an allowed domain and plausibly
+   matches the name. Receipt of the resulting email (stubbed in alpha) is the
+   proof of identity.
 3. On a match, an HMAC-signed letter token is issued and a PDF is generated
    from the current record using the right template.
 4. The PDF carries a QR code and a verification URL. A bank or retailer can
-   scan or visit it to confirm the letter is genuine and current.
+   scan or visit it to confirm the Ministry issued the letter and that it has
+   not been altered. Verification reports the record as it stood when the
+   letter was issued, not a live employment check.
 5. Tampering with the reference or the token will fail verification with a
    clear message.
 

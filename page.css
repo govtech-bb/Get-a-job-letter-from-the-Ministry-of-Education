@@ -39,6 +39,21 @@
 .page-flow :is(h2, h3) { margin-block-start: var(--govbb-space-m); }
 .page-flow :is(h2, h3) + * { margin-block-start: var(--govbb-space-s); }
 
+/* Route list under "Complete the form".
+   Each item carries block content — the route title, how long the form takes,
+   and on the online route the start button. The design system's list component
+   spaces single-line items, and the flow rules above are direct-child only, so
+   nothing spaced the blocks inside an item or the two routes from each other:
+   the button butted straight against the next route. Scoped to this list so the
+   other numbered lists in the service keep their own tighter spacing.
+   Item gap matches .page-flow, gap within an item matches .stack. */
+.route-list > li + li { margin-block-start: var(--govbb-space-m); }
+.route-list > li > * + * { margin-block-start: var(--govbb-space-s); }
+
+/* The title is the only thing on its line, so it needs to be a block for the
+   rule above to space what follows it. */
+.route-list__title { display: block; }
+
 /* Coloured panels. The design system has no panel or callout component, so
    these are bespoke — but built from the token ramps rather than literals.
    Raised with the design team rather than dressed up as a govbb- class. */
@@ -109,3 +124,13 @@
    Raised with the design team. This targets the attribute, not any component
    class, so it fixes the whole class of bug without overriding a component. */
 [hidden] { display: none !important; }
+
+/* "Last updated on ..." under the H1, matching the landing site's markdown
+   pages: small grey text sitting on a thick pale-blue rule. There the block is
+   rendered from the page's publish_date frontmatter by MarkdownContent; these
+   pages are hand-built, so the date is in the markup. */
+.last-updated {
+  color: var(--govbb-color-muted);
+  padding-bottom: var(--govbb-space-s);
+  border-bottom: 4px solid var(--govbb-blue-10);
+}

@@ -75,22 +75,12 @@ export const alphaBanner = `
   </div>
 </div>`;
 
-// Structure and classes already match what alpha.gov.bb serves. The platform's
-// own link list is Home / Terms & Conditions / Careers with the copy line
-// "(c) <year> Government of Barbados" (apps/landing/src/routes/__root.tsx).
-//
-// The naming and the copyright line are adopted here. The link list is not:
-// matching it exactly would drop Privacy notice, Accessibility statement,
-// Cookies and Contact us, and the platform has no equivalents to link to
-// instead — /accessibility, /privacy, /cookies and /contact all 404 there. A
-// service needs those reachable, so they stay. See #38.
-
 // The service had no feedback route at all once the alpha banner stopped
 // carrying one. The platform puts its HelpfulBox in a width container after
 // main; this is the design system's Feedback component pointing at the
 // platform's live /feedback page, absolute because we are not on that domain.
 export const feedback = `
-<div class="govbb-width-container">
+<div class="govbb-width-container feedback-region">
   <aside class="govbb-feedback">
     <h3 class="govbb-feedback__heading">Was this helpful?</h3>
     <p>Give us your feedback about this page.</p>
@@ -98,26 +88,34 @@ export const feedback = `
   </aside>
 </div>`;
 
+// Links and copy match alpha.gov.bb exactly, read from the live footer and
+// from apps/landing/src/routes/__root.tsx:
+//
+//     Home  Terms & Conditions  Careers
+//     (c) <year> Government of Barbados
+//
+// Absolute URLs, since this service is not hosted on that domain.
+//
+// NOTE: this deliberately drops the links to privacy.html,
+// accessibility.html, cookies.html, contact.html and terms.html. Those pages
+// still exist and are still served, but the footer is no longer a route to
+// them and the platform has no equivalents — /accessibility, /privacy,
+// /cookies and /contact all 404 on alpha.gov.bb. Flagged on #38; the decision
+// to match the platform exactly was taken deliberately.
 export const footer = `
 <footer class="govbb-footer">
   <div class="govbb-width-container govbb-footer__inner">
     <nav class="govbb-footer__nav" aria-label="Footer navigation">
       <ul class="govbb-footer__list">
-        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="{{base}}cookies.html">Cookies</a></li>
-        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="{{base}}privacy.html">Privacy notice</a></li>
-        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="{{base}}accessibility.html">Accessibility statement</a></li>
-        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="{{base}}contact.html">Contact us</a></li>
-        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="{{base}}terms.html">Terms &amp; Conditions</a></li>
+        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="https://alpha.gov.bb/">Home</a></li>
+        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="https://alpha.gov.bb/terms-conditions">Terms &amp; Conditions</a></li>
+        <li class="govbb-footer__item"><a class="govbb-link govbb-footer__link" href="https://job-boards.greenhouse.io/govtechbarbados">Careers</a></li>
       </ul>
     </nav>
     <hr class="govbb-footer__divider" aria-hidden="true" />
     <div class="govbb-footer__end">
       <img class="govbb-footer__coat" src="{{base}}assets/images/govbb-crest.svg" alt="" />
-      <p class="govbb-footer__copy">
-        &copy; 2026 Government of Barbados. Built by GovTech Barbados with the Ministry of
-        Education Transformation. All content is available under the Open Government Licence
-        except where otherwise stated.
-      </p>
+      <p class="govbb-footer__copy">&copy; 2026 Government of Barbados</p>
     </div>
   </div>
 </footer>`;

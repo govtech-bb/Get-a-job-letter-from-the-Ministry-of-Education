@@ -96,12 +96,11 @@ export const feedback = `
 //
 // Absolute URLs, since this service is not hosted on that domain.
 //
-// NOTE: this deliberately drops the links to privacy.html,
-// accessibility.html, cookies.html, contact.html and terms.html. Those pages
-// still exist and are still served, but the footer is no longer a route to
-// them and the platform has no equivalents — /accessibility, /privacy,
-// /cookies and /contact all 404 on alpha.gov.bb. Flagged on #38; the decision
-// to match the platform exactly was taken deliberately.
+// The service no longer carries its own privacy notice, accessibility
+// statement, cookies page or terms page. Matching this footer left them linked
+// from nowhere, and rather than keep unreachable pages they were removed —
+// see #38. contact.html stays, because index.html, request.html and
+// verify.html link to it directly.
 export const footer = `
 <footer class="govbb-footer">
   <div class="govbb-width-container govbb-footer__inner">

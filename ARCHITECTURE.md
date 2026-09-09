@@ -290,8 +290,7 @@ flowchart TB
 moe-letters/
 ├─ User-facing pages (root)
 │  ├─ index.html, request.html, sent.html, verify.html
-│  ├─ privacy.html, accessibility.html, cookies.html,
-│  │  contact.html, terms.html, not-found.html
+│  ├─ contact.html, not-found.html
 │  └─ chrome.js · styles.css · page.css
 ├─ admin/                   ← Admin console (HTML + JS only)
 │  ├─ login.html · index.html (dashboard)

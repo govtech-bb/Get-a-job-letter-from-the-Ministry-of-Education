@@ -35,11 +35,7 @@ const PAGES = [
   "request.html",
   "sent.html",
   "verify.html",
-  "privacy.html",
-  "accessibility.html",
-  "cookies.html",
   "contact.html",
-  "terms.html",
   "not-found.html",
 ];
 

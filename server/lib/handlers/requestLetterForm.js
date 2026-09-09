@@ -8,6 +8,7 @@
 // renders the form again with the messages in place, which cannot be a
 // redirect because the static page has no way to display them without script.
 
+import { LABELS, HINTS } from "../validationMessages.js";
 import { requestLetter } from "./requestLetter.js";
 import { renderPage, escapeHtml } from "../renderPage.js";
 
@@ -64,17 +65,7 @@ export function verificationBase() {
 
 const FIELDS = ["firstName", "lastName", "employeeId", "email"];
 
-const LABELS = {
-  firstName: "First name",
-  lastName: "Last name",
-  employeeId: "Employee ID",
-  email: "Government email address",
-};
 
-const HINTS = {
-  employeeId: "This is your National Registration number, for example 090472-0497",
-  email: "Must be from an allowed domain, for example juniper.boyce@moe.gov.bb",
-};
 
 function field(name, value, error, base) {
   const hint = HINTS[name]
@@ -127,7 +118,7 @@ export function renderFormPage({ values, errors, base, action }) {
       <h1 class="govbb-text-h1">Enter your details</h1>
       <p class="govbb-service-heading__description">
         We use your name and employee ID to match you to your record.
-        Your letter will be sent to the government email address you provide.
+        Your letter will be sent to the work email address you provide.
       </p>
     </div>
 

@@ -45,7 +45,7 @@ export function renderPage({ title, main, base }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${escapeHtml(title)} — Job letters — Ministry of Education</title>
+  <title>${escapeHtml(title)} - Job letters - Ministry of Education</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" href="${safeBase}assets/images/favicon.ico" />
   <link rel="stylesheet" href="${safeBase}styles.css" />

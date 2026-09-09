@@ -12,6 +12,7 @@
 // the same rule the database would. The previous inlined fallback skipped this
 // check entirely, which let the no-JavaScript path accept addresses the
 // enhanced path rejected.
+import { MESSAGES, emailDomainMessage } from "../validationMessages.js";
 import { isEmailFormat } from "../emailFormat.js";
 
 export const LOCAL_ALLOWED_DOMAINS = ["moe.gov.bb"];
@@ -19,19 +20,17 @@ export const LOCAL_ALLOWED_DOMAINS = ["moe.gov.bb"];
 export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }) {
   return async function requestLetterLocal({ firstName, lastName, employeeId, email }) {
     const errors = [];
-    if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
-    if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
-    if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
-    if (!isEmailFormat(email)) {
-      errors.push({ field: "email", message: "Enter a valid email address" });
-    }
-    if (isEmailFormat(email)) {
+    if (!firstName?.trim()) errors.push({ field: "firstName", message: MESSAGES.firstNameMissing });
+    if (!lastName?.trim()) errors.push({ field: "lastName", message: MESSAGES.lastNameMissing });
+    if (!employeeId?.trim()) errors.push({ field: "employeeId", message: MESSAGES.employeeIdMissing });
+    if (!email?.trim()) {
+      errors.push({ field: "email", message: MESSAGES.emailMissing });
+    } else if (!isEmailFormat(email)) {
+      errors.push({ field: "email", message: MESSAGES.emailFormat });
+    } else {
       const domain = email.split("@")[1].toLowerCase();
       if (!LOCAL_ALLOWED_DOMAINS.includes(domain)) {
-        errors.push({
-          field: "email",
-          message: `Enter an email address from an allowed domain (${LOCAL_ALLOWED_DOMAINS.join(", ")})`,
-        });
+        errors.push({ field: "email", message: emailDomainMessage(LOCAL_ALLOWED_DOMAINS) });
       }
     }
 
@@ -48,7 +47,7 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
         body: {
           error: "validation",
           errors: [
-            { field: "email", message: "Your email address does not appear to match the name you entered" },
+            { field: "email", message: MESSAGES.emailNameMismatch },
           ],
         },
       };
@@ -58,13 +57,13 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
     if (!employee || !employee.isActive) {
       return {
         status: 404,
-        body: { error: "not_found", message: "We could not find a record for that employee ID." },
+        body: { error: "not_found", message: MESSAGES.recordNotFound },
       };
     }
     if (fNorm !== employee.firstName.toLowerCase() || lNorm !== employee.lastName.toLowerCase()) {
       return {
         status: 404,
-        body: { error: "not_found", message: "The name you entered does not match the record for that employee ID." },
+        body: { error: "not_found", message: MESSAGES.nameDoesNotMatch },
       };
     }
 

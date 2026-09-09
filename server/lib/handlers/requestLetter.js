@@ -1,6 +1,7 @@
 // Pure handler logic. Called by both the Express dev server and the Vercel
 // serverless wrapper in /api/request-letter.js.
 
+import { MESSAGES, emailDomainMessage } from "../validationMessages.js";
 import { findEmployeeByEmployeeId, insertIssuedLetter, updateLetterEmailStatus, listAllowedDomains } from "../db.js";
 import { newLetterId, signLetterId, validUntil } from "../sign.js";
 import { generateDocumentCode, formatDocumentCode } from "../fingerprint.js";
@@ -32,18 +33,19 @@ function namesMatch(provided, record) {
 export async function requestLetter({ firstName, lastName, employeeId, email, publicBaseUrl }) {
   const errors = [];
 
-  if (!firstName?.trim()) errors.push({ field: "firstName", message: "Enter your first name" });
-  if (!lastName?.trim()) errors.push({ field: "lastName", message: "Enter your last name" });
-  if (!employeeId?.trim()) errors.push({ field: "employeeId", message: "Enter your employee ID" });
+  if (!firstName?.trim()) errors.push({ field: "firstName", message: MESSAGES.firstNameMissing });
+  if (!lastName?.trim()) errors.push({ field: "lastName", message: MESSAGES.lastNameMissing });
+  if (!employeeId?.trim()) errors.push({ field: "employeeId", message: MESSAGES.employeeIdMissing });
 
-  if (!isEmailFormat(email)) {
-    errors.push({ field: "email", message: "Enter a valid email address" });
+  if (!email?.trim()) {
+    errors.push({ field: "email", message: MESSAGES.emailMissing });
+  } else if (!isEmailFormat(email)) {
+    errors.push({ field: "email", message: MESSAGES.emailFormat });
   } else {
     const allowedDomains = (await listAllowedDomains()).map(r => r.domain.toLowerCase());
     const emailDomain = email.split("@")[1].toLowerCase();
     if (allowedDomains.length && !allowedDomains.includes(emailDomain)) {
-      const domainList = allowedDomains.join(", ");
-      errors.push({ field: "email", message: `Enter an email address from an allowed domain (${domainList})` });
+      errors.push({ field: "email", message: emailDomainMessage(allowedDomains) });
     }
   }
 
@@ -58,7 +60,7 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
         error: "validation",
         errors: [{
           field: "email",
-          message: "Your email address does not appear to match the name you entered",
+          message: MESSAGES.emailNameMismatch,
         }],
       },
     };
@@ -66,11 +68,11 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
 
   const employee = await findEmployeeByEmployeeId(employeeId.trim());
   if (!employee || !employee.isActive) {
-    return { status: 404, body: { error: "not_found", message: "We could not find a record for that employee ID." } };
+    return { status: 404, body: { error: "not_found", message: MESSAGES.recordNotFound } };
   }
 
   if (!namesMatch(firstName, employee.firstName) || !namesMatch(lastName, employee.lastName)) {
-    return { status: 404, body: { error: "not_found", message: "The name you entered does not match the record for that employee ID." } };
+    return { status: 404, body: { error: "not_found", message: MESSAGES.nameDoesNotMatch } };
   }
 
   const id = newLetterId();

@@ -45,7 +45,7 @@ To use it:
 2. Forward or print the letter to share with your bank, credit union or retailer.
 3. The recipient can verify the letter at ${verifyUrl}.
 
-If you did not request this letter, you can ignore this email — no further action is needed.
+If you did not request this letter, you can ignore this email. No further action is needed.
 
 Yours,
 Personnel Department
@@ -61,7 +61,7 @@ Ministry of Education Transformation`;
         <li>Forward or print the letter to share with your bank, credit union or retailer.</li>
         <li>The recipient can verify the letter at <a href="${verifyUrl}">${verifyUrl}</a>.</li>
       </ol>
-      <p>If you did not request this letter, you can ignore this email — no further action is needed.</p>
+      <p>If you did not request this letter, you can ignore this email. No further action is needed.</p>
       <p style="color:#555;">
         Yours,<br />
         Personnel Department<br />

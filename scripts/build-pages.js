@@ -18,6 +18,7 @@ import {
   officialBanner,
   header,
   alphaBanner,
+  feedback,
   footer,
   breadcrumbs,
   runtime,
@@ -152,7 +153,9 @@ function buildPage(file) {
   html = html.replace(/\s*<script src="chrome\.js"><\/script>/g, "");
 
   const top = toPagePath(skipLink + officialBanner + header + alphaBanner);
-  const bottom = toPagePath(footer + runtime);
+  // Feedback sits between main and the footer, as HelpfulBox does on the
+  // platform: its own width container, after the main wrapper.
+  const bottom = toPagePath(feedback + footer + runtime);
 
   const withTop = replaceRegion(html, "chrome-top", top);
   html =

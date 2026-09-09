@@ -103,3 +103,14 @@
   font-size: var(--govbb-font-size-body-sm);
   margin: 0;
 }
+
+/* Space below the feedback box, which would otherwise sit flush against the
+   footer — govbb-main-wrapper's padding ends at main, and nothing follows it.
+   The platform gives its HelpfulBox mb-4 lg:mb-16; these are the same two
+   steps on the design system's scale, at the --desktop breakpoint the layout
+   page documents (1024px). */
+.feedback-region { margin-block-end: var(--govbb-space-s); }
+
+@media (min-width: 1024px) {
+  .feedback-region { margin-block-end: var(--govbb-space-l); }
+}

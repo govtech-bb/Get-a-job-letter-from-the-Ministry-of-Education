@@ -1,4 +1,4 @@
-// Vercel serverless wrapper: document fingerprint challenge verification.
+// Serverless wrapper: document fingerprint challenge verification.
 
 import { challengeLetter } from "../server/lib/handlers/verifyLetter.js";
 

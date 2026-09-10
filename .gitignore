@@ -6,7 +6,6 @@ node_modules/
 .env
 .env.local
 .env.*.local
-.vercel
 
 # Excluded from the public repo:
 #  - sample-letters/ contains the original MoE Word/PDF samples that may have real names

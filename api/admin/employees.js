@@ -4,7 +4,7 @@
 // PUT  /api/admin/employees?email=X        — update
 // POST /api/admin/employees?email=X&op=set-active   { isActive }
 //
-// Vercel folds all of these into a single function file. We dispatch by method
+// All of these fold into a single function file. We dispatch by method
 // + query parameters so we don't need separate route files for each verb.
 
 import { requireAdmin } from "../../server/lib/adminAuth.js";

@@ -1,13 +1,13 @@
-// Adapter: run the existing Vercel-style (req, res) handlers in api/* as
-// Netlify Functions v2, which are Web-standard (Request) -> Response.
+// Adapter: run the Express-style (req, res) handlers in api/* as Netlify
+// Functions v2, which are Web-standard (Request) -> Response.
 //
 // Two details this has to get right:
 //
 //  1. Finalisation. requireAdmin() in adminAuth.js calls next() WITHOUT
 //     awaiting it, so `await handler(req, res)` can resolve before the route
-//     callback has written the response. On Vercel that is harmless because
-//     res is a live ServerResponse. Here we must wait for an explicit
-//     json()/send()/end() instead of for the handler promise.
+//     callback has written the response. On a live ServerResponse that is
+//     harmless. Here we must wait for an explicit json()/send()/end()
+//     instead of for the handler promise.
 //
 //  2. Set-Cookie. api/admin/verify.js and logout.js call res.setHeader with a
 //     single cookie string, but Headers needs append semantics so multiple
@@ -44,7 +44,7 @@ function parseBody(raw, contentType) {
   return raw;
 }
 
-export function toNetlify(vercelHandler, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export function toNetlify(nodeHandler, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   return async function netlifyHandler(request) {
     const url = new URL(request.url);
 
@@ -115,7 +115,7 @@ export function toNetlify(vercelHandler, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}
 
     let failure = null;
     Promise.resolve()
-      .then(() => vercelHandler(req, res))
+      .then(() => nodeHandler(req, res))
       .catch((err) => { failure = err; finish(undefined); });
 
     let timer;

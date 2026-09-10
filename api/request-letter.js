@@ -1,4 +1,4 @@
-// Vercel serverless wrapper around the requestLetter handler.
+// Serverless wrapper around the requestLetter handler.
 
 import { requestLetter } from "../server/lib/handlers/requestLetter.js";
 

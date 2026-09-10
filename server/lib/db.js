@@ -1,4 +1,4 @@
-// Shared DB helper. Uses @neondatabase/serverless for production (Vercel
+// Shared DB helper. Uses @neondatabase/serverless for production (Netlify
 // serverless, HTTP fetch) and falls back to pg for local development.
 
 import { neon } from "@neondatabase/serverless";

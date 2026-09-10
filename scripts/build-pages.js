@@ -61,9 +61,9 @@ function dropRegion(html, name) {
   return re.test(html) ? html.replace(re, "").replace(/\n[ \t]*\n[ \t]*\n/g, "\n\n") : html;
 }
 
-// Pages sit at the site root and link to each other relatively, which works on
-// both Vercel (domain root) and Pages (project subpath). Kept as a seam so the
-// admin pages, one level down, can reuse the same templates with "../".
+// Pages sit at the site root and link to each other relatively. Kept as a
+// seam so the admin pages, one level down, can reuse the same templates
+// with "../".
 const toPagePath = (s) => s.replace(/\{\{base\}\}/g, "");
 
 // Give the request form a real action and method so it works without script.

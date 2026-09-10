@@ -1,4 +1,4 @@
-// Vercel serverless wrapper around the verifyLetter handler.
+// Serverless wrapper around the verifyLetter handler.
 
 import { verifyLetter } from "../server/lib/handlers/verifyLetter.js";
 

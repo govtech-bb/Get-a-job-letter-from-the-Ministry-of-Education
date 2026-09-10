@@ -1,4 +1,4 @@
-// Netlify Function wrapper — reuses the Vercel-style handler in api/admin/template-csv.js unchanged.
+// Netlify Function wrapper — reuses the (req, res) handler in api/admin/template-csv.js unchanged.
 import handler from "../../api/admin/template-csv.js";
 import { toNetlify } from "../../server/lib/netlifyAdapter.js";
 

@@ -204,7 +204,7 @@ export function cookieName() {
 
 export function buildSetCookie(token, expiresAt) {
   const expires = new Date(expiresAt).toUTCString();
-  const isProd = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+  const isProd = process.env.CONTEXT === "production" || process.env.NODE_ENV === "production";
   return [
     `${COOKIE_NAME}=${token}`,
     "Path=/",
@@ -216,7 +216,7 @@ export function buildSetCookie(token, expiresAt) {
 }
 
 export function buildClearCookie() {
-  const isProd = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production";
+  const isProd = process.env.CONTEXT === "production" || process.env.NODE_ENV === "production";
   return [
     `${COOKIE_NAME}=`,
     "Path=/",

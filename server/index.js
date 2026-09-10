@@ -58,7 +58,7 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "2mb" }));
 
-// Permissive CORS for the API endpoints during local dev. Vercel applies its
+// Permissive CORS for the API endpoints during local dev. Production applies its
 // own (tighter) CORS in the deployed /api/* handlers.
 app.use("/api", (req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
@@ -128,7 +128,7 @@ app.post("/api/verify-challenge", async (req, res) => {
   }
 });
 
-/* ---------- Admin API (mirrored to /api/admin/*.js for Vercel) ---------- */
+/* ---------- Admin API (mirrored to /api/admin/*.js for the deployed functions) ---------- */
 
 app.post("/api/admin/login", async (req, res) => {
   try {
@@ -222,7 +222,7 @@ app.get("/api/admin/letter", async (req, res) => {
   });
 });
 
-// Employees CRUD — mirrors /api/admin/employees.js for Vercel.
+// Employees CRUD — mirrors /api/admin/employees.js for the deployed functions.
 function employeesHandler(method) {
   return async (req, res) => {
     await requireAdmin(req, res, async () => {
@@ -317,7 +317,7 @@ app.get("/api/admin/employees/template.csv", async (req, res) => {
   });
 });
 
-// Admins management — mirrors /api/admin/admins.js for Vercel.
+// Admins management — mirrors /api/admin/admins.js for the deployed functions.
 function adminsHandler(method) {
   return async (req, res) => {
     await requireAdmin(req, res, async () => {
@@ -412,7 +412,7 @@ app.get("/api/admin/settings/domains", settingsHandler("GET"));
 app.post("/api/admin/settings/domains", settingsHandler("POST"));
 app.delete("/api/admin/settings/domains", settingsHandler("DELETE"));
 
-// DEV ONLY — this route exists on the local server and has no Vercel
+// DEV ONLY — this route exists on the local server and has no deployed
 // counterpart, so it is not part of the deployed service. In production the
 // letter reaches the employee as a PDF attached to the email that
 // lib/handlers/requestLetter.js sends. This is here so you can look at a
@@ -454,7 +454,7 @@ app.get("/letter/:id/download", async (req, res) => {
 });
 
 // Short verify URL — the QR codes on the generated PDFs point at
-// /v?id=...&t=... In production this is a rewrite in vercel.json, so mirror
+// /v?id=...&t=... In production this is a redirect in netlify.toml, so mirror
 // that here: rewrite the path and let the static middleware below serve it.
 // The URL the user sees stays /v, edits to verify.html are picked up without a
 // restart, and this handler touches the filesystem itself not at all.

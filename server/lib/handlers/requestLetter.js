@@ -1,4 +1,4 @@
-// Pure handler logic. Called by both the Express dev server and the Vercel
+// Pure handler logic. Called by both the Express dev server and the Netlify
 // serverless wrapper in /api/request-letter.js.
 
 import { MESSAGES, emailDomainMessage } from "../validationMessages.js";

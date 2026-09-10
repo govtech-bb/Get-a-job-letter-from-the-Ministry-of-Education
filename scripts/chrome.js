@@ -10,9 +10,9 @@
 //   /components/skip-link/  /components/official-banner/  /components/header/
 //   /components/status-banner/  /components/footer/  /components/breadcrumbs/
 
-// Paths are root-relative. The site is served from the domain root on Vercel
-// and from a project subpath on GitHub Pages, so the build script rewrites
-// these per page — see toPagePath in build-pages.js.
+// Paths are root-relative. The site is served from the domain root on
+// Netlify; the build script rewrites these per page — see toPagePath in
+// build-pages.js.
 export const skipLink = `
 <a class="govbb-skip-link" href="#main-content">Skip to main content</a>`;
 

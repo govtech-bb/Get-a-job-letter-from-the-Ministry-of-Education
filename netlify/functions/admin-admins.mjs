@@ -1,4 +1,4 @@
-// Netlify Function wrapper — reuses the Vercel-style handler in api/admin/admins.js unchanged.
+// Netlify Function wrapper — reuses the (req, res) handler in api/admin/admins.js unchanged.
 import handler from "../../api/admin/admins.js";
 import { toNetlify } from "../../server/lib/netlifyAdapter.js";
 

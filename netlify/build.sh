@@ -27,7 +27,6 @@ tar --exclude='./.git' \
     --exclude='./test' \
     --exclude='./*.md' \
     --exclude='./.env.example' \
-    --exclude='./vercel.json' \
     --exclude='./netlify.toml' \
     --exclude='./.gitignore' \
     --exclude='./package.json' \

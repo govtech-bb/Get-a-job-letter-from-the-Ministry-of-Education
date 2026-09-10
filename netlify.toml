@@ -23,7 +23,7 @@
   node_bundler = "nft"
   included_files = ["assets/images/**"]
 
-# The short URL printed on letters (mirrors the old vercel.json rewrite).
+# The short URL printed on letters.
 [[redirects]]
   from = "/v"
   to = "/verify.html"

@@ -1,4 +1,4 @@
-// Netlify Function wrapper — reuses the Vercel-style handler in api/admin/logout.js unchanged.
+// Netlify Function wrapper — reuses the (req, res) handler in api/admin/logout.js unchanged.
 import handler from "../../api/admin/logout.js";
 import { toNetlify } from "../../server/lib/netlifyAdapter.js";
 

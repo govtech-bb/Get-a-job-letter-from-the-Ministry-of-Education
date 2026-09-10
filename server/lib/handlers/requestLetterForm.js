@@ -22,7 +22,6 @@ import { renderPage, escapeHtml } from "../renderPage.js";
 // interpolated into the page, reflected XSS.
 const KNOWN_SITES = [
   { origin: "https://get-a-job-letter.netlify.app", path: "/" },
-  { origin: "https://moe-letters.vercel.app", path: "/" },
   { origin: "http://localhost:3000", path: "/" },
   { origin: "http://127.0.0.1:3000", path: "/" },
 ];
@@ -135,7 +134,7 @@ ${FIELDS.map((f) => field(f, values[f] || "", byField[f], base)).join("\n\n")}
 
 /**
  * Runs the whole no-JS submit. Returns either a redirect or a page to render,
- * so the Vercel function and the dev server share one implementation.
+ * so the Netlify function and the dev server share one implementation.
  */
 export async function handleFormSubmit({ body, base, action, submit = requestLetter }) {
   const values = Object.fromEntries(

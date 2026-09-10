@@ -22,6 +22,7 @@ import { renderPage, escapeHtml } from "../renderPage.js";
 // interpolated into the page, reflected XSS.
 const KNOWN_SITES = [
   { origin: "https://get-a-job-letter.netlify.app", path: "/" },
+  { origin: "https://moe-job-letters.netlify.app", path: "/" },
   { origin: "https://moe-letters.vercel.app", path: "/" },
   { origin: "http://localhost:3000", path: "/" },
   { origin: "http://127.0.0.1:3000", path: "/" },

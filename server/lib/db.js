@@ -19,7 +19,13 @@ function localSql(pool) {
 
 export function sql() {
   if (!_sql) {
-    const url = process.env.DATABASE_URL;
+    // DATABASE_URL wins so an external Postgres can still be pointed at;
+    // otherwise use the Netlify-provisioned database (NETLIFY_DB_URL, with
+    // the legacy NETLIFY_DATABASE_URL name as a fallback).
+    const url =
+      process.env.DATABASE_URL ||
+      process.env.NETLIFY_DB_URL ||
+      process.env.NETLIFY_DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not set");
     if (url.includes("localhost") || url.includes("127.0.0.1")) {
       _sql = localSql(new pg.Pool({ connectionString: url }));

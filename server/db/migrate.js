@@ -1,5 +1,5 @@
 // One-shot setup script: creates the schema and seeds employees from
-// data/employees.json. Idempotent — safe to re-run.
+// data/employees-2000.json. Idempotent — safe to re-run.
 //
 // Usage:
 //   node server/db/migrate.js
@@ -51,23 +51,24 @@ async function main() {
   console.log("  Column migrations done.");
 
   console.log("→ Seeding employees…");
-  const json = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "employees.json"), "utf-8"));
+  const json = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "employees-2000.json"), "utf-8"));
   const employees = json.employees;
   let upserted = 0;
   for (const e of employees) {
     await client.query(
       `INSERT INTO employees (
-         email, title, first_name, last_name, pronoun, address,
+         email, employee_id, title, first_name, last_name, pronoun, address,
          letter_type, post, school, employer,
          appointment_date, monthly_salary, monthly_allowance,
          pay_frequency, is_acting, is_active
        ) VALUES (
-         $1, $2, $3, $4, $5, $6,
-         $7, $8, $9, $10,
-         $11, $12, $13,
-         $14, $15, $16
+         $1, $2, $3, $4, $5, $6, $7,
+         $8, $9, $10, $11,
+         $12, $13, $14,
+         $15, $16, $17
        )
        ON CONFLICT (email) DO UPDATE SET
+         employee_id       = EXCLUDED.employee_id,
          title             = EXCLUDED.title,
          first_name        = EXCLUDED.first_name,
          last_name         = EXCLUDED.last_name,
@@ -85,7 +86,7 @@ async function main() {
          is_active         = EXCLUDED.is_active,
          updated_at        = NOW()`,
       [
-        e.email, e.title, e.firstName, e.lastName, e.pronoun, e.address,
+        e.email, e.employeeId, e.title, e.firstName, e.lastName, e.pronoun, e.address,
         e.letterType, e.post, e.school, e.employer,
         e.appointmentDate, e.monthlySalary, e.monthlyAllowance,
         e.payFrequency, e.isActing, e.isActive,

@@ -13,7 +13,7 @@ function sign(id) {
   return crypto.createHmac("sha256", SIGNING_KEY).update(id).digest("hex").slice(0, 16);
 }
 
-export function issueLetter(employee) {
+export function issueLetter(employee, recipientEmail = null) {
   const id = "MOE-" + Date.now().toString(36).toUpperCase() + "-" + crypto.randomBytes(3).toString("hex").toUpperCase();
   const token = sign(id);
   const issuedAt = new Date();
@@ -22,6 +22,7 @@ export function issueLetter(employee) {
     id,
     token,
     employee: { ...employee },
+    recipientEmail,
     issuedAt: issuedAt.toISOString(),
     validUntil: validUntil.toISOString(),
   };

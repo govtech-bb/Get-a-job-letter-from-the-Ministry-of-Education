@@ -6,8 +6,18 @@
   "framework": null,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/v", "destination": "/verify.html" },
-    { "source": "/api/admin/settings/domains", "destination": "/api/admin/settings-domains.js" }
+    {
+      "source": "/v",
+      "destination": "/verify.html"
+    },
+    {
+      "source": "/api/admin/settings/domains",
+      "destination": "/api/admin/settings-domains.js"
+    },
+    {
+      "source": "/letter-sent",
+      "destination": "/api/letter-sent.js"
+    }
   ],
   "functions": {
     "api/*.js": {

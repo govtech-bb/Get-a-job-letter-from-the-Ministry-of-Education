@@ -1,0 +1,30 @@
+# Netlify deploy config.
+#
+# netlify/build.sh assembles the static pages into _site/ (the repo root minus
+# server-side code and deps); netlify/functions/*.mjs serve the same /api/*
+# routes the local Express server does.
+#
+# Frontend and API are served from ONE origin: the admin pages call relative
+# /api/* URLs with credentials:"same-origin" and the session cookie is
+# SameSite=Lax, so a split frontend/API deploy would break admin sign-in.
+
+[build]
+  publish = "_site"
+  command = "bash netlify/build.sh"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  # "nft" copies the module tree instead of inlining it, which keeps
+  # import.meta.url meaningful — server/pdf.js resolves its letterhead images
+  # relative to its own location.
+  node_bundler = "nft"
+  included_files = ["assets/images/**"]
+
+# The short URL printed on letters (mirrors the old vercel.json rewrite).
+[[redirects]]
+  from = "/v"
+  to = "/verify.html"
+  status = 200

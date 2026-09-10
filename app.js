@@ -1,21 +1,16 @@
-// Static frontend of the Job Letters service. On staging the client talks to
-// a real backend (Vercel functions in /api/*) which queries Neon Postgres and
+// Static frontend of the Job Letters service. The client talks to a real
+// backend (Netlify functions in /api/*) which queries Neon Postgres and
 // sends mail via Resend. The legacy fully-client-side helpers (issueLetter /
 // decodeAndVerify) are kept around as a fallback for environments where the
 // API isn't reachable.
 
-// Where the API lives. Local dev: same origin (Express server on :3000).
-// GitHub Pages: explicit Vercel URL — set this once the Vercel project is
-// deployed.
+// Where the API lives. The site and the API are served from the same origin
+// everywhere (local dev on :3000, Netlify functions in production), so this
+// is empty unless a page overrides it.
 const API_BASE_URL = (() => {
   // Allow per-page override via <meta name="api-base" content="...">.
   const meta = document.querySelector('meta[name="api-base"]');
   if (meta && meta.content) return meta.content.replace(/\/$/, "");
-  // Local dev — same origin.
-  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return "";
-  // Public Pages demo — point at the live Vercel deploy. The project alias is
-  // stable; new deployments roll out to the same URL.
-  if (location.hostname.endsWith("github.io")) return "https://moe-letters.vercel.app";
   return "";
 })();
 

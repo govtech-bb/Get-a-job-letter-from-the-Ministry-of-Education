@@ -5,8 +5,6 @@ import { requestLetter } from "../server/lib/handlers/requestLetter.js";
 export const config = { runtime: "nodejs" };
 
 const ALLOWED_ORIGINS = new Set([
-  // GitHub Pages
-  "https://govtech-bb.github.io",
   // Local dev
   "http://localhost:3000",
   "http://127.0.0.1:3000",

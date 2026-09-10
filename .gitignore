@@ -20,3 +20,8 @@ dist/assets/images/dist/
 
 # Local test output (scripts/test-pdf.js)
 scripts/out/
+
+# Netlify CLI state and the assembled publish directory (netlify/build.sh)
+.netlify/
+_site/
+deno.lock

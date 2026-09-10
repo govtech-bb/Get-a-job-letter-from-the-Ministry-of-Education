@@ -1,4 +1,4 @@
-// Vercel serverless wrapper for the no-JavaScript form submit.
+// Serverless wrapper for the no-JavaScript form submit.
 //
 // Separate from api/request-letter.js on purpose: that one speaks JSON to the
 // enhanced page, this one speaks HTML to a browser that is navigating. Same

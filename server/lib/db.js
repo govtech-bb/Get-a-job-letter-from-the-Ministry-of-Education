@@ -1,7 +1,8 @@
-// Shared DB helper. Uses @neondatabase/serverless for production (Vercel
+// Shared DB helper. Uses @neondatabase/serverless for production (Netlify
 // serverless, HTTP fetch) and falls back to pg for local development.
 
 import { neon } from "@neondatabase/serverless";
+import { getConnectionString } from "@netlify/database";
 import pg from "pg";
 
 let _sql = null;
@@ -19,7 +20,21 @@ function localSql(pool) {
 
 export function sql() {
   if (!_sql) {
-    const url = process.env.DATABASE_URL;
+    // DATABASE_URL wins so an external Postgres can still be pointed at;
+    // otherwise use the Netlify-provisioned database — the env vars where
+    // they are injected, or getConnectionString(), which also resolves the
+    // right branch database inside preview deploys.
+    let url =
+      process.env.DATABASE_URL ||
+      process.env.NETLIFY_DB_URL ||
+      process.env.NETLIFY_DATABASE_URL;
+    if (!url) {
+      try {
+        url = getConnectionString();
+      } catch {
+        // Not running on Netlify and no DATABASE_URL — fall through.
+      }
+    }
     if (!url) throw new Error("DATABASE_URL is not set");
     if (url.includes("localhost") || url.includes("127.0.0.1")) {
       _sql = localSql(new pg.Pool({ connectionString: url }));

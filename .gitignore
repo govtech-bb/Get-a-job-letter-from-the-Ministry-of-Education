@@ -6,7 +6,6 @@ node_modules/
 .env
 .env.local
 .env.*.local
-.vercel
 
 # Excluded from the public repo:
 #  - sample-letters/ contains the original MoE Word/PDF samples that may have real names
@@ -20,3 +19,8 @@ dist/assets/images/dist/
 
 # Local test output (scripts/test-pdf.js)
 scripts/out/
+
+# Netlify CLI state and the assembled publish directory (netlify/build.sh)
+.netlify/
+_site/
+deno.lock

@@ -1,3 +1,6 @@
+-- Job Letters schema. Mirrors server/db/schema.sql (the local dev path);
+-- this copy is what Netlify applies to the hosted database on deploy.
+
 -- Job Letters service schema.
 --
 -- Two tables:

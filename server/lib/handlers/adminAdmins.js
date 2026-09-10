@@ -84,7 +84,7 @@ async function sendInviteEmail({ email, name, invitedBy }) {
 
   const greetingName = name ? name.split(" ")[0] : "";
   const greeting = greetingName ? `Hello ${greetingName},` : "Hello,";
-  const baseUrl = process.env.PUBLIC_BASE_URL || "https://moe-letters.vercel.app";
+  const baseUrl = process.env.PUBLIC_BASE_URL || "https://get-a-job-letter.netlify.app";
   const loginUrl = `${baseUrl}/admin/login.html`;
 
   const text = `${greeting}

@@ -22,12 +22,12 @@ flowchart LR
     admin[Ministry admin<br/>browser]
   end
 
-  subgraph frontend[Frontend – static, served by Vercel]
+  subgraph frontend[Frontend – static, served by Netlify]
     pubpages[Public pages<br/>index, request, sent,<br/>verify, privacy, …]
     adminpages[Admin console<br/>/admin/*]
   end
 
-  subgraph api[Vercel serverless functions]
+  subgraph api[Netlify functions]
     pubapi[Public API<br/>/api/request-letter<br/>/api/verify-letter]
     adminapi[Admin API<br/>/api/admin/*]
   end
@@ -248,36 +248,29 @@ erDiagram
 
 ## Deployment topology
 
-Two branches map to two Vercel deploys and two GitHub Pages URLs. The
-red STAGING banner and the "What's new" panel are the only deliberate
-code differences between branches.
+One Netlify site serves both the static pages and the /api/* functions from
+a single origin. Production deploys from `main`; branch pushes and pull
+requests get their own preview URLs with the same code.
 
 ```mermaid
 flowchart TB
   subgraph github[GitHub repo]
     main[main branch<br/>production code]
-    staging[staging branch<br/>same code + STAGING markers]
+    branches[other branches / PRs]
   end
 
-  subgraph vercel[Vercel]
-    prod[Production<br/>moe-letters.vercel.app<br/>RESEND_OVERRIDE_TO: unset]
-    preview[Preview deploys<br/>per-commit URLs<br/>RESEND_OVERRIDE_TO: set]
-  end
-
-  subgraph ghpages[GitHub Pages]
-    pageprod[govtech-bb.github.io/.../ <br/>read-only static demo<br/>built from the repo root on main]
-    pagestaging[govtech-bb.github.io/.../staging/<br/>read-only static demo<br/>auto-synced from staging]
+  subgraph netlify[Netlify]
+    prod[Production<br/>get-a-job-letter.netlify.app<br/>static _site + /api/* functions]
+    preview[Deploy previews<br/>per-branch / per-PR URLs]
   end
 
   subgraph external[Managed services]
-    neon[(Neon Postgres<br/>single instance,<br/>both deploys share it)]
+    neon[(Neon Postgres<br/>single instance,<br/>all deploys share it)]
     resend[Resend<br/>account on free tier<br/>sender domain unverified]
   end
 
   main -.on push.-> prod
-  staging -.on push.-> preview
-  main -.root of the repo.-> pageprod
-  staging -.sync workflow.-> pagestaging
+  branches -.on push / PR.-> preview
   prod --> neon
   prod --> resend
   preview --> neon
@@ -298,11 +291,11 @@ moe-letters/
 │  ├─ employees.html · employee-edit.html
 │  ├─ admins.html · confirm.html
 │  └─ admin-chrome.js
-├─ api/                     ← Vercel serverless functions
+├─ api/                     ← Request handlers, wrapped as Netlify functions
 │  ├─ request-letter.js
 │  ├─ verify-letter.js
 │  └─ admin/{login,verify,logout,me,dashboard,letters,letter,employees,admins}.js
-├─ server/                  ← Shared libs (Node, run on Vercel + dev)
+├─ server/                  ← Shared libs (Node, run on Netlify + dev)
 │  ├─ index.js              ← Express dev server (mirrors all routes)
 │  ├─ pdf.js                ← pdf-lib letter generation
 │  ├─ db/schema.sql
@@ -314,8 +307,7 @@ moe-letters/
 │     └─ handlers/{adminEmployees,adminLetters,adminDashboard,adminAdmins}.js
 ├─ decisions/               ← ADRs (you are here, future-maintainer)
 │  └─ 0001…0006-*.md
-├─ staging/                 ← /staging/ folder on GitHub Pages
-│  └─ auto-synced from the staging branch via Actions
+├─ netlify/                 ← build.sh (assembles _site/) + functions/*.mjs wrappers
 ├─ assets/                  ← logos, favicon, fonts
 ├─ principles/              ← gitignored — personal product/dev principles
 └─ ARCHITECTURE.md          ← this file

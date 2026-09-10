@@ -2,8 +2,8 @@
 // package and into the served root, so both deploy targets get them without a
 // build step.
 //
-// Neither target builds: GitHub Pages deploys main/root as-is, and vercel.json
-// sets "buildCommand": null. So the stylesheet has to be committed. The point of
+// The deploy does not run this: netlify/build.sh only assembles _site/ from
+// committed files. So the stylesheet has to be committed. The point of
 // generating it here is that it stops being an unattributed blob — the header
 // records exactly which package version produced it, and `npm run build:ds`
 // reproduces it.

@@ -1,11 +1,10 @@
-// Vercel serverless wrapper: document fingerprint challenge verification.
+// Serverless wrapper: document fingerprint challenge verification.
 
 import { challengeLetter } from "../server/lib/handlers/verifyLetter.js";
 
 export const config = { runtime: "nodejs" };
 
 const ALLOWED_ORIGINS = new Set([
-  "https://govtech-bb.github.io",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ]);

@@ -30,7 +30,7 @@ server/
   letterStore.js             Issued letters, HMAC-signed verification tokens
   letterTemplates.js         The four letter body templates (teacher / ministry × permanent / temporary)
   pdf.js                     pdf-lib PDF generation with embedded QR code
-  lib/handlers/              The handlers Vercel wraps as functions in api/
+  lib/handlers/              The handlers api/ wraps, deployed as Netlify functions
 ```
 
 ## Run locally
@@ -52,8 +52,9 @@ sending it. To use Postgres instead, set `DATABASE_URL` and run
 `node server/db/migrate.js` first.
 
 Open <http://localhost:3000>. The dev server serves the same static files
-GitHub Pages ships, plus the JSON API at `/api/*` — the same endpoints Vercel
-serves in production, so local dev exercises the deployed shape.
+Netlify publishes, plus the JSON API at `/api/*` — the same endpoints the
+Netlify functions serve in production, so local dev exercises the deployed
+shape.
 
 ### Demo employees
 
@@ -75,11 +76,16 @@ data" section. It is developer-facing, and on the start page it also demonstrate
 to any visitor that a name and an ID are all it takes to have someone's salary
 letter emailed — so it lives here now. See #26.
 
-## Production deploy (staging branch)
+## Production deploy (Netlify)
 
-The static frontend lives on GitHub Pages. The API is a tiny Vercel project
-that talks to **Neon** (Postgres) for employees and the issued-letters log,
-and **Resend** for email.
+One Netlify site serves the static frontend and the `/api/*` functions from
+a single origin. The functions talk to **Neon** (Postgres) for employees and
+the issued-letters log, and **Resend** for email.
+
+`netlify.toml` drives the deploy: `netlify/build.sh` assembles the public
+pages into `_site/`, and `netlify/functions/*.mjs` wrap the handlers in
+`api/` (via `server/lib/netlifyAdapter.js`) as Netlify Functions on the same
+`/api/*` paths the dev server uses.
 
 ### 1. Neon
 
@@ -98,19 +104,22 @@ verified test recipient. While you wait for domain verification, send from
 For real production mail, verify a subdomain of `moe.gov.bb` and set
 `RESEND_FROM=noreply@letters.moe.gov.bb` (or similar).
 
-### 3. Vercel
+### 3. Netlify
 
-- Import this repo into Vercel from the GitHub UI
-- In **Project Settings → Environment Variables** add (for Production *and*
-  Preview):
+- Connect this repo to a Netlify site (Git continuous deployment), or deploy
+  from a checkout with `netlify deploy --build --prod`.
+- In **Site configuration → Environment variables** add (for Production *and*
+  Deploy Previews):
   - `DATABASE_URL` — Neon pooled URL
   - `RESEND_API_KEY` — from Resend
   - `RESEND_FROM` — e.g. `onboarding@resend.dev`
   - `LETTER_SIGNING_KEY` — a random 32-byte string (used for the verification
     HMAC; must match what's expected by the QR codes already in the wild)
-- Deploy. The functions will live at `https://<project>.vercel.app/api/*`.
-- Update `API_BASE_URL` in `app.js` (the `endsWith("github.io")` branch) to
-  point at your Vercel URL.
+  - `PUBLIC_BASE_URL` — the site's canonical origin, e.g.
+    `https://get-a-job-letter.netlify.app` (baked into verify URLs and
+    admin-invite emails)
+- Deploy. Pages and functions share one origin:
+  `https://<site>.netlify.app` and `https://<site>.netlify.app/api/*`.
 
 ## How it works
 

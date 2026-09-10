@@ -21,8 +21,6 @@ import { renderPage, escapeHtml } from "../renderPage.js";
 // Host it likes, and using it raw produced both an open redirect and, once
 // interpolated into the page, reflected XSS.
 const KNOWN_SITES = [
-  { origin: "https://govtech-bb.github.io", path: "/Get-a-job-letter-from-the-Ministry-of-Education/" },
-  { origin: "https://moe-letters.vercel.app", path: "/" },
   { origin: "https://get-a-job-letter.netlify.app", path: "/" },
   { origin: "http://localhost:3000", path: "/" },
   { origin: "http://127.0.0.1:3000", path: "/" },
@@ -33,7 +31,7 @@ const KNOWN_SITES = [
 // never come from a header — a forged Host would mint letters whose permanent
 // verify URL points somewhere else.
 const CANONICAL_ORIGIN =
-  process.env.PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://moe-letters.vercel.app";
+  process.env.PUBLIC_BASE_URL?.replace(/\/$/, "") || "https://get-a-job-letter.netlify.app";
 
 function siteFor(origin) {
   return KNOWN_SITES.find((s) => s.origin === origin) || null;
@@ -136,7 +134,7 @@ ${FIELDS.map((f) => field(f, values[f] || "", byField[f], base)).join("\n\n")}
 
 /**
  * Runs the whole no-JS submit. Returns either a redirect or a page to render,
- * so the Vercel function and the dev server share one implementation.
+ * so the Netlify function and the dev server share one implementation.
  */
 export async function handleFormSubmit({ body, base, action, submit = requestLetter }) {
   const values = Object.fromEntries(

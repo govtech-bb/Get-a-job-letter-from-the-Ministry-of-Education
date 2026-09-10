@@ -13,6 +13,7 @@ import { findIssuedLetter } from "./lib/db.js";
 import { requestLetter as apiRequestLetter } from "./lib/handlers/requestLetter.js";
 import { handleFormSubmit, resolveBase } from "./lib/handlers/requestLetterForm.js";
 import { makeRequestLetterLocal, LOCAL_ALLOWED_DOMAINS } from "./lib/handlers/requestLetterLocal.js";
+import { renderLetterSent } from "./lib/handlers/letterSent.js";
 import { verifyLetter as apiVerifyLetter, challengeLetter as apiChallengeLetter } from "./lib/handlers/verifyLetter.js";
 import {
   issueCode as adminIssueCode,
@@ -78,6 +79,26 @@ app.post("/api/request-letter", async (req, res) => {
   } catch (err) {
     console.error("request-letter:", err);
     res.status(500).json({ error: "internal_error", message: err.message });
+  }
+});
+
+// Server-rendered confirmation for the no-JavaScript path. Mirrors
+// api/letter-sent.js.
+app.get("/letter-sent", async (req, res) => {
+  const ownOrigin = `${req.protocol}://${req.get("host")}`;
+  try {
+    const result = await renderLetterSent({
+      id: String(req.query.id || ""),
+      token: String(req.query.t || ""),
+      base: resolveBase({ origin: req.headers.origin, referer: req.headers.referer }),
+      lookup: async (id) =>
+        process.env.DATABASE_URL ? await findIssuedLetter(id) : getLetter(id),
+    });
+    res.set("Cache-Control", "no-store");
+    return res.status(result.status).type("html").send(result.html);
+  } catch (err) {
+    console.error("letter-sent failed:", err);
+    return res.status(500).type("html").send("<h1>Sorry, there is a problem with the service</h1>");
   }
 });
 

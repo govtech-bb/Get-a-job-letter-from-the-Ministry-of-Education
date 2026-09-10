@@ -85,7 +85,6 @@ app.post("/api/request-letter", async (req, res) => {
 // Server-rendered confirmation for the no-JavaScript path. Mirrors
 // api/letter-sent.js.
 app.get("/letter-sent", async (req, res) => {
-  const ownOrigin = `${req.protocol}://${req.get("host")}`;
   try {
     const result = await renderLetterSent({
       id: String(req.query.id || ""),

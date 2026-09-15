@@ -3,6 +3,7 @@
 
 import { sql } from "../db.js";
 import { isEmailFormat } from "../emailFormat.js";
+import { normaliseNationalId } from "../nationalId.js";
 
 const PAGE_SIZE = 50;
 
@@ -136,7 +137,7 @@ function normaliseInput(b) {
   // Pull through fields, coerce numerics + booleans.
   return {
     email: String(e.email || "").trim().toLowerCase(),
-    employeeId: e.employeeId ? String(e.employeeId).trim() : null,
+    employeeId: e.employeeId ? normaliseNationalId(e.employeeId) ?? String(e.employeeId).trim() : null,
     title: String(e.title || "").trim(),
     firstName: String(e.firstName || "").trim(),
     lastName: String(e.lastName || "").trim(),
@@ -160,6 +161,9 @@ function validate(input) {
   if (!isEmailFormat(input.email)) errors.push({ field: "email", message: "Valid email required." });
   if (!input.firstName) errors.push({ field: "firstName", message: "First name is required." });
   if (!input.lastName)  errors.push({ field: "lastName",  message: "Last name is required." });
+  if (input.employeeId && !normaliseNationalId(input.employeeId)) {
+    errors.push({ field: "employeeId", message: "Employee ID must be a National Registration number, for example 850101-0001." });
+  }
   if (!input.title)     errors.push({ field: "title",     message: "Title is required." });
   if (!input.pronoun)   errors.push({ field: "pronoun",   message: "Pronoun must be 'he' or 'she'." });
   if (!["teacher_appointed","teacher_special","ministry_permanent","ministry_temporary"].includes(input.letterType)) {

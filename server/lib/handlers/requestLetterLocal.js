@@ -14,6 +14,7 @@
 // enhanced path rejected.
 import { MESSAGES, emailDomainMessage } from "../validationMessages.js";
 import { isEmailFormat } from "../emailFormat.js";
+import { normaliseNationalId } from "../nationalId.js";
 
 export const LOCAL_ALLOWED_DOMAINS = ["moe.gov.bb"];
 
@@ -22,7 +23,9 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
     const errors = [];
     if (!firstName?.trim()) errors.push({ field: "firstName", message: MESSAGES.firstNameMissing });
     if (!lastName?.trim()) errors.push({ field: "lastName", message: MESSAGES.lastNameMissing });
+    const nationalId = normaliseNationalId(employeeId);
     if (!employeeId?.trim()) errors.push({ field: "employeeId", message: MESSAGES.employeeIdMissing });
+    else if (!nationalId) errors.push({ field: "employeeId", message: MESSAGES.employeeIdFormat });
     if (!email?.trim()) {
       errors.push({ field: "email", message: MESSAGES.emailMissing });
     } else if (!isEmailFormat(email)) {
@@ -53,7 +56,7 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
       };
     }
 
-    const employee = findEmployeeByEmployeeId(employeeId.trim());
+    const employee = findEmployeeByEmployeeId(nationalId);
     if (!employee || !employee.isActive) {
       return {
         status: 404,

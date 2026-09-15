@@ -74,7 +74,7 @@
       <p class="govbb-service-heading__service">Job letters</p>
       <h1>Enter your details</h1>
       <p class="govbb-service-heading__description">
-        We use your name and employee ID to match you to your record.
+        We use your name and National Identification (ID) number to match you to your record.
         Your letter will be sent to the work email address you provide.
       </p>
     </div>
@@ -99,11 +99,12 @@
       </div>
 
       <div class="govbb-form-group" id="employeeId-group">
-        <label class="govbb-label" for="employeeId">Employee ID</label>
+        <label class="govbb-label" for="employeeId">National Identification (ID) number</label>
+        <span class="govbb-hint" id="employeeId-hint">This is on your National Registration card. For example, 850101-0001</span>
         <span class="govbb-error-message" id="employeeId-error" hidden></span>
         <div class="govbb-input-wrapper">
           <input class="govbb-input" id="employeeId" name="employeeId" type="text"
-            spellcheck="false" />
+            inputmode="numeric" autocomplete="off" spellcheck="false" aria-describedby="employeeId-hint" />
         </div>
       </div>
 
@@ -185,6 +186,8 @@
     }
 
     const EMAIL_RX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Mirrors normaliseNationalId in server/lib/nationalId.js.
+    const isNationalIdFormat = (value) => /^\d{10}$/.test(value.replace(/[\s-]/g, ""));
     let allowedDomains = [];
     fetch("/api/allowed-domains")
       .then(r => r.ok ? r.json() : { domains: [] })
@@ -216,7 +219,8 @@
       const errors = [];
       if (!firstName) errors.push({ field: "firstName", message: "Enter your first name" });
       if (!lastName) errors.push({ field: "lastName", message: "Enter your last name" });
-      if (!employeeId) errors.push({ field: "employeeId", message: "Enter your employee ID" });
+      if (!employeeId) errors.push({ field: "employeeId", message: "Enter your National Identification (ID) number" });
+      else if (!isNationalIdFormat(employeeId)) errors.push({ field: "employeeId", message: "Enter a valid National Identification (ID) number (for example, 850101-0001)" });
 
       if (!email) {
         errors.push({ field: "email", message: "Enter your work email address" });

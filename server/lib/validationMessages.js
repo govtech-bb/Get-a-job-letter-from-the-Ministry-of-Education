@@ -16,28 +16,28 @@
 export const LABELS = {
   firstName: "First name",
   lastName: "Last name",
-  employeeId: "Employee ID",
+  employeeId: "National Identification (ID) number",
   email: "Work email address",
 };
 
-// employeeId has no hint. It used to say "This is your National Registration
-// number, for example 090472-0497", which contradicted both the label and the
-// employeeId values the service actually matches on. What the number is called
-// on a payslip, and how it is formatted, is still an open question for the
-// Ministry (#29) — until that is answered there is nothing true to say here.
+// The employeeId label is the one alpha.gov.bb forms use. The hint names the
+// card because many people know the number as their National Registration
+// number rather than by the label.
 export const HINTS = {
+  employeeId: "This is on your National Registration card. For example, 850101-0001",
   email: "Must be from an allowed domain, for example juniper.boyce@moe.gov.bb",
 };
 
 export const MESSAGES = {
   firstNameMissing: "Enter your first name",
   lastNameMissing: "Enter your last name",
-  employeeIdMissing: "Enter your employee ID",
+  employeeIdMissing: "Enter your National Identification (ID) number",
+  employeeIdFormat: "Enter a valid National Identification (ID) number (for example, 850101-0001)",
   emailMissing: "Enter your work email address",
   emailFormat: "Enter an email address in the correct format, for example jane.doe@moe.gov.bb",
   emailNameMismatch: "Your email address does not appear to match the name you entered",
-  recordNotFound: "We could not find a record for that employee ID.",
-  nameDoesNotMatch: "The name you entered does not match the record for that employee ID.",
+  recordNotFound: "We could not find a record for that National Identification (ID) number.",
+  nameDoesNotMatch: "The name you entered does not match the record for that National Identification (ID) number.",
 };
 
 // Naming the domains is the whole point of the message: without them the user

@@ -83,7 +83,9 @@ function field(name, value, error, base) {
         ${hint}
         ${err}
         <div class="govbb-input-wrapper">
-          <input class="govbb-input" id="${name}" name="${name}" type="${name === "email" ? "email" : "text"}"
+          <input class="govbb-input" id="${name}" name="${name}" type="${name === "email" ? "email" : "text"}"${
+    name === "employeeId" ? ' inputmode="numeric" autocomplete="off"' : ""
+  }
             value="${escapeHtml(value)}"${error ? ' aria-invalid="true"' : ""}${
     describedBy ? ` aria-describedby="${describedBy}"` : ""
   } />
@@ -117,7 +119,7 @@ export function renderFormPage({ values, errors, base, action }) {
       <p class="govbb-service-heading__service">Job letters</p>
       <h1 class="govbb-text-h1">Enter your details</h1>
       <p class="govbb-service-heading__description">
-        We use your name and employee ID to match you to your record.
+        We use your name and National Identification (ID) number to match you to your record.
         Your letter will be sent to the work email address you provide.
       </p>
     </div>

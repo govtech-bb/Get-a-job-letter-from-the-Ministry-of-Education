@@ -7,6 +7,7 @@ import { LABELS, HINTS, MESSAGES, emailDomainMessage } from "../server/lib/valid
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const requestHtml = fs.readFileSync(path.join(ROOT, "request.html"), "utf8");
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // request.html validates in an inline script and is served as a static file, so
 // it cannot import validationMessages.js. These assertions are what stops the
@@ -30,23 +31,19 @@ describe("request.html matches the shared validation messages", () => {
 
   for (const [field, label] of Object.entries(LABELS)) {
     it(`labels ${field} as "${label}"`, () => {
-      assert.match(requestHtml, new RegExp(`for="${field}"[^>]*>${label}<`));
+      assert.match(requestHtml, new RegExp(`for="${field}"[^>]*>${escapeRegExp(label)}<`));
     });
   }
 
-  it("shows the email hint", () => {
-    assert.ok(requestHtml.includes(HINTS.email));
-  });
-
-  it("gives the employee ID no hint, because there is nothing true to say yet", () => {
-    assert.equal(HINTS.employeeId, undefined);
-    assert.equal(requestHtml.includes("employeeId-hint"), false);
-    assert.equal(requestHtml.includes("National Registration"), false);
-  });
+  for (const [field, hint] of Object.entries(HINTS)) {
+    it(`gives ${field} the hint "${hint}"`, () => {
+      assert.match(requestHtml, new RegExp(`id="${field}-hint">${escapeRegExp(hint)}<`));
+    });
+  }
 });
 
 describe("terminology is consistent across the journey", () => {
-  const pages = ["index.html", "request.html"].map(p =>
+  const pages = ["index.html", "request.html", "not-found.html"].map(p =>
     fs.readFileSync(path.join(ROOT, p), "utf8")
   );
 
@@ -54,7 +51,8 @@ describe("terminology is consistent across the journey", () => {
     ["approved domain", "allowed domain"],
     ["Government email address", "Work email address"],
     ["government email address", "work email address"],
-    ["National Registration", "employee ID"],
+    ["employee ID", "National Identification (ID) number"],
+    ["Employee ID", "National Identification (ID) number"],
   ]) {
     it(`does not say "${stale}", says "${instead}"`, () => {
       for (const page of pages) {

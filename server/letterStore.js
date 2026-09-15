@@ -32,10 +32,3 @@ export function issueLetter(employee) {
 export function getLetter(id) {
   return letters.get(id) || null;
 }
-
-export function verifyLetter(id, token) {
-  const letter = letters.get(id);
-  if (!letter) return { valid: false, reason: "We have no record of a letter with that reference." };
-  if (letter.token !== token) return { valid: false, reason: "The verification code does not match. This letter may have been altered." };
-  return { valid: true, letter };
-}

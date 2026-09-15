@@ -5,7 +5,7 @@
 
 ## Context
 
-The admin console needs to be reachable by Ministry of Education personnel
+The admin console needs to be reachable by Ministry of Education Transformation personnel
 staff — a small group whose membership changes only when people join or
 leave the team. The Ministry does not run a central identity provider we
 can federate against, and the Government of Barbados does not currently

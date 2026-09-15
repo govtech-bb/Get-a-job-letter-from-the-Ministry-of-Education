@@ -67,7 +67,7 @@ export function makeRequestLetterLocal({ findEmployeeByEmployeeId, issueLetter }
       };
     }
 
-    const letter = issueLetter(employee);
+    const letter = issueLetter(employee, email);
     return { status: 200, body: { ok: true, letterId: letter.id, letterToken: letter.token } };
   };
 }

@@ -148,7 +148,16 @@ export async function handleFormSubmit({ body, base, action, submit = requestLet
   const result = await submit({ ...values, publicBaseUrl: verificationBase() });
 
   if (result.status === 200 && result.body?.ok) {
-    return { redirect: `${base}sent.html` };
+    // To the server-rendered confirmation rather than the static sent.html:
+    // that page fills itself in from sessionStorage, which a redirect does not
+    // populate, so without script it could not name the address. The reference
+    // and token identify the letter; the address is read from the record.
+    const { letterId, letterToken } = result.body;
+    return {
+      redirect:
+        `/letter-sent?id=${encodeURIComponent(letterId)}` +
+        `&t=${encodeURIComponent(letterToken || "")}`,
+    };
   }
 
   // Match how app.js routes each outcome, so the two paths tell the user the

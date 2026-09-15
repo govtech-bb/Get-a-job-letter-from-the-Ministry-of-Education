@@ -148,11 +148,11 @@ async function decodeAndVerify(token) {
     const { sig, ...rest } = payload;
     const expected = (await sha256Hex(JSON.stringify(rest) + DEMO_KEY)).slice(0, 16);
     if (sig !== expected) {
-      return { valid: false, reason: "The verification code does not match. This letter may have been altered." };
+      return { valid: false, reason: "This link does not match a letter the Ministry issued. Check it was entered correctly, or scan the QR code on the letter instead." };
     }
     return { valid: true, letter: payload };
   } catch (err) {
-    return { valid: false, reason: "We could not read the letter reference. The link may be incomplete." };
+    return { valid: false, reason: "This link is incomplete. Scan the QR code on the letter instead." };
   }
 }
 

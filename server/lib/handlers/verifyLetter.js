@@ -15,19 +15,23 @@ import { verifyDocumentCode } from "../fingerprint.js";
 const MAX_CODE_ATTEMPTS = 5;
 const RATE_WINDOW_MINUTES = 15;
 
+const INCOMPLETE_LINK = "This link is incomplete. Scan the QR code on the letter instead.";
+const LINK_DOES_NOT_MATCH = "This link does not match a letter the Ministry issued. Check it was entered correctly, or scan the QR code on the letter instead.";
+const NO_RECORD = "We have no record of a letter with this reference.";
+
 function hashSource(ip) {
   return crypto.createHash("sha256").update(String(ip || "unknown")).digest("hex").slice(0, 16);
 }
 
 export async function verifyLetter({ id, signature, sourceIp }) {
   if (!id || !signature) {
-    return { status: 400, body: { valid: false, reason: "Missing reference or signature." } };
+    return { status: 400, body: { valid: false, reason: INCOMPLETE_LINK } };
   }
 
   if (!verifySignature(id, signature)) {
     return {
       status: 200,
-      body: { valid: false, reason: "The verification code does not match. This letter may have been altered." },
+      body: { valid: false, reason: LINK_DOES_NOT_MATCH },
     };
   }
 
@@ -35,7 +39,7 @@ export async function verifyLetter({ id, signature, sourceIp }) {
   if (!row) {
     return {
       status: 200,
-      body: { valid: false, reason: "We have no record of a letter with that reference." },
+      body: { valid: false, reason: NO_RECORD },
     };
   }
 
@@ -93,17 +97,20 @@ export async function verifyLetter({ id, signature, sourceIp }) {
 }
 
 export async function challengeLetter({ id, signature, code, sourceIp }) {
-  if (!id || !signature || !code) {
-    return { status: 400, body: { valid: false, reason: "Missing required fields." } };
+  if (!id || !signature) {
+    return { status: 400, body: { valid: false, reason: INCOMPLETE_LINK } };
+  }
+  if (!code) {
+    return { status: 400, body: { valid: false, reason: "Enter the document code printed at the bottom of the letter." } };
   }
 
   if (!verifySignature(id, signature)) {
-    return { status: 200, body: { valid: false, reason: "Invalid verification link." } };
+    return { status: 200, body: { valid: false, reason: LINK_DOES_NOT_MATCH } };
   }
 
   const row = await findIssuedLetter(id);
   if (!row) {
-    return { status: 200, body: { valid: false, reason: "No record found." } };
+    return { status: 200, body: { valid: false, reason: NO_RECORD } };
   }
 
   const sourceHash = hashSource(sourceIp);

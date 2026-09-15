@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Verify a letter - Job letters</title>
+  <title>Verify a job letter - Ministry of Education</title>
   <link rel="icon" href="assets/images/favicon.ico" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="page.css" />
@@ -111,7 +111,7 @@
 </div>
 <!-- /govbb:chrome-top -->
 
-  <main class="govbb-width-container govbb-main-wrapper" id="main-content" tabindex="-1" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Verify a letter"}]' data-needs-js="Checking a letter">
+  <main class="govbb-width-container govbb-main-wrapper" id="main-content" tabindex="-1" data-breadcrumbs='[{"label":"Job letters","href":"index.html"},{"label":"Verify a job letter"}]' data-needs-js="Checking a letter">
     <div class="govbb-grid-row">
       <div class="govbb-grid-column-two-thirds">
         <div class="govbb-prose">
@@ -140,7 +140,7 @@
       </noscript>
 <!-- /govbb:noscript -->
     <div class="verify-strap">
-      <h1 class="verify-strap__title">You scanned a Ministry of Education job letter</h1>
+      <h1 class="verify-strap__title">Verify a job letter</h1>
       <p class="verify-strap__lede">
         This page shows what the Ministry's record said when this letter was issued, so you can
         compare it against the letter you were given.
@@ -182,6 +182,11 @@
         result = await JobLetters.decodeAndVerify(hashToken);
       }
 
+      if (result.status >= 500 || (!result.valid && !result.reason)) {
+        renderServiceProblem();
+        return;
+      }
+
       if (!result.valid) {
         renderInvalid(result.reason);
         return;
@@ -196,7 +201,7 @@
       function renderInvalid(reason) {
         root.innerHTML = `
           <div class="panel-error stack">
-            <span class="verify-stamp verify-stamp--invalid">✗ Verification failed</span>
+            <span class="verify-stamp verify-stamp--invalid">Verification failed</span>
             <h2 class="govbb-text-h3">This letter could not be verified</h2>
             <p>${esc(reason)}</p>
           </div>
@@ -209,10 +214,20 @@
 `;
       }
 
+      function renderServiceProblem() {
+        root.innerHTML = `
+          <div class="panel-warning stack">
+            <h2 class="govbb-text-h3">Sorry, there is a problem with the service</h2>
+            <p>Try again later.</p>
+          </div>
+          <p>For help, contact the Ministry's Personnel Department.</p>
+`;
+      }
+
       function renderChallenge(letter) {
         const emp = letter.employee;
         root.innerHTML = `
-          <span class="verify-stamp verify-stamp--pending">○ Record found</span>
+          <span class="verify-stamp verify-stamp--pending">Record found</span>
           <h2 class="govbb-text-h3">We found a record for this letter</h2>
           <dl class="key-value">
             <dt>Employee</dt>
@@ -223,11 +238,8 @@
 
           <div class="stack" id="challenge-section">
             <h2 class="govbb-text-h3">Document code</h2>
-            <p>
-              Enter the code printed near the bottom of the letter to confirm it is genuine.
-            </p>
             <div class="govbb-form-group" id="code-group">
-              <label class="govbb-label" for="doc-code-1">Enter the 8-character code</label>
+              <label class="govbb-label" for="doc-code-1">Enter the document code printed at the bottom of the letter</label>
               <div class="challenge-field">
                 <span class="challenge-field__prefix">0 –</span>
                 <input class="challenge-field__input" type="text" id="doc-code-1"
@@ -284,7 +296,7 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id, t: signature, code }),
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
 
             if (data.rateLimited) {
               renderRateLimited();
@@ -298,19 +310,20 @@
 
             if (data.codeMatch === false) {
               const remaining = data.attemptsRemaining;
-              let msg = data.reason;
-              if (remaining !== undefined && remaining > 0) {
-                msg += ` You have ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`;
-              } else if (remaining === 0) {
-                msg += " This is your last attempt before the code is temporarily locked.";
-              }
-              showCodeError(msg);
+              showCodeError(remaining > 0
+                ? `The document code does not match. Check the code printed at the bottom of the letter and try again. You have ${remaining} attempt${remaining === 1 ? "" : "s"} left.`
+                : "The document code does not match. You have no attempts left. Wait 15 minutes, then try again.");
               btn.disabled = false;
               btn.textContent = "Check code";
               return;
             }
 
-            showCodeError(data.reason || "Something went wrong. Please try again.");
+            if (res.status >= 500 || !data.reason) {
+              renderServiceProblem();
+              return;
+            }
+
+            showCodeError(data.reason);
             btn.disabled = false;
             btn.textContent = "Check code";
           } catch {
@@ -341,8 +354,7 @@
           <div class="panel-warning stack">
             <h2 class="govbb-text-h3">Too many attempts</h2>
             <p>
-              The document code check has been temporarily locked for this letter.
-              Please wait 15 minutes before trying again.
+              The document code check is locked for this letter. Wait 15 minutes, then try again.
             </p>
           </div>
           <p>For help, contact the Ministry's Personnel Department.</p>
@@ -354,10 +366,10 @@
         const postLine = esc(emp.post) + (emp.school ? ", " + esc(emp.school) : "");
 
         root.innerHTML = `
-          <span class="verify-stamp">✓ Verified: this letter is genuine</span>
+          <span class="verify-stamp">Verified: this letter is genuine</span>
           <h2>This letter was issued by the Ministry of Education Transformation.</h2>
 
-          <h2 class="govbb-text-h3">What this letter confirms</h2>
+          <h2 class="govbb-text-h3">What the Ministry's record said when the letter was issued</h2>
           <dl class="key-value">
             <dt>Employee</dt>
             <dd>${esc(emp.title)} ${esc(emp.firstName)} ${esc(emp.lastName)}</dd>
@@ -372,6 +384,10 @@
             <dt>Reference</dt>
             <dd><code>${esc(letter.id)}</code></dd>
           </dl>
+          <p>
+            If the employee has since left or changed posts, this page still shows the details from
+            the day the letter was issued. It is not a check of their employment today.
+          </p>
           <p class="govbb-text-body-sm" style="color: var(--govbb-color-muted);">
             Salary information is on the letter itself and is not shown on this public page.
           </p>
@@ -380,15 +396,10 @@
             <summary class="govbb-show-hide__summary">How this verification works</summary>
             <div class="govbb-show-hide__content">
               <p>
-                Each letter is signed with a code held by the Ministry of Education's service.
-                When you scan the QR code, this page checks that signature against the Ministry's record.
-                If the letter has been altered after it was issued, the signature will no longer match
-                and verification will fail.
-              </p>
-              <p>
-                Verification reflects the Ministry's record at the time the letter was issued. If the
-                employee has since left or changed posts, this page will continue to show what the
-                letter said when it was originally signed.
+                The QR code and link on each letter carry a reference signed by the Ministry of
+                Education's service. This page checks that signature and shows the Ministry's record
+                of the letter. It does not read the letter you were given, so compare the details
+                above with it.
               </p>
             </div>
           </details>`;

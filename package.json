@@ -2,7 +2,7 @@
   "name": "moe-letters",
   "version": "0.1.0",
   "private": true,
-  "description": "Ministry of Education Job Letters — request and verify employment letters",
+  "description": "Ministry of Education Transformation Job Letters — request and verify employment letters",
   "type": "module",
   "scripts": {
     "dev": "node server/index.js",

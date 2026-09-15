@@ -89,7 +89,7 @@ async function sendInviteEmail({ email, name, invitedBy }) {
 
   const text = `${greeting}
 
-${invitedBy} has added you as an admin on the Ministry of Education Job Letters service.
+${invitedBy} has added you as an admin on the Ministry of Education Transformation Job Letters service.
 
 To sign in:
   1. Open ${loginUrl}
@@ -103,7 +103,7 @@ If you weren't expecting this, you can ignore the email and your access can be r
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#111;max-width:560px;">
       <p>${greeting}</p>
-      <p>${invitedBy} has added you as an admin on the Ministry of Education Job Letters service.</p>
+      <p>${invitedBy} has added you as an admin on the Ministry of Education Transformation Job Letters service.</p>
       <p><strong>To sign in:</strong></p>
       <ol>
         <li>Open <a href="${loginUrl}">${loginUrl}</a></li>

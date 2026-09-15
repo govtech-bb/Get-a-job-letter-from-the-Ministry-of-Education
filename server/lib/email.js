@@ -26,8 +26,8 @@ export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyU
   const overrideActive = !!process.env.RESEND_OVERRIDE_TO;
   const { to: deliverTo, cc } = recipientsForLetter(to);
   const subject = overrideActive
-    ? `[TEST → ${to}] Your Ministry of Education job letter`
-    : "Your Ministry of Education job letter";
+    ? `[TEST → ${to}] Your Ministry of Education Transformation job letter`
+    : "Your Ministry of Education Transformation job letter";
 
   const safe = s => (s || "").replace(/[^A-Za-z0-9.\-]+/g, "-");
   const filename = `Job-Letter-${safe(employee.firstName)}-${safe(employee.lastName)}.pdf`;
@@ -38,7 +38,7 @@ export async function sendLetterEmail({ to, employee, pdfBuffer, letter, verifyU
   const text =
 `${greeting}
 
-Thank you for using the Ministry of Education job letters service. Your letter is attached to this email as a PDF.
+Thank you for using the Ministry of Education Transformation job letters service. Your letter is attached to this email as a PDF.
 
 To use it:
 1. Open the attachment.
@@ -54,7 +54,7 @@ Ministry of Education Transformation`;
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#111;max-width:560px;">
       <p>${greeting}</p>
-      <p>Thank you for using the Ministry of Education job letters service. Your letter is attached to this email as a PDF.</p>
+      <p>Thank you for using the Ministry of Education Transformation job letters service. Your letter is attached to this email as a PDF.</p>
       <p>To use it:</p>
       <ol>
         <li>Open the attachment.</li>

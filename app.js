@@ -186,7 +186,7 @@ function renderLetterHtml(letter, opts = {}) {
           <div style="font-size:10.5pt;">St. Michael BB 11124</div>
           <div style="font-size:10.5pt;">BARBADOS, W.I.</div>
         </div>
-        <img src="assets/images/moe-logo.png" alt="Ministry of Education logo"
+        <img src="assets/images/moe-logo.png" alt="Ministry of Education Transformation logo"
              style="width:110px;height:110px;object-fit:contain;display:block;margin-left:auto;" />
       </div>
 

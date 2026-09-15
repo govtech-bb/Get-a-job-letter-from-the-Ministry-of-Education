@@ -1,4 +1,4 @@
-# Job letters — Ministry of Education
+# Job letters — Ministry of Education Transformation
 
 Alpha service that lets a Ministry of Education Transformation employee request
 a job letter on demand, and lets a relying party (bank, retailer) verify the

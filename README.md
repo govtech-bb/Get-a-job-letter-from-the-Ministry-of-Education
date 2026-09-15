@@ -58,11 +58,11 @@ serves in production, so local dev exercises the deployed shape.
 ### Demo employees
 
 `data/employees-2000.json` holds 2,000 synthetic records. The request form asks
-for a first name, a last name, an employee ID and an email address on an allowed
-domain, and the email's local part has to contain part of the name. One active
-record per letter type:
+for a first name, a last name, a National Identification (ID) number and an email
+address on an allowed domain, and the email's local part has to contain part of
+the name. One active record per letter type:
 
-| Name | Employee ID | Email | Letter type |
+| Name | National Identification (ID) number | Email | Letter type |
 | --- | --- | --- | --- |
 | Judith Drakes | `123456-0001` | `judith.drakes@moe.gov.bb` | Appointed teacher |
 | Elizabeth Leacock | `123456-0920` | `elizabeth.leacock@moe.gov.bb` | Teacher with special responsibility |
@@ -115,8 +115,8 @@ For real production mail, verify a subdomain of `moe.gov.bb` and set
 ## How it works
 
 1. Employee opens the service and enters their first name, last name,
-   employee ID and work email address.
-2. The server looks the employee up by employee ID, checks the name matches
+   National Identification (ID) number and work email address.
+2. The server looks the employee up by that number, checks the name matches
    that record, and checks the email is on an allowed domain and plausibly
    matches the name. Receipt of the resulting email (stubbed in alpha) is the
    proof of identity.

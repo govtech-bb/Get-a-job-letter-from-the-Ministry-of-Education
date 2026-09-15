@@ -4,6 +4,7 @@
 
 import { sql } from "../db.js";
 import { isEmailFormat } from "../emailFormat.js";
+import { normaliseNationalId } from "../nationalId.js";
 
 // ── CSV parsing ────────────────────────────────────────────────────────────
 
@@ -102,7 +103,9 @@ function normaliseRow(raw) {
   const isActing = actingRaw === "true" || actingRaw === "yes" || actingRaw === "1" || actingRaw === "y";
 
   return {
-    employeeId: String(raw.employeeId || "").trim(),
+    // Stored in the form the request lookup searches for; validateRow rejects
+    // anything this cannot normalise.
+    employeeId: normaliseNationalId(raw.employeeId) ?? String(raw.employeeId || "").trim(),
     email: String(raw.email || "").trim().toLowerCase(),
     title: String(raw.title || "").trim(),
     firstName: String(raw.firstName || "").trim(),
@@ -136,6 +139,7 @@ function normaliseDate(raw) {
 function validateRow(row, lineNum) {
   const errors = [];
   if (!row.employeeId) errors.push("Employee ID is required");
+  else if (!normaliseNationalId(row.employeeId)) errors.push("Employee ID must be a National Registration number, for example 850101-0001");
   if (!row.email || !isEmailFormat(row.email)) errors.push("Valid email is required");
   if (!row.firstName) errors.push("First name is required");
   if (!row.lastName) errors.push("Last name is required");

@@ -8,6 +8,7 @@ import { generateDocumentCode, formatDocumentCode } from "../fingerprint.js";
 import { generateLetterPdf } from "../../pdf.js";
 import { sendLetterEmail } from "../email.js";
 import { isEmailFormat } from "../emailFormat.js";
+import { normaliseNationalId } from "../nationalId.js";
 
 function normalise(s) {
   return String(s || "").trim().toLowerCase();
@@ -35,7 +36,9 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
 
   if (!firstName?.trim()) errors.push({ field: "firstName", message: MESSAGES.firstNameMissing });
   if (!lastName?.trim()) errors.push({ field: "lastName", message: MESSAGES.lastNameMissing });
+  const nationalId = normaliseNationalId(employeeId);
   if (!employeeId?.trim()) errors.push({ field: "employeeId", message: MESSAGES.employeeIdMissing });
+  else if (!nationalId) errors.push({ field: "employeeId", message: MESSAGES.employeeIdFormat });
 
   if (!email?.trim()) {
     errors.push({ field: "email", message: MESSAGES.emailMissing });
@@ -66,7 +69,7 @@ export async function requestLetter({ firstName, lastName, employeeId, email, pu
     };
   }
 
-  const employee = await findEmployeeByEmployeeId(employeeId.trim());
+  const employee = await findEmployeeByEmployeeId(nationalId);
   if (!employee || !employee.isActive) {
     return { status: 404, body: { error: "not_found", message: MESSAGES.recordNotFound } };
   }

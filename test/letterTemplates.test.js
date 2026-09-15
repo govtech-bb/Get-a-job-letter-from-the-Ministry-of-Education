@@ -71,3 +71,13 @@ describe("letter body currency", () => {
     });
   }
 });
+
+describe("letter body start date", () => {
+  it("states the stored appointment date when the server runs west of UTC", () => {
+    process.env.TZ = "America/Barbados";
+    for (const letterType of LETTER_TYPES) {
+      const body = buildLetterBody(employee({ letterType, appointmentDate: "2010-01-01" })).join(" ");
+      assert.match(body, /with effect from 1 January 2010\b/);
+    }
+  });
+});

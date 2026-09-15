@@ -36,9 +36,12 @@ export function moneyFormatted(value) {
   return "BDS $" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatLongDate(dateStr) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const months = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"];
+
+function longDateFromYmd(ymd) {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return `${day} ${months[month - 1]} ${year}`;
 }
 
 export function buildLetterBody(employee) {
@@ -47,7 +50,7 @@ export function buildLetterBody(employee) {
   const nameAndAddress = employee.address ? `${fullName} of ${employee.address}` : fullName;
   const salaryWords = moneyToWords(employee.monthlySalary);
   const salaryFig = moneyFormatted(employee.monthlySalary);
-  const startDate = formatLongDate(employee.appointmentDate);
+  const startDate = longDateFromYmd(employee.appointmentDate);
 
   switch (employee.letterType) {
     case "teacher_appointed": {
